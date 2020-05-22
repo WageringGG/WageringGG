@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"omnisharp.defaultLaunchSolution": "../WageringGG.sln",
+		"editor.formatOnSave": true,
+		"html.format.indentInnerHtml": true
+	},
+}

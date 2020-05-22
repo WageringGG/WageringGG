@@ -1,16 +1,36 @@
 ﻿@inherits LayoutComponentBase
-
-<div class="sidebar">
-    <NavMenu />
-</div>
-
-<div class="main">
-    <div class="top-row px-4 auth">
-        <LoginDisplay />
-        <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+<NavMenu />
+<section class="hero is-dark is-bold is-fullheight-with-navbar">
+    <div class="hero-body">
+        <div class="container">
+            @Body
+        </div>
     </div>
-
-    <div class="content px-4">
-        @Body
+    <div class="hero-foot">
+        <div class="tabs is-centered">
+            <ul>
+                <li>
+                    <a href="https://discord.gg/HmmVMs2" target="_blank">
+                        <span class="icon">
+                            <i class="mdi mdi-discord"> </i>
+                        </span>
+                    </a>
+                </li>
+                <li>
+                    <a href="https://www.instagram.com/Wagering.GG" target="_blank">
+                        <span class="icon">
+                            <i class="mdi mdi-instagram"> </i>
+                        </span>
+                    </a>
+                </li>
+                <li>
+                    <a href="https://twitter.com/WageringGG" target="_blank">
+                        <span class="icon">
+                            <i class="mdi mdi-twitter"> </i>
+                        </span>
+                    </a>
+                </li>
+            </ul>
+        </div>
     </div>
-</div>
+</section>

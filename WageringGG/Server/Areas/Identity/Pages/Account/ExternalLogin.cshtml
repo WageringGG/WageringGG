@@ -1,0 +1,43 @@
+﻿@page
+@model ExternalLoginModel
+@{
+    ViewData["Title"] = "Complete Registration";
+}
+
+<div class="columns is-mobile is-centered">
+    <div class="column is-12-mobile is-10-tablet is-6-desktop is-5-widescreen is-4-fullhd">
+        <div class="box has-background-transparent">
+            <h1 class="title">Complete Registration</h1>
+            <form asp-page-handler="Confirmation" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                <div asp-validation-summary="All" class="has-text-danger"></div>
+                <div class="field">
+                    <p class="control has-icons-left">
+                        <input asp-for="Input.DisplayName" placeholder="Display Name" class="input" />
+                        <span class="icon is-left">
+                            <i class="mdi mdi-account"></i>
+                        </span>
+                    </p>
+                    <span asp-validation-for="Input.DisplayName" class="has-text-danger"></span>
+                </div>
+                <div class="field">
+                    <p class="control has-icons-left">
+                        <input asp-for="Input.Email" placeholder="Email" class="input" />
+                        <span class="icon is-left">
+                            <i class="mdi mdi-email"></i>
+                        </span>
+                    </p>
+                    <span asp-validation-for="Input.Email" class="has-text-danger"></span>
+                </div>
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" class="button is-success is-fullwidth">Register</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

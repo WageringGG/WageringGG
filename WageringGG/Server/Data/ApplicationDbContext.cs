@@ -1,21 +1,41 @@
-﻿using WageringGG.Server.Models;
-using IdentityServer4.EntityFramework.Options;
-using Microsoft.AspNetCore.ApiAuthorization.IdentityServer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using WageringGG.Shared.Models;
+#nullable disable
 
 namespace WageringGG.Server.Data
 {
-    public class ApplicationDbContext : ApiAuthorizationDbContext<ApplicationUser>
+    public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext(
-            DbContextOptions options,
-            IOptions<OperationalStoreOptions> operationalStoreOptions) : base(options, operationalStoreOptions)
+        public DbSet<Profile> Profiles { get; set; }
+        #region Wagers
+        public DbSet<Wager> Wagers { get; set; }
+        public DbSet<WagerChallenge> WagerChallenges { get; set; }
+        public DbSet<WagerChallengeBid> WagerChallengeBids { get; set; }
+        public DbSet<WagerHostBid> WagerHostBids { get; set; }
+        public DbSet<WagerRule> WagerRules { get; set; }
+        #endregion
+        #region Tournaments
+        public DbSet<Tournament> Tournaments { get; set; }
+        #endregion
+        public DbSet<Game> Games { get; set; }
+        public DbSet<Rule> Rules { get; set; }
+        public DbSet<PersonalNotification> Notifications { get; set; }
+        public DbSet<Rating> Ratings { get; set; }
+        public DbSet<Connection> Connections { get; set; }
+
+        public ApplicationDbContext(DbContextOptions options) : base(options)
         {
+        }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            builder.Entity<Profile>().HasIndex(x => x.NormalizedDisplayName).IsUnique();
+            builder.Entity<Profile>().HasAlternateKey(x => x.DisplayName);
+            builder.Entity<Game>().HasIndex(x => x.NormalizedName).IsUnique();
+
+            Game[] games = new Game[] { new Game { Id = 1, Name = "Fortnite", NormalizedName = "fortnite" } };
+            builder.Entity<Game>().HasData(games);
+            base.OnModelCreating(builder);
         }
     }
 }

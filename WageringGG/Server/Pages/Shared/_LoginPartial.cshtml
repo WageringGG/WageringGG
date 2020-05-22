@@ -1,0 +1,50 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using WageringGG.Server.Models;
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+@{
+    string? returnUrl = null;
+    var query = ViewContext.HttpContext.Request.Query;
+    if (query.ContainsKey("returnUrl"))
+    {
+        returnUrl = query["returnUrl"];
+    }
+}
+
+<div class="navbar-item">
+    <div class="buttons">
+        @if (SignInManager.IsSignedIn(User))
+        {
+            <a class="button is-dark" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">
+                <span class="icon">
+                    <i class="mdi mdi-account"></i>
+                </span>
+                <span>@User.GetName()</span>
+            </a>
+            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/">
+                <button type="submit" class="button is-secondary">
+                    <span class="icon">
+                        <i class="mdi mdi-logout"></i>
+                    </span>
+                    <span>Logout</span>
+                </button>
+            </form>
+        }
+        else
+        {
+            <a class="button is-dark" asp-area="Identity" asp-page="/Account/Register" asp-route-returnUrl="@returnUrl">
+                <span class="icon">
+                    <i class="mdi mdi-account-plus"></i>
+                </span>
+                <span>Register</span>
+            </a>
+            <a class="button is-secondary" asp-area="Identity" asp-page="/Account/Login" asp-route-returnUrl="@returnUrl">
+                <span class="icon">
+                    <i class="mdi mdi-login"></i>
+                </span>
+                <span>Login</span>
+            </a>
+        }
+    </div>
+</div>

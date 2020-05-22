@@ -1,0 +1,35 @@
+﻿@page
+@model ExternalLoginsModel
+@{
+    ViewData["Title"] = "Manage your external logins";
+    ViewData["ActivePage"] = ManageNavPages.ExternalLogins;
+}
+
+<partial name="_StatusMessage" for="StatusMessage" />
+@if (Model.CurrentLogins?.Count > 0)
+{
+    <h1 class="title">Registered Logins</h1>
+    <div class="tags">
+        @foreach (var login in Model.CurrentLogins)
+        {
+            <span class="tag is-medium is-info">
+                @login.ProviderDisplayName
+                @if (Model.ShowRemoveButton)
+                {
+                    <form id="remove-login" asp-page-handler="RemoveLogin" method="post">
+                        <input asp-for="@login.LoginProvider" name="LoginProvider" type="hidden" />
+                        <input asp-for="@login.ProviderKey" name="ProviderKey" type="hidden" />
+                        <button type="submit" class="delete" title="Remove this @login.ProviderDisplayName login from your account">Remove</button>
+                    </form>
+                }
+            </span>
+        }
+    </div>
+}
+@if (Model.OtherLogins?.Count > 0)
+{
+    <h1 class="title">Add another service to log in.</h1>
+    <form id="link-login-form" asp-page-handler="LinkLogin" method="post">
+        <partial name="_ExternalPartial" model="Model.OtherLogins" />
+    </form>
+}

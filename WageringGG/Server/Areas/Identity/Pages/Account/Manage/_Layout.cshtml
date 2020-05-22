@@ -1,0 +1,22 @@
+﻿@{
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="columns is-centered">
+    <div class="column is-12-mobile is-6-tablet is-6-desktop is-5-widescreen is-4-fullhd">
+        <div class="box has-background-transparent">
+            <aside class="menu has-text-left">
+                <partial name="_ManageNav" />
+            </aside>
+        </div>
+    </div>
+    <div class="column is-12-mobile is-6-tablet is-6-desktop is-5-widescreen is-4-fullhd">
+        <div class="box has-background-transparent">
+            @RenderBody()
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @RenderSection("Scripts", required: false)
+}

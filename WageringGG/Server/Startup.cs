@@ -1,49 +1,110 @@
+using Microsoft.AspNetCore.ApiAuthorization.IdentityServer;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Linq;
 using WageringGG.Server.Data;
 using WageringGG.Server.Models;
+using WageringGG.Server.Services;
+using stellar = stellar_dotnet_sdk;
 
 namespace WageringGG.Server
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration config, IWebHostEnvironment env)
         {
-            Configuration = configuration;
+            _config = config;
+            _env = env;
         }
 
-        public IConfiguration Configuration { get; }
+        private readonly IConfiguration _config;
+        private readonly IWebHostEnvironment _env;
 
         // This method gets called by the runtime. Use this method to add services to the container.
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(
-                    Configuration.GetConnectionString("DefaultConnection")));
+            services.AddDbContextPool<ApplicationDbContext>(options =>
+            {
+                options.UseSqlServer(_config.GetConnectionString("Application"));
+            });
+            services.AddDbContext<IdentityDbContext>(options =>
+            {
+                options.UseSqlServer(_config.GetConnectionString("Identity"));
+            });
 
-            services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-                .AddEntityFrameworkStores<ApplicationDbContext>();
+            services.AddDefaultIdentity<ApplicationUser>(x =>
+            {
+                x.User.RequireUniqueEmail = true;
+                x.SignIn.RequireConfirmedAccount = !_env.IsDevelopment();
+            }).AddEntityFrameworkStores<IdentityDbContext>();
 
             services.AddIdentityServer()
-                .AddApiAuthorization<ApplicationUser, ApplicationDbContext>();
+                .AddApiAuthorization<ApplicationUser, IdentityDbContext>()
+                .AddProfileService<ProfileService>();
 
             services.AddAuthentication()
+                .AddGoogle(options =>
+                {
+                    IConfigurationSection section =
+                        _config.GetSection("Authentication:Google");
+
+                    options.ClientId = section["ClientId"];
+                    options.ClientSecret = section["ClientSecret"];
+                })
+                .AddFacebook(options =>
+                {
+                    IConfigurationSection section =
+                        _config.GetSection("Authentication:Facebook");
+
+                    options.AppId = section["ClientId"];
+                    options.AppSecret = section["ClientSecret"];
+                    options.AccessDeniedPath = "/Error";
+                })
+                .AddTwitter(options =>
+                {
+                    IConfigurationSection section =
+                        _config.GetSection("Authentication:Twitter");
+
+                    options.ConsumerKey = section["ClientId"];
+                    options.ConsumerSecret = section["ClientSecret"];
+                })
                 .AddIdentityServerJwt();
+
+            services.Configure<JwtBearerOptions>(
+            IdentityServerJwtConstants.IdentityServerJwtBearerScheme,
+            options =>
+            {
+                var received = options.Events.OnMessageReceived;
+                options.Events.OnMessageReceived = async context =>
+                {
+                    await received(context);
+                    var accessToken = context.Request.Query["access_token"];
+
+                    // If the request is for our hub...
+                    var path = context.HttpContext.Request.Path;
+                    if (!string.IsNullOrEmpty(accessToken) &&
+                        (path.StartsWithSegments("/group-hub")))
+                    {
+                        // Read the token out of the query string
+                        context.Token = accessToken;
+                    }
+                };
+            });
 
             services.AddControllersWithViews();
             services.AddRazorPages();
+            services.AddSignalR();
+
+            string network = _env.IsDevelopment() ? "https://horizon-testnet.stellar.org/" : "https://horizon.stellar.org/";
+            services.AddSingleton(new stellar.Server(network));
+            services.AddScoped<IEmailSender, EmailSender>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

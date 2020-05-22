@@ -1,0 +1,12 @@
+﻿[
+  {
+    "outputFile": "wwwroot/css/bulma.min.css",
+    "inputFile": "Styles/bulma.sass",
+    "minify": { "enabled": true }
+  },
+  {
+    "inputFile": "Styles/bulma.sass",
+    "minify": { "enabled": true },
+    "outputFile": "../Client/wwwroot/css/bulma.min.css"
+  }
+]
