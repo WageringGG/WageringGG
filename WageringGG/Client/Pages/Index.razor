@@ -1,5 +1,12 @@
 ﻿@page "/"
 
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
+<h1 class="title">Wagering.GG</h1>
+<h2 class="subtitle">Invest in yourself one game at a time.</h2>
+@foreach (Game game in Constants.Games.Values)
+{
+    <div class="box">
+        <h1 class="title">@game.Name</h1>
+        <div class="buttons">
+        </div>
+    </div>
+}

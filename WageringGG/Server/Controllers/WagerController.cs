@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using WageringGG.Server.Data;
 using WageringGG.Server.Hubs;
+using WageringGG.Server.Models;
 using WageringGG.Shared.Constants;
 using WageringGG.Shared.Models;
 using stellar = stellar_dotnet_sdk;
@@ -22,15 +23,6 @@ namespace WageringGG.Server.Handlers
         private readonly IHubContext<GroupHub> _hubContext;
         private readonly stellar.Server _server;
         private const int ResultSize = 15;
-        public struct Query
-        {
-            public int gameId;
-            public int page;
-            public string? displayName;
-            public int? minimumWager;
-            public int? maximumWager;
-            public int? playerCount;
-        }
 
         public WagerController(ApplicationDbContext context, IHubContext<GroupHub> hubContext, stellar.Server server)
         {
@@ -40,39 +32,39 @@ namespace WageringGG.Server.Handlers
         }
 
         //POST: api/wagers/search
-        [HttpPost("search")]
-        public async Task<IActionResult> GetWagers([FromBody] Query query)
+        [HttpGet("{gameId}")]
+        public async Task<IActionResult> GetWagers(int gameId, int page, string? displayName, int? minimumWager, int? maximumWager, int? playerCount)
         {
-            if (query.page < 1)
-                ModelState.AddModelError("Page", $"{query.page} is not a valid page.");
-            if (query.minimumWager.HasValue && query.maximumWager.HasValue && query.minimumWager.Value > query.maximumWager.Value)
+            if (page < 1)
+                ModelState.AddModelError("Page", $"{page} is not a valid page.");
+            if (minimumWager.HasValue && maximumWager.HasValue && minimumWager.Value > maximumWager.Value)
                 ModelState.AddModelError("Greater than", "Minimum wager cannot be larger than the maximum wager.");
-            if (query.maximumWager.HasValue && query.maximumWager.Value < 0)
+            if (maximumWager.HasValue && maximumWager.Value < 0)
                 ModelState.AddModelError("Max Negative", "Maximum wager cannot be negative.");
-            if (query.minimumWager.HasValue && query.minimumWager.Value < 0)
+            if (minimumWager.HasValue && minimumWager.Value < 0)
                 ModelState.AddModelError("Min Negative", "Minimum wager cannot be negative.");
-            if (query.playerCount.HasValue && query.playerCount.Value < 0)
+            if (playerCount.HasValue && playerCount.Value < 0)
                 ModelState.AddModelError("Player Negative", "Player count cannot be negative.");
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             byte confirmed = (byte)Status.Confirmed;
-            IQueryable<Wager> wagerQuery = _context.Wagers.AsNoTracking().Where(x => x.GameId == query.gameId).Where(x => !x.IsPrivate).Where(x => x.Status == confirmed);
+            IQueryable<Wager> wagerQuery = _context.Wagers.AsNoTracking().Where(x => x.GameId == gameId).Where(x => !x.IsPrivate).Where(x => x.Status == confirmed);
 
-            if (query.playerCount.HasValue)
-                wagerQuery = wagerQuery.Where(x => x.Hosts.Count == query.playerCount);
-            if (query.minimumWager.HasValue)
-                wagerQuery = wagerQuery.Where(x => x.MinimumWager == null || (x.MinimumWager.HasValue && x.MinimumWager > query.minimumWager) || (x.MaximumWager.HasValue && x.MaximumWager > query.minimumWager));
-            if (query.maximumWager.HasValue)
-                wagerQuery = wagerQuery.Where(x => x.MaximumWager == null || (x.MinimumWager.HasValue && x.MinimumWager < query.maximumWager) || (x.MaximumWager.HasValue && x.MaximumWager < query.maximumWager));
+            if (playerCount.HasValue)
+                wagerQuery = wagerQuery.Where(x => x.Hosts.Count == playerCount);
+            if (minimumWager.HasValue)
+                wagerQuery = wagerQuery.Where(x => x.MinimumWager == null || (x.MinimumWager.HasValue && x.MinimumWager > minimumWager) || (x.MaximumWager.HasValue && x.MaximumWager > minimumWager));
+            if (maximumWager.HasValue)
+                wagerQuery = wagerQuery.Where(x => x.MaximumWager == null || (x.MinimumWager.HasValue && x.MinimumWager < maximumWager) || (x.MaximumWager.HasValue && x.MaximumWager < maximumWager));
             wagerQuery = wagerQuery.Include(x => x.Hosts).ThenInclude(x => x.Profile);
-            if (query.displayName != null)
+            if (displayName != null)
             {
-                query.displayName = query.displayName.ToUpper();
-                wagerQuery = wagerQuery.Where(x => x.Hosts.Any(x => x.Profile.NormalizedDisplayName.Contains(query.displayName)));
+                displayName = displayName.ToUpper();
+                wagerQuery = wagerQuery.Where(x => x.Hosts.Any(x => x.Profile.NormalizedDisplayName.Contains(displayName)));
             }
-            PaginatedList<Wager> results = await PaginatedList<Wager>.CreateAsync(wagerQuery.OrderByDescending(x => x.Date), query.page, ResultSize);
+            PaginatedList<Wager> results = await Paginator<Wager>.CreateAsync(wagerQuery.OrderByDescending(x => x.Date), page, ResultSize);
             return Ok(results);
         }
 

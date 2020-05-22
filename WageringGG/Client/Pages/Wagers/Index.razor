@@ -1,0 +1,31 @@
+﻿@page "/wagers/{game}"
+@inject HttpClient http
+@inject NavigationManager nav
+
+<h3>Index</h3>
+
+@code {
+    [Parameter]
+    public string Game { get; set; }
+    public Dictionary<string, string> Query { get; set; } = new Dictionary<string, string>();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        int? gameId = Constants.Games.GetId(Game.ToLower());
+        if (gameId != null)
+        {
+            QueryParser queryParser = new QueryParser(nav);
+            if (queryParser.TryGetQueryString<int>("playerCount", out int playerCount))
+            {
+                Query.TryAdd("playerCount", playerCount.ToString());
+            }
+            if(queryParser.TryGetQueryString<int>("minimumWager", out int minimumWager))
+            {
+                Query.TryAdd("minimumWager", minimumWager);
+            }
+            string getQuery = QueryHelpers.AddQueryString($"/api/wager/{gameId.Value}", Query);
+            await http.GetFromJsonAsync<PaginatedList<Wager>>(getQuery);
+        }
+        await base.OnParametersSetAsync();
+    }
+}

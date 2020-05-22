@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30011.22
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WageringGG.Server", "WageringGG\Server\WageringGG.Server.csproj", "{51AA1F53-F558-4DE4-9FCA-443FFC2D6A78}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WageringGG.Server", "WageringGG\Server\WageringGG.Server.csproj", "{51AA1F53-F558-4DE4-9FCA-443FFC2D6A78}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WageringGG.Client", "WageringGG\Client\WageringGG.Client.csproj", "{79D787B8-ABBB-4FC8-8B6B-ABF175394023}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WageringGG.Client", "WageringGG\Client\WageringGG.Client.csproj", "{79D787B8-ABBB-4FC8-8B6B-ABF175394023}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WageringGG.Shared", "WageringGG\Shared\WageringGG.Shared.csproj", "{CA91D6C9-1B07-47E3-A2B8-92A688F2D6B1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WageringGG.Shared", "WageringGG\Shared\WageringGG.Shared.csproj", "{CA91D6C9-1B07-47E3-A2B8-92A688F2D6B1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

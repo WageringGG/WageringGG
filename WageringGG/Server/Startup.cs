@@ -104,7 +104,8 @@ namespace WageringGG.Server
 
             string network = _env.IsDevelopment() ? "https://horizon-testnet.stellar.org/" : "https://horizon.stellar.org/";
             services.AddSingleton(new stellar.Server(network));
-            services.AddScoped<IEmailSender, EmailSender>();
+            if (!_env.IsDevelopment())
+                services.AddScoped<IEmailSender, EmailSender>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
