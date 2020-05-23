@@ -2,12 +2,13 @@
 @inject HttpClient http
 @inject NavigationManager nav
 
-<h3>Index</h3>
+<h1 class="title">Wagers</h1>
 
 @code {
     [Parameter]
     public string Game { get; set; }
     public Dictionary<string, string> Query { get; set; } = new Dictionary<string, string>();
+    public PaginatedList<Wager> Wagers { get; set; } = new PaginatedList<Wager>();
 
     protected override async Task OnParametersSetAsync()
     {
@@ -15,15 +16,17 @@
         if (gameId != null)
         {
             QueryParser queryParser = new QueryParser(nav);
+            if (queryParser.TryGetQueryString<int>("page", out int page))
+                Query.TryAdd("page", page.ToString());
+            if (queryParser.TryGetQueryString<string>("displayName", out string displayName))
+                Query.TryAdd("displayName", displayName);
             if (queryParser.TryGetQueryString<int>("playerCount", out int playerCount))
-            {
                 Query.TryAdd("playerCount", playerCount.ToString());
-            }
             if(queryParser.TryGetQueryString<int>("minimumWager", out int minimumWager))
-            {
-                Query.TryAdd("minimumWager", minimumWager);
-            }
-            string getQuery = QueryHelpers.AddQueryString($"/api/wager/{gameId.Value}", Query);
+                Query.TryAdd("minimumWager", minimumWager.ToString());
+            if (queryParser.TryGetQueryString<int>("maximumWager", out int maximumWager))
+                Query.TryAdd("maximumWager", maximumWager.ToString());
+            string getQuery = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString($"/api/wager/{gameId.Value}", Query);
             await http.GetFromJsonAsync<PaginatedList<Wager>>(getQuery);
         }
         await base.OnParametersSetAsync();

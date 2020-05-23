@@ -33,7 +33,7 @@ namespace WageringGG.Server.Handlers
 
         //POST: api/wagers/search
         [HttpGet("{gameId}")]
-        public async Task<IActionResult> GetWagers(int gameId, int page, string? displayName, int? minimumWager, int? maximumWager, int? playerCount)
+        public async Task<IActionResult> GetWagers(int gameId, int? page, string? displayName, int? minimumWager, int? maximumWager, int? playerCount)
         {
             if (page < 1)
                 ModelState.AddModelError("Page", $"{page} is not a valid page.");
@@ -64,12 +64,12 @@ namespace WageringGG.Server.Handlers
                 displayName = displayName.ToUpper();
                 wagerQuery = wagerQuery.Where(x => x.Hosts.Any(x => x.Profile.NormalizedDisplayName.Contains(displayName)));
             }
-            PaginatedList<Wager> results = await Paginator<Wager>.CreateAsync(wagerQuery.OrderByDescending(x => x.Date), page, ResultSize);
+            PaginatedList<Wager> results = await Paginator<Wager>.CreateAsync(wagerQuery.OrderByDescending(x => x.Date), page ?? 1, ResultSize);
             return Ok(results);
         }
 
         // GET: api/wagers/{id}
-        [HttpGet("{id}")]
+        [HttpGet("view/{id}")]
         public async Task<IActionResult> GetWager(int id)
         {
             var wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == id).Include(x => x.Hosts).ThenInclude(x => x.Profile).Include(x => x.Challenges).FirstOrDefaultAsync();

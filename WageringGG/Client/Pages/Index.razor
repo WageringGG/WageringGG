@@ -2,11 +2,24 @@
 
 <h1 class="title">Wagering.GG</h1>
 <h2 class="subtitle">Invest in yourself one game at a time.</h2>
-@foreach (Game game in Constants.Games.Values)
-{
-    <div class="box">
-        <h1 class="title">@game.Name</h1>
-        <div class="buttons">
+<div class="columns">
+    @foreach (Game game in Constants.Games.Values)
+    {
+        <div class="column">
+            <div class="box">
+                <h1 class="title">@game.Name</h1>
+                <div class="buttons">
+                    <NavLink class="button is-primary" href="@($"/wagers/{game.NormalizedName}")">
+                        Wagers
+                    </NavLink>
+                    <NavLink class="button is-primary" href="@($"/tournaments/{game.NormalizedName}")">
+                        Tournaments
+                    </NavLink>
+                </div>
+            </div>
         </div>
-    </div>
+    }
+</div>
+
+@code{
 }

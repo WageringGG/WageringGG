@@ -1,41 +1,10 @@
-﻿<nav class="navbar is-dark" role="navigation" aria-label="main navigation">
-    <div class="navbar-brand">
-        <NavLink class="navbar-item" href="" Match="NavLinkMatch.All">
-            Wagering.GG
-        </NavLink>
-
-        <a role="button" class="navbar-burger burger" @onclick="ToggleNavMenu">
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-        </a>
-    </div>
-
-    <div class="navbar-menu @NavMenuCssClass">
-        <div class="navbar-start">
-            <NavLink class="navbar-item" href="counter">
-                Counter
-            </NavLink>
-            <NavLink class="navbar-item" href="fetchdata">
-                Fetch Data
-            </NavLink>
-        </div>
-
-        <div class="navbar-end">
-            <div class="navbar-item">
-                <LoginDisplay />
-            </div>
-        </div>
-    </div>
-</nav>
-
-@code {
-    private bool isActive = false;
-
-    private string NavMenuCssClass => isActive ? "is-active" : null;
-
-    private void ToggleNavMenu()
-    {
-        isActive = !isActive;
-    }
-}
+﻿<MatAppBar Fixed="true">
+    <MatAppBarRow>
+        <MatAppBarSection>
+            <MatAppBarTitle>Wagering.GGs</MatAppBarTitle>
+        </MatAppBarSection>
+        <MatAppBarSection Align="@MatAppBarSectionAlign.End">
+            <MatIconButton Icon="menu"></MatIconButton>
+        </MatAppBarSection>
+    </MatAppBarRow>
+</MatAppBar>

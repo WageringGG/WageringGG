@@ -1,36 +1,52 @@
 ﻿@inherits LayoutComponentBase
-<NavMenu />
-<section class="hero is-dark is-bold is-fullheight-with-navbar">
-    <div class="hero-body">
-        <div class="container">
-            @Body
-        </div>
-    </div>
-    <div class="hero-foot">
-        <div class="tabs is-centered">
-            <ul>
-                <li>
-                    <a href="https://discord.gg/HmmVMs2" target="_blank">
-                        <span class="icon">
-                            <i class="mdi mdi-discord"> </i>
-                        </span>
-                    </a>
-                </li>
-                <li>
-                    <a href="https://www.instagram.com/Wagering.GG" target="_blank">
-                        <span class="icon">
-                            <i class="mdi mdi-instagram"> </i>
-                        </span>
-                    </a>
-                </li>
-                <li>
-                    <a href="https://twitter.com/WageringGG" target="_blank">
-                        <span class="icon">
-                            <i class="mdi mdi-twitter"> </i>
-                        </span>
-                    </a>
-                </li>
-            </ul>
-        </div>
-    </div>
-</section>
+
+<MatThemeProvider Theme="@dark">
+    <MatAppBarContainer>
+        <NavMenu />
+        <MatAppBarContent>
+            <section class="hero is-dark is-bold is-fullheight-with-navbar">
+                <div class="hero-body">
+                    <div class="container">
+                        @Body
+                    </div>
+                </div>
+                <div class="hero-foot">
+                    <div class="tabs is-centered">
+                        <ul>
+                            <li>
+                                <a href="https://discord.gg/HmmVMs2" target="_blank">
+                                    <span class="icon">
+                                        <i class="mdi mdi-discord"> </i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.instagram.com/Wagering.GG" target="_blank">
+                                    <span class="icon">
+                                        <i class="mdi mdi-instagram"> </i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://twitter.com/WageringGG" target="_blank">
+                                    <span class="icon">
+                                        <i class="mdi mdi-twitter"> </i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </MatAppBarContent>
+    </MatAppBarContainer>
+</MatThemeProvider>
+
+@code {
+
+    MatTheme dark = new MatTheme()
+    {
+        Primary = "#673AB7",
+        Secondary = "#00ACC1",
+    };
+}
