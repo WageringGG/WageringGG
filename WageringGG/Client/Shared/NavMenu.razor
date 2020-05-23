@@ -1,10 +1,23 @@
-﻿<MatAppBar Fixed="true">
-    <MatAppBarRow>
-        <MatAppBarSection>
-            <MatAppBarTitle>Wagering.GGs</MatAppBarTitle>
-        </MatAppBarSection>
-        <MatAppBarSection Align="@MatAppBarSectionAlign.End">
-            <MatIconButton Icon="menu"></MatIconButton>
-        </MatAppBarSection>
-    </MatAppBarRow>
-</MatAppBar>
+﻿<Bar Breakpoint="Breakpoint.Desktop" Background="Background.Primary">
+    <BarBrand>
+        Wagering.GG
+    </BarBrand>
+    <BarToggler>
+    </BarToggler>
+    <BarMenu>
+        <BarStart>
+            <BarItem>
+                <BarLink To="/">Home</BarLink>
+            </BarItem>
+            <BarItem>
+                <BarLink To="/about">About</BarLink>
+            </BarItem>
+            <BarItem>
+                <BarLink To="/counter">Counter</BarLink>
+            </BarItem>
+        </BarStart>
+        <BarEnd>
+            <LoginDisplay />
+        </BarEnd>
+    </BarMenu>
+</Bar>
