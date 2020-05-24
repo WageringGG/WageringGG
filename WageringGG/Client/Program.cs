@@ -1,6 +1,3 @@
-using Blazorise;
-using Blazorise.Bootstrap;
-using Blazorise.Icons.Material;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,14 +13,6 @@ namespace WageringGG.Client
         {
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
-            builder.Services
-             .AddBlazorise(options =>
-             {
-                 options.ChangeTextOnKeyPress = true;
-             })
-             .AddBootstrapProviders()
-             .AddMaterialIcons();
-
             builder.RootComponents.Add<App>("app");
             builder.Services.AddHttpClient("WageringGG.ServerAPI", client => client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress))
                 .AddHttpMessageHandler<BaseAddressAuthorizationMessageHandler>();
@@ -32,13 +21,7 @@ namespace WageringGG.Client
             builder.Services.AddTransient(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("WageringGG.ServerAPI"));
             builder.Services.AddApiAuthorization();
 
-            var host = builder.Build();
-
-            host.Services
-              .UseBootstrapProviders()
-              .UseMaterialIcons();
-
-            await host.RunAsync();
+            await builder.Build().RunAsync();
         }
     }
 }

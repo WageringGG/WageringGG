@@ -2,6 +2,15 @@
   {
     "outputFile": "wwwroot/css/bulma.min.css",
     "inputFile": "Styles/bulma.sass",
-    "minify": { "enabled": true }
+    "minify": {
+      "enabled": true
+    }
+  },
+  {
+    "outputFile": "../Client/wwwroot/css/bootstrap.min.css",
+    "inputFile": "Styles/bootstrap.scss",
+    "minify": {
+      "enabled": true
+    }
   }
 ]

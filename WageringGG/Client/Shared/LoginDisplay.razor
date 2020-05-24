@@ -4,20 +4,30 @@
 @inject NavigationManager navManager
 @inject SignOutSessionStateManager SignOutManager
 
-<BarItem>
+<div class="ml-auto">
     <AuthorizeView>
         <Authorized>
-            <a class="btn btn-primary" href="authentication/manage">
+            <a class="btn btn-secondary" href="authentication/profile">
+                <i class="mdi mdi-account"></i>
                 @context.User.GetName()
             </a>
-            <Button @onclick="BeginSignOut">Log out</Button>
+            <button class="btn btn-dark" @onclick="BeginSignOut">
+                <i class="mdi mdi-logout"></i>
+                Log out
+            </button>
         </Authorized>
         <NotAuthorized>
-            <a class="btn btn-primary" href="authentication/register">Register</a>
-            <a class="btn btn-secondary" href="authentication/login">Log in</a>
+            <a class="btn btn-secondary" href="authentication/register">
+                <i class="mdi mdi-account-plus"></i>
+                Register
+            </a>
+            <a class="btn btn-dark" href="authentication/login">
+                <i class="mdi mdi-login"></i>
+                Log in
+            </a>
         </NotAuthorized>
     </AuthorizeView>
-</BarItem>
+</div>
 @code{
     private async Task BeginSignOut(MouseEventArgs args)
     {
