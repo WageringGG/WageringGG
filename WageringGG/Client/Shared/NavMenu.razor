@@ -2,10 +2,10 @@
     <div class="navbar-brand font-weight-bold">
         Wagering.GG
     </div>
-    <button class="navbar-toggler" type="button" aria-label="Toggle navigation" @onclick="ToggleMenu">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <i class="mdi mdi-menu"></i>
     </button>
-    <div class="navbar-collapse @menuCss">
+    <div class="navbar-collapse collapse" id="navbarNav">
         <ul class="navbar-nav">
             <li class="nav-item">
                 <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
@@ -26,9 +26,3 @@
         <LoginDisplay />
     </div>
 </nav>
-
-@code{
-    private bool showMenu = false;
-    private string menuCss { get { return showMenu ? "" : "collapse"; } }
-    private void ToggleMenu() { showMenu = !showMenu; }
-}
