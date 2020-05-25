@@ -1,13 +1,21 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WageringGG.Shared.Models
 {
     public class WagerBid : Bid
     {
         [Required]
-        public byte ReceivablePt { get; set; }
+        [Column(TypeName = "tinyint unsigned")]
+        public int ReceivablePt { get; set; }
         [Required]
-        public byte PayablePt { get; set; }
+        [Column(TypeName = "tinyint unsigned")]
+        public int PayablePt { get; set; }
         public bool IsOwner { get; set; }
+
+        [NotMapped]
+        public string DisplayName { get; set; }
+        [NotMapped]
+        public bool IsEditing { get; set; }
     }
 }

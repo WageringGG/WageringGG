@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 #nullable disable
 
 namespace WageringGG.Shared.Models
@@ -20,5 +21,8 @@ namespace WageringGG.Shared.Models
         public ICollection<Rating> Ratings { get; set; } = new List<Rating>();
         public IList<PersonalNotification> Notifications { get; set; } = new List<PersonalNotification>();
         public ICollection<Connection> Connections { get; set; } = new List<Connection>();
+
+        [NotMapped]
+        public bool IsSelected { get; set; }
     }
 }

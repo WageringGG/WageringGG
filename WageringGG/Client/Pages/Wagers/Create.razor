@@ -1,5 +1,6 @@
 ﻿@inject HttpClient http
 @inject NavigationManager navManager
+@inject IJSRuntime js
 
 <AuthorizeView>
     <Authorized>
@@ -15,65 +16,109 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="modalLabel">Create a Wager</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <button type="button" class="close text-danger" data-dismiss="modal" aria-label="Close">
                             <i class="mdi mdi-close-circle-outline"></i>
                         </button>
                     </div>
                     <EditForm Model="Wager" OnValidSubmit="SubmitWager" Context="EditContext">
                         <div class="modal-body">
                             <DataAnnotationsValidator />
-                            <ValidationSummary />
-                            <table class="table table-borderless text-center">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Name</th>
-                                        <th scope="col">Payable (%)</th>
-                                        <th scope="col">Receivable (%)</th>
-                                        <th scope="col">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (WagerHostBid bid in Wager.Hosts)
-                                    {
+                            <ValidationSummary class="text-danger" />
+                            <div class="table-responsive">
+                                <table class="table table-borderless text-center">
+                                    <thead>
                                         <tr>
-                                            <td>@bid.DisplayName</td>
-                                            <td>@bid.PayablePt%</td>
-                                            <td>@bid.ReceivablePt%</td>
-                                            <td>
-                                                @if (!bid.IsOwner)
-                                                {
-                                                    <button type="button" class="btn btn-link"><i class="mdi mdi-pencil"></i></button>
-                                                    <button type="button" class="btn btn-link"><i class="mdi mdi-delete"></i></button>
-                                                }
-                                            </td>
+                                            <th scope="col">Name</th>
+                                            <th scope="col">Payable (%)</th>
+                                            <th scope="col">Receivable (%)</th>
+                                            <th scope="col">Actions</th>
                                         </tr>
-                                    }
-                                    <tr class="border-top">
-                                        <th scope="row">Total:</th>
-                                        <td>@Wager.Hosts.Sum(x => x.PayablePt)%</td>
-                                        <td>@Wager.Hosts.Sum(x => x.ReceivablePt)%</td>
-                                        <td><button type="button" class="btn btn-sm btn-outline-secondary">Normalize</button></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <button type="button" class="btn btn-primary btn-block" data-toggle="collapse" data-target="#addCollapse" aria-expanded="false" aria-controls="addCollapse">
+                                    </thead>
+                                    <tbody>
+                                        @foreach (WagerHostBid bid in Wager.Hosts)
+                                        {
+                                            <tr>
+                                                <td>@bid.DisplayName</td>
+                                                @if (bid.IsEditing)
+                                                {
+                                                    <td>
+                                                        <InputNumber @bind-Value="bid.PayablePt" class="form-control">
+                                                        </InputNumber>
+                                                    </td>
+                                                    <td>
+                                                        <InputNumber @bind-Value="bid.ReceivablePt" class="form-control">
+                                                        </InputNumber>
+                                                    </td>
+                                                }
+                                                else
+                                                {
+                                                    <td>@bid.PayablePt%</td>
+                                                    <td>@bid.ReceivablePt%</td>
+                                                }
+                                                <td>
+                                                    <div class="btn-group">
+                                                        @if (bid.IsEditing)
+                                                        {
+                                                            <button type="button" class="btn btn-link"><i class="mdi mdi-content-save" @onclick="e => SaveEdit(bid)"></i></button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <button type="button" class="btn btn-link"><i class="mdi mdi-pencil" @onclick="e => EditUser(bid)"></i></button>
+                                                        }
+                                                        @if (!bid.IsOwner)
+                                                        {
+                                                            <button type="button" class="btn btn-link" @onclick="e => RemoveUser(bid.ProfileId)"><i class="mdi mdi-delete"></i></button>
+                                                        }
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                        <tr class="border-top">
+                                            <th scope="row">Total:</th>
+                                            <td>@Wager.Hosts.Sum(x => x.PayablePt)%</td>
+                                            <td>@Wager.Hosts.Sum(x => x.ReceivablePt)%</td>
+                                            <td><button type="button" class="btn btn-sm btn-outline-secondary" @onclick="Normalize">Normalize</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary btn-block" data-toggle="collapse" data-target="#addCollapse" aria-expanded="false" aria-controls="addCollapse">
                                 <i class="mdi mdi-account-plus"></i> Add User
                             </button>
-                            <div class="collapse" id="addCollapse">
-                                <div class="form-group">
-                                    <label for="displayName">Email address</label>
-                                    <InputText @bind-Value="Host.Profile.DisplayName" class="form-control" id="displayName" @oninput="GetProfiles">
-
-                                    </InputText>
-                                </div>
-                                <div class="list-group">
-                                    @foreach (Profile profile in Profiles)
-                                    {
-                                        <button type="button" class="list-group-item list-group-item-action">@profile.DisplayName</button>
-                                    }
+                            <div class="collapse mt-1" id="addCollapse">
+                                <div class="form-row mb-2">
+                                    <div class="col-12 col-sm-6">
+                                        <div class="form-group">
+                                            <label for="displayName">Display Name</label>
+                                            <input type="text" autocomplete="off" @bind-value="DisplayName" class="form-control" id="displayName" @bind-value:event="oninput" @onkeyup="BeginTimer" />
+                                        </div>
+                                        @if (Profiles.Count > 0)
+                                        {
+                                            <div class="card overflow-auto" style="max-height: 6rem;">
+                                                <div class="btn-group-vertical w-100">
+                                                    @foreach (Profile profile in Profiles)
+                                                    {
+                                                        <button type="button" class="btn btn-block btn-sm @(profile.IsSelected ? "btn-outline-success" : "btn-outline-secondary")" @onclick="e => SelectUser(profile)">@profile.DisplayName</button>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="col-12 col-sm-6">
+                                        <div class="form-group">
+                                            <label for="payablePt">Payable %</label>
+                                            <InputNumber @bind-Value="Host.PayablePt" class="form-control" id="payablePt">
+                                            </InputNumber>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="receivablePt">Receivable %</label>
+                                            <InputNumber @bind-Value="Host.ReceivablePt" class="form-control" id="receivablePt">
+                                            </InputNumber>
+                                        </div>
+                                    </div>
                                 </div>
                                 <button type="button" class="btn btn-danger" @onclick="ResetUser">Reset</button>
-                                <button type="button" class="btn btn-success" @onclick="SetUser">Confirm</button>
+                                <button type="button" class="btn btn-success" @onclick="AddUser">Confirm</button>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -87,20 +132,22 @@
 </AuthorizeView>
 
 @code {
-    @using System.Threading
+    @using System.Timers;
     [Parameter]
     public Game Game { get; set; }
     [CascadingParameter]
     private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+    [Parameter]
+    public EventCallback<string> NameChanged { get; set; }
     private Wager Wager { get; set; } = new Wager();
     private WagerHostBid Host { get; set; } = new WagerHostBid();
-    private IEnumerable<Profile> Profiles { get; set; } = new List<Profile>();
-    CancellationTokenSource cancelTokenSource = new CancellationTokenSource();
-    CancellationToken cancelToken = new CancellationToken();
+    private string DisplayName { get; set; }
+    private ICollection<Profile> Profiles { get; set; } = new List<Profile>();
+    private Timer Debounce { get; set; } = new Timer(750) { AutoReset = false };
 
     protected override async Task OnInitializedAsync()
     {
-        Host.Profile = new Profile();
+        Debounce.Elapsed += SearchUsers;
         AuthenticationState context = await AuthenticationStateTask;
         if (context.User.Identity.IsAuthenticated)
         {
@@ -117,36 +164,99 @@
         await base.OnInitializedAsync();
     }
 
-    private void SetUser()
+    private void Normalize()
     {
-        WagerHostBid host = Wager.Hosts.FirstOrDefault(x => x.ProfileId == Host.ProfileId);
-        if (host == null)
+        int avg = 100 / Wager.Hosts.Count;
+        Wager.Hosts.All(x =>
         {
+            x.PayablePt = avg;
+            x.ReceivablePt = avg;
+            return true;
+        });
+    }
 
-        }
-        else
+    private void BeginTimer(KeyboardEventArgs e)
+    {
+        Debounce.Stop();
+        Debounce.Start();
+    }
+
+    private Profile SelectedProfile
+    {
+        get
         {
-
+            return Profiles.FirstOrDefault(x => x.IsSelected);
         }
+    }
+
+    private void SelectUser(Profile profile)
+    {
+        profile.IsSelected = true;
+        DisplayName = profile.DisplayName;
+    }
+
+    private async Task AddUser()
+    {
+        Profile profile = SelectedProfile;
+        if (profile == null)
+        {
+            await js.InvokeVoidAsync("alert", "No user has been selected.");
+            return;
+        }
+        if (Wager.Hosts.Any(x => x.DisplayName == profile.DisplayName))
+        {
+            await js.InvokeVoidAsync("alert", $"{profile.DisplayName} is already a member.");
+            return;
+        }
+
+        Wager.Hosts.Add(new WagerHostBid
+        {
+            ProfileId = profile.Id,
+            DisplayName = profile.DisplayName,
+            ReceivablePt = Host.ReceivablePt,
+            PayablePt = Host.PayablePt,
+            IsOwner = false
+        });
+        ResetUser();
+        await js.InvokeVoidAsync("blazorCollapse", "#addCollapse", "hide");
     }
 
     private void ResetUser()
     {
-        Host.Profile = null;
+        Host = new WagerHostBid();
+        Profiles = new List<Profile>();
+        DisplayName = null;
     }
 
-    private async Task GetProfiles(ChangeEventArgs e)
+    private void RemoveUser(string profileId)
     {
-        cancelTokenSource.Cancel();
-        cancelTokenSource = new CancellationTokenSource();
-        cancelToken = cancelTokenSource.Token;
-        await Task.Delay(750).ContinueWith(async task =>
-        {
-            if (!task.IsCanceled)
-            {
-                Profiles = await http.GetFromJsonAsync<IEnumerable<Profile>>("/api/user/search/" + e.Value);
-            }
-        });
+        WagerHostBid bid = Wager.Hosts.FirstOrDefault(x => x.ProfileId == profileId);
+        if (bid == null)
+            return;
+        Wager.Hosts.Remove(bid);
+    }
+
+    private void EditUser(WagerHostBid bid)
+    {
+        if (bid == null)
+            return;
+        bid.IsEditing = true;
+    }
+
+    private void SaveEdit(WagerHostBid bid)
+    {
+        if (bid == null)
+            return;
+        bid.IsEditing = false;
+    }
+
+    private async void SearchUsers(Object source, ElapsedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(DisplayName))
+            Profiles = new List<Profile>();
+        else
+            Profiles = await http.GetFromJsonAsync<ICollection<Profile>>("/api/user/search/" + DisplayName);
+        StateHasChanged();
     }
 
     private async Task SubmitWager()
