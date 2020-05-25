@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WageringGG.Shared.Models;
+using Constants = WageringGG.Shared.Constants;
 #nullable disable
 
 namespace WageringGG.Server.Data
@@ -33,8 +34,7 @@ namespace WageringGG.Server.Data
             builder.Entity<Profile>().HasAlternateKey(x => x.DisplayName);
             builder.Entity<Game>().HasIndex(x => x.NormalizedName).IsUnique();
 
-            Game[] games = new Game[] { new Game { Id = 1, Name = "Fortnite", NormalizedName = "fortnite" } };
-            builder.Entity<Game>().HasData(games);
+            builder.Entity<Game>().HasData(Constants.Games.Values);
             base.OnModelCreating(builder);
         }
     }

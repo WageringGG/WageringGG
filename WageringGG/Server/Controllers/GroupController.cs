@@ -17,7 +17,7 @@ namespace WageringGG.Server.Handlers
     {
         private readonly ApplicationDbContext _context;
 
-        public GroupController(UserManager<ApplicationUser> userManager, ApplicationDbContext context)
+        public GroupController(ApplicationDbContext context)
         {
             _context = context;
         }

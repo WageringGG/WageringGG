@@ -1,0 +1,35 @@
+﻿@using Humanizer
+
+<div class="card">
+    <div class="card-header">
+        @Wager.Description
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-6">
+                Minimum: @NumDisplay(Wager.MinimumWager)
+            </div>
+            <div class="col-6">
+                Maximum: @NumDisplay(Wager.MaximumWager)
+            </div>
+            <div class="col-6">
+                <small>
+                    @(Wager.Date.Humanize(true, DateTime.Now))
+                </small>
+            </div>
+            <div class="col-6">
+                <a class="btn btn-secondary ml-auto" href="/view/wagers/@Wager.Id">View</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Wager Wager { get; set; }
+
+    private string NumDisplay(decimal? num)
+    {
+        return num.HasValue ? num.ToString() : "-";
+    }
+}

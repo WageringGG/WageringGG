@@ -30,13 +30,14 @@ namespace WageringGG.Server
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            IConfigurationSection connections = _config.GetSection("ConnectionStrings");
             services.AddDbContextPool<ApplicationDbContext>(options =>
             {
-                options.UseSqlServer(_config.GetConnectionString("Application"));
+                options.UseSqlServer(connections["Application"]);
             });
             services.AddDbContext<IdentityDbContext>(options =>
             {
-                options.UseSqlServer(_config.GetConnectionString("Identity"));
+                options.UseSqlServer(connections["Identity"]);
             });
 
             services.AddDefaultIdentity<ApplicationUser>(x =>

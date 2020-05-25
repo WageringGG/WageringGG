@@ -18,12 +18,29 @@ namespace WageringGG.Shared.Constants
                 Id = 2,
                 Name = "Modern Warfare",
                 NormalizedName = "modern-warfare"
+            },
+            new Game
+            {
+                Id = 3,
+                Name = "Apex Legends",
+                NormalizedName = "apex-legends"
+            },
+            new Game
+            {
+                Id = 4,
+                Name = "Valorant",
+                NormalizedName = "valorant"
             }
         };
 
         public static int? GetId(string normalizedName)
         {
             return Values.FirstOrDefault(x => x.NormalizedName == normalizedName)?.Id;
+        }
+
+        public static string GetName(string normalizedName)
+        {
+            return Values.FirstOrDefault(x => x.NormalizedName == normalizedName)?.Name;
         }
     }
 }

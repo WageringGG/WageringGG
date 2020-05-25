@@ -1,19 +1,39 @@
-﻿@page "/wagers/{game}"
+﻿@page "/wagers/{name}"
 @inject HttpClient http
 @inject NavigationManager nav
 
-<h1 class="title">Wagers</h1>
+<h1 class="text-center">@Game.Name Wagers</h1>
+<Create Game="Game" />
+@if (Wagers.TotalPages == 0)
+{
+    <div class="text-center my-auto">
+        <h3>There's currently no wagers.</h3>
+        <p class="lead">Create your own to get started.</p>
+    </div>
+}
+else
+{
+    <div class="row">
+        @foreach (Wager wager in Wagers.List)
+        {
+            <div class="col-6 col-md-4 col-lg-3">
+                <WagerDisplay Wager="wager"></WagerDisplay>
+            </div>
+        }
+    </div>
+}
 
 @code {
     [Parameter]
-    public string Game { get; set; }
+    public string Name { get; set; }
+    public Game Game { get; set; }
     public Dictionary<string, string> Query { get; set; } = new Dictionary<string, string>();
     public PaginatedList<Wager> Wagers { get; set; } = new PaginatedList<Wager>();
 
     protected override async Task OnParametersSetAsync()
     {
-        int? gameId = Constants.Games.GetId(Game.ToLower());
-        if (gameId != null)
+        Game = Constants.Games.Values.FirstOrDefault(x => x.NormalizedName == Name);
+        if (Game != null)
         {
             QueryParser queryParser = new QueryParser(nav);
             if (queryParser.TryGetQueryString<int>("page", out int page))
@@ -22,12 +42,12 @@
                 Query.TryAdd("displayName", displayName);
             if (queryParser.TryGetQueryString<int>("playerCount", out int playerCount))
                 Query.TryAdd("playerCount", playerCount.ToString());
-            if(queryParser.TryGetQueryString<int>("minimumWager", out int minimumWager))
+            if (queryParser.TryGetQueryString<int>("minimumWager", out int minimumWager))
                 Query.TryAdd("minimumWager", minimumWager.ToString());
             if (queryParser.TryGetQueryString<int>("maximumWager", out int maximumWager))
                 Query.TryAdd("maximumWager", maximumWager.ToString());
-            string getQuery = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString($"/api/wager/{gameId.Value}", Query);
-            await http.GetFromJsonAsync<PaginatedList<Wager>>(getQuery);
+            string getQuery = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString($"/api/wager/{Game.Id}", Query);
+            Wagers = await http.GetFromJsonAsync<PaginatedList<Wager>>(getQuery);
         }
         await base.OnParametersSetAsync();
     }

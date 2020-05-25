@@ -1,0 +1,161 @@
+﻿@inject HttpClient http
+@inject NavigationManager navManager
+
+<AuthorizeView>
+    <Authorized>
+        <div class="row">
+            <div class="col text-right">
+                <button class="btn btn-secondary" data-toggle="modal" data-target="#createModal">
+                    <i class="mdi mdi-plus"></i> Create
+                </button>
+            </div>
+        </div>
+        <div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalLabel">Create a Wager</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <i class="mdi mdi-close-circle-outline"></i>
+                        </button>
+                    </div>
+                    <EditForm Model="Wager" OnValidSubmit="SubmitWager" Context="EditContext">
+                        <div class="modal-body">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+                            <table class="table table-borderless text-center">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Payable (%)</th>
+                                        <th scope="col">Receivable (%)</th>
+                                        <th scope="col">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (WagerHostBid bid in Wager.Hosts)
+                                    {
+                                        <tr>
+                                            <td>@bid.DisplayName</td>
+                                            <td>@bid.PayablePt%</td>
+                                            <td>@bid.ReceivablePt%</td>
+                                            <td>
+                                                @if (!bid.IsOwner)
+                                                {
+                                                    <button type="button" class="btn btn-link"><i class="mdi mdi-pencil"></i></button>
+                                                    <button type="button" class="btn btn-link"><i class="mdi mdi-delete"></i></button>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                    <tr class="border-top">
+                                        <th scope="row">Total:</th>
+                                        <td>@Wager.Hosts.Sum(x => x.PayablePt)%</td>
+                                        <td>@Wager.Hosts.Sum(x => x.ReceivablePt)%</td>
+                                        <td><button type="button" class="btn btn-sm btn-outline-secondary">Normalize</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <button type="button" class="btn btn-primary btn-block" data-toggle="collapse" data-target="#addCollapse" aria-expanded="false" aria-controls="addCollapse">
+                                <i class="mdi mdi-account-plus"></i> Add User
+                            </button>
+                            <div class="collapse" id="addCollapse">
+                                <div class="form-group">
+                                    <label for="displayName">Email address</label>
+                                    <InputText @bind-Value="Host.Profile.DisplayName" class="form-control" id="displayName" @oninput="GetProfiles">
+
+                                    </InputText>
+                                </div>
+                                <div class="list-group">
+                                    @foreach (Profile profile in Profiles)
+                                    {
+                                        <button type="button" class="list-group-item list-group-item-action">@profile.DisplayName</button>
+                                    }
+                                </div>
+                                <button type="button" class="btn btn-danger" @onclick="ResetUser">Reset</button>
+                                <button type="button" class="btn btn-success" @onclick="SetUser">Confirm</button>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-success">Submit</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    @using System.Threading
+    [Parameter]
+    public Game Game { get; set; }
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+    private Wager Wager { get; set; } = new Wager();
+    private WagerHostBid Host { get; set; } = new WagerHostBid();
+    private IEnumerable<Profile> Profiles { get; set; } = new List<Profile>();
+    CancellationTokenSource cancelTokenSource = new CancellationTokenSource();
+    CancellationToken cancelToken = new CancellationToken();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Host.Profile = new Profile();
+        AuthenticationState context = await AuthenticationStateTask;
+        if (context.User.Identity.IsAuthenticated)
+        {
+
+            Wager.Hosts.Add(new WagerHostBid
+            {
+                ProfileId = context.User.GetId(),
+                DisplayName = context.User.GetName(),
+                ReceivablePt = 100,
+                PayablePt = 100,
+                IsOwner = true
+            });
+        }
+        await base.OnInitializedAsync();
+    }
+
+    private void SetUser()
+    {
+        WagerHostBid host = Wager.Hosts.FirstOrDefault(x => x.ProfileId == Host.ProfileId);
+        if (host == null)
+        {
+
+        }
+        else
+        {
+
+        }
+    }
+
+    private void ResetUser()
+    {
+        Host.Profile = null;
+    }
+
+    private async Task GetProfiles(ChangeEventArgs e)
+    {
+        cancelTokenSource.Cancel();
+        cancelTokenSource = new CancellationTokenSource();
+        cancelToken = cancelTokenSource.Token;
+        await Task.Delay(750).ContinueWith(async task =>
+        {
+            if (!task.IsCanceled)
+            {
+                Profiles = await http.GetFromJsonAsync<IEnumerable<Profile>>("/api/user/search/" + e.Value);
+            }
+        });
+    }
+
+    private async Task SubmitWager()
+    {
+        HttpResponseMessage response = await http.PostAsJsonAsync("/api/wager", Wager);
+        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            int wagerId = await response.Content.ReadFromJsonAsync<int>();
+            navManager.NavigateTo($"/wagers/view/{wagerId}");
+        }
+    }
+}

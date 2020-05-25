@@ -36,8 +36,8 @@ namespace WageringGG.Server.Handlers
         public async Task<IActionResult> SearchUsers(string query)
         {
             query = query.ToUpper();
-            var user = await _context.Profiles.Where(x => x.NormalizedDisplayName.Contains(query)).Take(ResultSize).ToListAsync();
-            return Ok(user);
+            var users = await _context.Profiles.Where(x => x.NormalizedDisplayName.Contains(query)).Take(ResultSize).ToListAsync();
+            return Ok(users);
         }
     }
 }

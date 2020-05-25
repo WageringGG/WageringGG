@@ -58,11 +58,10 @@ namespace WageringGG.Server.Handlers
                 wagerQuery = wagerQuery.Where(x => x.MinimumWager == null || (x.MinimumWager.HasValue && x.MinimumWager > minimumWager) || (x.MaximumWager.HasValue && x.MaximumWager > minimumWager));
             if (maximumWager.HasValue)
                 wagerQuery = wagerQuery.Where(x => x.MaximumWager == null || (x.MinimumWager.HasValue && x.MinimumWager < maximumWager) || (x.MaximumWager.HasValue && x.MaximumWager < maximumWager));
-            wagerQuery = wagerQuery.Include(x => x.Hosts).ThenInclude(x => x.Profile);
             if (displayName != null)
             {
                 displayName = displayName.ToUpper();
-                wagerQuery = wagerQuery.Where(x => x.Hosts.Any(x => x.Profile.NormalizedDisplayName.Contains(displayName)));
+                wagerQuery = wagerQuery.Include(x => x.Hosts).ThenInclude(x => x.Profile).Where(x => x.Hosts.Any(x => x.Profile.NormalizedDisplayName.Contains(displayName)));
             }
             PaginatedList<Wager> results = await Paginator<Wager>.CreateAsync(wagerQuery.OrderByDescending(x => x.Date), page ?? 1, ResultSize);
             return Ok(results);
@@ -203,7 +202,7 @@ namespace WageringGG.Server.Handlers
             IEnumerable<string> others = wager.HostIds().Where(x => x != userId);
             List<PersonalNotification> notifications = NotificationHandler.AddNotificationToUsers(_context, others, notification);
             await SignalRHandler.SendNotificationsAsync(_context, _hubContext, others, notifications);
-            return Ok(new { id = wager.Id, status = wager.Status });
+            return Ok(wager.Id);
         }
     }
 }

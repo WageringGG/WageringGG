@@ -1,12 +1,12 @@
 ﻿@page "/"
 
 <h1 class="text-center">Wagering.GG</h1>
-<h2 class="text-center">Invest in yourself one game at a time.</h2>
-<div class="row align-items-center">
+<h4 class="text-center">Invest in yourself one game at a time.</h4>
+<div class="row">
     @foreach (Game game in Constants.Games.Values)
     {
         <div class="col-12 col-md-6 col-lg-4 my-1">
-            <div class="card bg-primary text-white">
+            <div class="card bg-gradient-primary text-white">
                 <div class="card-body">
                     <h3 class="card-title">@game.Name</h3>
                     <p class="card-text">
