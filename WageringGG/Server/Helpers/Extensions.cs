@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
+using stellar_dotnet_sdk;
+using System;
 using System.Collections.Generic;
 
 namespace WageringGG.Server
@@ -16,6 +18,14 @@ namespace WageringGG.Server
                 }
             }
             return errors;
+        }
+
+        public static bool WithinTimeBounds(this TimeBounds bounds)
+        {
+            DateTime date = DateTime.Now;
+            if (bounds.MinTime < date.Ticks && bounds.MaxTime > date.Ticks)
+                return true;
+            return false;
         }
     }
 }

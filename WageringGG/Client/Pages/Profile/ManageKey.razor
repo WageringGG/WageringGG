@@ -1,0 +1,94 @@
+﻿@inject HttpClient http
+
+<ErrorDisplay Errors="KeyErrors" />
+@if (!string.IsNullOrEmpty(PublicKey))
+{
+    <div class="form-group">
+        <label>Current Public Key</label>
+        <input type="text" disabled class="input-group" value="@PublicKey" />
+    </div>
+}
+@if (Transaction == null)
+{
+    <div class="form-group">
+        <label>Public Key</label>
+        <input type="text" @bind-value="PublicKey" class="input-group" />
+    </div>
+    <button type="button" class="btn btn-success" @onclick="GetChallenge">Submit</button>
+}
+else
+{
+    <div class="form-group">
+        <label>Public Key</label>
+        <input type="text" value="@PublicKey" disabled class="input-group" />
+    </div>
+    <div class="form-group">
+        <label>Private Key</label>
+        <input type="password" @bind-value="PrivateKey" class="input-group" />
+    </div>
+    <button type="button" class="btn btn-success" @onclick="SendTransaction">Submit</button>
+}
+
+@code {
+    @using stellar_dotnet_sdk;
+    @inject Microsoft.Extensions.Configuration.IConfigurationRoot config
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; }
+    private string PublicKey { get; set; }
+    private string PrivateKey { get; set; }
+    private Transaction Transaction { get; set; }
+    public ICollection<string> KeyErrors { get; set; } = new List<string>();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var context = await AuthenticationState;
+        if (context.User.Identity.IsAuthenticated)
+        {
+            PublicKey = context.User.GetKey();
+        }
+        await base.OnParametersSetAsync();
+    }
+
+    /// <summary>
+    /// SEP-0010 Implementation
+    /// </summary>
+    private async Task GetChallenge()
+    {
+        KeyErrors.Clear();
+        if (string.IsNullOrWhiteSpace(PublicKey))
+        {
+            KeyErrors.Add("The Public Key is required.");
+            return;
+        }
+        Transaction = await http.GetFromJsonAsync<stellar_dotnet_sdk.Transaction>($"/api/stellar?account={PublicKey}");
+        try
+        {
+            WebAuthentication.ReadChallengeTransaction(Transaction, config["Stellar:Server"]);
+        }
+        catch(Exception e)
+        {
+            KeyErrors.Add(e.Message);
+        }
+    }
+
+    private async Task SendTransaction()
+    {
+        KeyErrors.Clear();
+        if (string.IsNullOrWhiteSpace(PrivateKey))
+        {
+            KeyErrors.Add("The Private Key is required.");
+            return;
+        }
+        var signature = KeyPair.FromSecretSeed(PrivateKey);
+        Transaction.Sign(signature);
+        var response = await http.PostAsJsonAsync("/api/stellar", Transaction.ToEnvelopeXdrBase64());
+        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            var token = await response.Content.ReadAsStringAsync();
+        }
+        else
+        {
+            KeyErrors.Union(await response.Content.ReadFromJsonAsync<IEnumerable<string>>());
+        }
+    }
+}

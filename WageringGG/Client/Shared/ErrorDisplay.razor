@@ -1,0 +1,13 @@
+﻿@foreach (string error in Errors)
+{
+    <div class="alert alert-danger" role="alert">
+        @error
+    </div>
+}
+
+@code {
+    [Parameter]
+    public IEnumerable<string> Errors { get; set; }
+    [Parameter]
+    public EventCallback<IEnumerable<string>> ErrorsChanged { get; set; }
+}

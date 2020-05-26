@@ -125,9 +125,6 @@ namespace WageringGG.Server.Handlers
         {
             string? userId = User.GetId();
             string? userName = User.GetName();
-            string? userKey = User.GetKey();
-            if (userKey == null)
-                ModelState.AddModelError(string.Empty, "User does not have a public key registered.");
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
 

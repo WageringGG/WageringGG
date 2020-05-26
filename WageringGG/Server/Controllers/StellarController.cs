@@ -1,24 +1,83 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using stellar = stellar_dotnet_sdk;
+using Microsoft.Extensions.Configuration;
+using stellar_dotnet_sdk;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using WageringGG.Server.Data;
+using WageringGG.Server.Models;
+using WageringGG.Shared.Constants;
+using WageringGG.Shared.Models;
 
 namespace WageringGG.Server.Handlers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class StellarController : ControllerBase
     {
-        private readonly stellar.Server _server;
-        public StellarController(stellar.Server server)
+        private readonly stellar_dotnet_sdk.Server _server;
+        private readonly IConfiguration _config;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly ApplicationDbContext _context;
+
+        public StellarController(stellar_dotnet_sdk.Server server, IConfiguration config, ApplicationDbContext context, UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
         {
             _server = server;
+            _config = config;
+            _userManager = userManager;
+            _signInManager = signInManager;
+            _context = context;
         }
 
         [HttpGet]
         public IActionResult RequestChallenge([FromQuery] string account)
         {
-            //need server keys here
-            stellar.WebAuthentication.BuildChallengeTransaction(null, account, "Wagering.GG");
-            return Ok();
+            //check that id is not already set
+            KeyPair serverKeys = KeyPair.FromSecretSeed(_config["Stellar:Secret"]);
+            return Ok(WebAuthentication.BuildChallengeTransaction(serverKeys, account, "Wagering.GG"));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> VerifyTransaction(string transaction)
+        {
+            Transaction signedTransaction = Transaction.FromEnvelopeXdr(transaction);
+            Dictionary<string, int> signerSummary = new Dictionary<string, int>();
+            signedTransaction.Signatures.ForEach(x =>
+            {
+                signerSummary.Add(KeyPair.FromPublicKey(x.Signature.InnerValue).Address, 1);
+            });
+            try
+            {
+                string serverId = _config["Stellar:Public"];
+                ICollection<string> clients = WebAuthentication.VerifyChallengeTransactionThreshold(signedTransaction, serverId, 2, signerSummary);
+                if (clients.Count == 1)
+                {
+                    string key = clients.First();
+                    ApplicationUser user = await _userManager.FindByIdAsync(User.GetId());
+                    var claims = await _userManager.GetClaimsAsync(user);
+                    Profile profile = await _context.Profiles.FindAsync(user.Id);
+                    var keyClaim = claims.KeyClaim();
+                    var newClaim = new Claim(Claims.PublicKey, key);
+                    if (keyClaim == null)
+                        await _userManager.AddClaimAsync(user, newClaim);
+                    else
+                        await _userManager.ReplaceClaimAsync(user, keyClaim, newClaim);
+                    profile.PublicKey = key;
+                    _context.SaveChanges();
+                    await _signInManager.RefreshSignInAsync(user);
+                }
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new string[] { e.Message });
+            }
         }
     }
 }

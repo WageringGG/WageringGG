@@ -16,14 +16,14 @@
     <div class="buttons">
         @if (SignInManager.IsSignedIn(User))
         {
-            <a class="button is-dark" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">
+            <a class="button is-secondary" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">
                 <span class="icon">
                     <i class="mdi mdi-account"></i>
                 </span>
                 <span>@User.GetName()</span>
             </a>
             <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/">
-                <button type="submit" class="button is-secondary">
+                <button type="submit" class="button is-dark">
                     <span class="icon">
                         <i class="mdi mdi-logout"></i>
                     </span>
@@ -33,13 +33,13 @@
         }
         else
         {
-            <a class="button is-dark" asp-area="Identity" asp-page="/Account/Register" asp-route-returnUrl="@returnUrl">
+            <a class="button is-secondary" asp-area="Identity" asp-page="/Account/Register" asp-route-returnUrl="@returnUrl">
                 <span class="icon">
                     <i class="mdi mdi-account-plus"></i>
                 </span>
                 <span>Register</span>
             </a>
-            <a class="button is-secondary" asp-area="Identity" asp-page="/Account/Login" asp-route-returnUrl="@returnUrl">
+            <a class="button is-dark" asp-area="Identity" asp-page="/Account/Login" asp-route-returnUrl="@returnUrl">
                 <span class="icon">
                     <i class="mdi mdi-login"></i>
                 </span>

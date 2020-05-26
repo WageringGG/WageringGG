@@ -2,146 +2,148 @@
 @inject NavigationManager navManager
 @inject IJSRuntime js
 
-<AuthorizeView>
-    <Authorized>
-        <div class="row">
-            <div class="col text-right">
-                <button class="btn btn-secondary" data-toggle="modal" data-target="#createModal">
-                    <i class="mdi mdi-plus"></i> Create
+<div class="row">
+    <div class="col text-right">
+        <button class="btn btn-secondary" data-toggle="modal" data-target="#createModal">
+            <i class="mdi mdi-plus"></i> Create
+        </button>
+    </div>
+</div>
+<div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalLabel">Create a Wager</h5>
+                <button type="button" class="close text-danger" data-dismiss="modal" aria-label="Close">
+                    <i class="mdi mdi-close-circle-outline"></i>
                 </button>
             </div>
-        </div>
-        <div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modalLabel">Create a Wager</h5>
-                        <button type="button" class="close text-danger" data-dismiss="modal" aria-label="Close">
-                            <i class="mdi mdi-close-circle-outline"></i>
-                        </button>
-                    </div>
-                    <EditForm Model="Wager" OnValidSubmit="SubmitWager" EditContext="EditContext">
-                        <div class="modal-body">
-                            <DataAnnotationsValidator />
-                            <ValidationSummary class="text-danger" />
-                            <div class="table-responsive">
-                                <table class="table table-borderless text-center">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">Name</th>
-                                            <th scope="col">Payable (%)</th>
-                                            <th scope="col">Receivable (%)</th>
-                                            <th scope="col">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (WagerHostBid bid in Wager.Hosts)
+            <EditForm EditContext="EditContext" OnValidSubmit="SubmitWager" OnInvalidSubmit="SetErrors">
+                <div class="modal-body">
+                    <DataAnnotationsValidator />
+                    @if (!HasKey)
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            You do not have a Stellar public key set. Go to <a @onclick="GoToProfile" role="button" class="alert-link">your profile management page</a> to set one.
+                        </div>
+                    }
+                    <ErrorDisplay @bind-Errors="TotalErrors" />
+                    <div class="table-responsive">
+                        <table class="table table-borderless text-center">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Payable (%)</th>
+                                    <th scope="col">Receivable (%)</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (WagerHostBid bid in Wager.Hosts)
+                                {
+                                    <tr>
+                                        <td>@bid.DisplayName</td>
+                                        @if (bid.IsEditing)
                                         {
-                                            <tr>
-                                                <td>@bid.DisplayName</td>
+                                            <td>
+                                                <InputNumber @bind-Value="bid.PayablePt" class="form-control" />
+                                            </td>
+                                            <td>
+                                                <InputNumber @bind-Value="bid.ReceivablePt" class="form-control" />
+                                            </td>
+                                        }
+                                        else
+                                        {
+                                            <td>@bid.PayablePt%</td>
+                                            <td>@bid.ReceivablePt%</td>
+                                        }
+                                        <td>
+                                            <div class="btn-group">
                                                 @if (bid.IsEditing)
                                                 {
-                                                    <td>
-                                                        <InputNumber @bind-Value="bid.PayablePt" class="form-control" />
-                                                    </td>
-                                                    <td>
-                                                        <InputNumber @bind-Value="bid.ReceivablePt" class="form-control" />
-                                                    </td>
+                                                    <button type="button" class="btn btn-link"><i class="mdi mdi-content-save" @onclick="e => SaveEdit(bid)"></i></button>
                                                 }
                                                 else
                                                 {
-                                                    <td>@bid.PayablePt%</td>
-                                                    <td>@bid.ReceivablePt%</td>
+                                                    <button type="button" class="btn btn-link"><i class="mdi mdi-pencil" @onclick="e => EditUser(bid)"></i></button>
                                                 }
-                                                <td>
-                                                    <div class="btn-group">
-                                                        @if (bid.IsEditing)
-                                                        {
-                                                            <button type="button" class="btn btn-link"><i class="mdi mdi-content-save" @onclick="e => SaveEdit(bid)"></i></button>
-                                                        }
-                                                        else
-                                                        {
-                                                            <button type="button" class="btn btn-link"><i class="mdi mdi-pencil" @onclick="e => EditUser(bid)"></i></button>
-                                                        }
-                                                        @if (!bid.IsOwner)
-                                                        {
-                                                            <button type="button" class="btn btn-link" @onclick="e => RemoveUser(bid.ProfileId)"><i class="mdi mdi-delete"></i></button>
-                                                        }
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        }
-                                        <tr class="border-top">
-                                            <th scope="row">Total:</th>
-                                            <td>@Wager.Hosts.Sum(x => x.PayablePt)%</td>
-                                            <td>@Wager.Hosts.Sum(x => x.ReceivablePt)%</td>
-                                            <td><button type="button" class="btn btn-sm btn-outline-secondary" @onclick="Normalize">Normalize</button></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="form-row">
-                                <div class="col-9">
-                                    <div class="form-group">
-                                        <label for="description">Description</label>
-                                        <InputText class="form-control" @bind-Value="Wager.Description" />
-                                    </div>
-                                </div>
-                                <div class="col-3 my-auto">
-                                    <div class="form-group form-check">
-                                        <InputCheckbox @bind-Value="Wager.IsPrivate" class="form-check-input" />
-                                        <label class="form-check-label">Private</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary btn-block" data-toggle="collapse" data-target="#addCollapse" aria-expanded="false" aria-controls="addCollapse">
-                                <i class="mdi mdi-account-plus"></i> Add User
-                            </button>
-                            <div class="collapse mt-1" id="addCollapse">
-                                <div class="form-row mb-2">
-                                    <div class="col-12 col-sm-6">
-                                        <div class="form-group">
-                                            <label for="displayName">Display Name</label>
-                                            <input type="text" autocomplete="off" @bind-value="DisplayName" class="form-control" id="displayName" @bind-value:event="oninput" @onkeyup="BeginTimer" />
-                                        </div>
-                                        @if (Profiles.Count > 0)
-                                        {
-                                            <div class="card overflow-auto" style="max-height: 6rem;">
-                                                <div class="btn-group-vertical w-100">
-                                                    @foreach (Profile profile in Profiles)
-                                                    {
-                                                        <button type="button" class="btn btn-block btn-sm @(profile.IsSelected ? "btn-outline-success" : "btn-outline-secondary")" @onclick="e => SelectUser(profile)">@profile.DisplayName</button>
-                                                    }
-                                                </div>
+                                                @if (!bid.IsOwner)
+                                                {
+                                                    <button type="button" class="btn btn-link" @onclick="e => RemoveUser(bid.ProfileId)"><i class="mdi mdi-delete"></i></button>
+                                                }
                                             </div>
-                                        }
-                                    </div>
-                                    <div class="col-12 col-sm-6">
-                                        <div class="form-group">
-                                            <label for="payablePt">Payable %</label>
-                                            <InputNumber @bind-Value="Host.PayablePt" class="form-control" id="payablePt">
-                                            </InputNumber>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="receivablePt">Receivable %</label>
-                                            <InputNumber @bind-Value="Host.ReceivablePt" class="form-control" id="receivablePt">
-                                            </InputNumber>
-                                        </div>
-                                    </div>
-                                </div>
-                                <button type="button" class="btn btn-danger" @onclick="ResetUser">Reset</button>
-                                <button type="button" class="btn btn-success" @onclick="AddUser">Confirm</button>
+                                        </td>
+                                    </tr>
+                                }
+                                <tr class="border-top">
+                                    <th scope="row">Total:</th>
+                                    <td>@Wager.Hosts.Sum(x => x.PayablePt)%</td>
+                                    <td>@Wager.Hosts.Sum(x => x.ReceivablePt)%</td>
+                                    <td><button type="button" class="btn btn-sm btn-outline-secondary" @onclick="Normalize">Normalize</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="form-row">
+                        <div class="col-9">
+                            <div class="form-group">
+                                <label for="description">Description</label>
+                                <InputText class="form-control" @bind-Value="Wager.Description" />
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="submit" class="btn btn-success">Submit</button>
+                        <div class="col-3 my-auto">
+                            <div class="form-group form-check">
+                                <InputCheckbox @bind-Value="Wager.IsPrivate" class="form-check-input" />
+                                <label class="form-check-label">Private</label>
+                            </div>
                         </div>
-                    </EditForm>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary btn-block" data-toggle="collapse" data-target="#addCollapse" aria-expanded="false" aria-controls="addCollapse">
+                        <i class="mdi mdi-account-plus"></i> Add User
+                    </button>
+                    <div class="collapse mt-1" id="addCollapse">
+                        <div class="form-row mb-2">
+                            <div class="col-12 col-sm-6">
+                                <div class="form-group">
+                                    <label for="displayName">Display Name</label>
+                                    <input type="text" autocomplete="off" @bind-value="DisplayName" class="form-control" id="displayName" @bind-value:event="oninput" @onkeyup="BeginTimer" />
+                                </div>
+                                @if (Profiles.Count > 0)
+                                {
+                                    <div class="card overflow-auto" style="max-height: 6rem;">
+                                        <div class="btn-group-vertical w-100">
+                                            @foreach (Profile profile in Profiles)
+                                            {
+                                                <button type="button" class="btn btn-block btn-sm @(profile.IsSelected ? "btn-outline-success" : "btn-outline-secondary")" @onclick="e => SelectUser(profile)">@profile.DisplayName</button>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <div class="form-group">
+                                    <label for="payablePt">Payable %</label>
+                                    <InputNumber @bind-Value="Host.PayablePt" class="form-control" id="payablePt">
+                                    </InputNumber>
+                                </div>
+                                <div class="form-group">
+                                    <label for="receivablePt">Receivable %</label>
+                                    <InputNumber @bind-Value="Host.ReceivablePt" class="form-control" id="receivablePt">
+                                    </InputNumber>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-danger" @onclick="ResetUser">Reset</button>
+                        <button type="button" class="btn btn-success" @onclick="AddUser">Confirm</button>
+                    </div>
                 </div>
-            </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Submit</button>
+                </div>
+            </EditForm>
         </div>
-    </Authorized>
-</AuthorizeView>
+    </div>
+</div>
 
 @code {
     @using System.Timers;
@@ -156,17 +158,29 @@
     private string DisplayName { get; set; }
     private ICollection<Profile> Profiles { get; set; } = new List<Profile>();
     private Timer Debounce { get; set; } = new Timer(750) { AutoReset = false };
+    private IEnumerable<string> TotalErrors { get; set; } = new List<string>();
+    private IEnumerable<string> Errors { get; set; } = new List<string>();
     private EditContext EditContext { get; set; }
+    private bool HasKey { get; set; } = false;
+    private Profile SelectedProfile
+    {
+        get
+        {
+            return Profiles.FirstOrDefault(x => x.IsSelected);
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
+        EditContext = new EditContext(Wager);
         Debounce.Elapsed += SearchUsers;
         AuthenticationState context = await AuthenticationStateTask;
         if (Game != null)
             Wager.GameId = Game.Id;
         if (context.User.Identity.IsAuthenticated)
         {
-
+            if (!string.IsNullOrEmpty(context.User.GetKey()))
+                HasKey = true;
             Wager.Hosts.Add(new WagerHostBid
             {
                 ProfileId = context.User.GetId(),
@@ -177,6 +191,17 @@
             });
         }
         await base.OnInitializedAsync();
+    }
+
+    private async Task GoToProfile()
+    {
+        await js.InvokeVoidAsync("blazorModal", "#createModal", "hide");
+        navManager.NavigateTo("/profile");
+    }
+
+    private void SetErrors()
+    {
+        TotalErrors = EditContext.GetValidationMessages().Union(Errors);
     }
 
     private void Normalize()
@@ -194,14 +219,6 @@
     {
         Debounce.Stop();
         Debounce.Start();
-    }
-
-    private Profile SelectedProfile
-    {
-        get
-        {
-            return Profiles.FirstOrDefault(x => x.IsSelected);
-        }
     }
 
     private void SelectUser(Profile profile)
@@ -276,16 +293,18 @@
 
     private async Task SubmitWager()
     {
+        if (!HasKey)
+            return;
         HttpResponseMessage response = await http.PostAsJsonAsync("/api/wager", Wager);
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
         {
             int wagerId = await response.Content.ReadFromJsonAsync<int>();
             navManager.NavigateTo($"/wagers/view/{wagerId}");
         }
-        else if(response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
-            //add errors here
-            //response.Content.ReadFromJsonAsync<IEnumerable<string>>()
+            Errors = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
+            SetErrors();
         }
     }
 }

@@ -23,6 +23,9 @@
         window.blazorCollapse = (id, action) => {
             $(id).collapse(action);
         };
+        window.blazorModal = (id, action) => {
+            $(id).modal(action);
+        };
     </script>
     <script>navigator.serviceWorker.register('service-worker.js');</script>
 </body>
