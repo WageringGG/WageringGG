@@ -31,14 +31,14 @@ namespace WageringGG.Server.Handlers
             if (!StrKey.IsValidEd25519PublicKey(key))
             {
                 ModelState.AddModelError(string.Empty, $"{key} is not a valid stellar key");
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             string? userId = User.GetId();
             ApplicationUser user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {
                 ModelState.AddModelError(string.Empty, $"Could not load user with id {userId}");
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             var claims = await _userManager.GetClaimsAsync(user);
             var profile = await _context.Profiles.FindAsync(user.Id);

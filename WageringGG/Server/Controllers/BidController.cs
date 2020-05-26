@@ -38,22 +38,22 @@ namespace WageringGG.Server.Controllers
             if (bid == null)
             {
                 ModelState.AddModelError(string.Empty, "not_found");
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             if (bid.Wager.Status != (byte)Status.Created)
             {
                 ModelState.AddModelError(string.Empty, "Wager is not in the created state.");
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             if (bid.ProfileId != userId)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             if (bid.Approved != null)
             {
                 ModelState.AddModelError(string.Empty, Errors.AlreadySent);
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
 
             bid.Approved = true;
@@ -88,22 +88,22 @@ namespace WageringGG.Server.Controllers
             if (bid == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             if (bid.Wager.Status != (byte)Status.Created)
             {
                 ModelState.AddModelError(string.Empty, "Wager is not in the created state.");
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             if (bid.ProfileId != userId)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotCorresponding);
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             if (bid.Approved != null)
             {
                 ModelState.AddModelError(string.Empty, Errors.AlreadySent);
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             bid.Approved = false;
             bid.Wager.Status = (byte)Status.Canceled;

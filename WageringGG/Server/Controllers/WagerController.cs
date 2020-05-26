@@ -47,7 +47,7 @@ namespace WageringGG.Server.Handlers
                 ModelState.AddModelError("Player Negative", "Player count cannot be negative.");
 
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
 
             byte confirmed = (byte)Status.Confirmed;
             IQueryable<Wager> wagerQuery = _context.Wagers.AsNoTracking().Where(x => x.GameId == gameId).Where(x => !x.IsPrivate).Where(x => x.Status == confirmed);
@@ -75,7 +75,7 @@ namespace WageringGG.Server.Handlers
             if (wager == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             return Ok(wager);
         }
@@ -91,17 +91,17 @@ namespace WageringGG.Server.Handlers
             if (wager == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             if (wager.Status != (byte)Status.Created)
             {
                 ModelState.AddModelError(string.Empty, "Wager is not in the created.");
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             if (!wager.Hosts.Any(x => x.ProfileId == userId))
             {
                 ModelState.AddModelError(string.Empty, "You are not a host of this wager.");
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             wager.Status = (byte)Status.Canceled;
             PersonalNotification notification = new PersonalNotification
@@ -129,7 +129,7 @@ namespace WageringGG.Server.Handlers
             if (userKey == null)
                 ModelState.AddModelError(string.Empty, "User does not have a public key registered.");
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
 
             WagerHostBid caller = wagerData.Hosts.FirstOrDefault(x => x.ProfileId == userId);
             if (wagerData.Hosts.Sum(x => x.ReceivablePt) != 100)
@@ -153,7 +153,7 @@ namespace WageringGG.Server.Handlers
             }
 
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
 
             DateTime date = DateTime.Now;
             Wager wager = new Wager //prevents overposting

@@ -27,7 +27,7 @@ namespace WageringGG.Server.Handlers
             if (user == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             return Ok(user);
         }

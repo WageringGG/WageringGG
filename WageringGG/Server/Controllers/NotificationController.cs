@@ -39,12 +39,12 @@ namespace WageringGG.Server.Handlers
             if (notification == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             if (notification.ProfileId != userId)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotCorresponding);
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             _context.Remove(notification);
             _context.SaveChanges();

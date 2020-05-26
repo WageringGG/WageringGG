@@ -42,12 +42,12 @@ namespace WageringGG.Server.Handlers
             if (wager == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             if (!wager.Hosts.Any(x => x.ProfileId == userId))
             {
                 ModelState.AddModelError(string.Empty, "You are not a host of this wager.");
-                return BadRequest(ModelState);
+                return BadRequest(ModelState.GetErrors());
             }
             return Ok(wager);
         }
