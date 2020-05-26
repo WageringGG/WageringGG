@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using stellar_dotnet_sdk;
 using WageringGG.Server.Data;
 using WageringGG.Server.Models;
 using WageringGG.Server.Services;
@@ -103,8 +104,11 @@ namespace WageringGG.Server
             services.AddRazorPages();
             services.AddSignalR();
 
-            string network = _env.IsDevelopment() ? "https://horizon-testnet.stellar.org/" : "https://horizon.stellar.org/";
-            services.AddSingleton(new stellar.Server(network));
+            if (_env.IsDevelopment())
+                Network.UseTestNetwork();
+            else
+                Network.UsePublicNetwork();
+            services.AddSingleton(new stellar.Server(_config["Stellar:URI"]));
             if (!_env.IsDevelopment())
                 services.AddScoped<IEmailSender, EmailSender>();
         }

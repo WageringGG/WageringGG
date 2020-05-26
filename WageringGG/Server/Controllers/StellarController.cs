@@ -39,12 +39,12 @@ namespace WageringGG.Server.Handlers
         public IActionResult RequestChallenge([FromQuery] string account)
         {
             //check that id is not already set
-            KeyPair serverKeys = KeyPair.FromSecretSeed(_config["Stellar:Secret"]);
+            KeyPair serverKeys = KeyPair.FromSecretSeed(_config["Stellar:SecretSeed"]);
             return Ok(WebAuthentication.BuildChallengeTransaction(serverKeys, account, "Wagering.GG"));
         }
 
         [HttpPost]
-        public async Task<IActionResult> VerifyTransaction(string transaction)
+        public async Task<IActionResult> VerifyTransaction([FromBody] string transaction)
         {
             Transaction signedTransaction = Transaction.FromEnvelopeXdr(transaction);
             Dictionary<string, int> signerSummary = new Dictionary<string, int>();
@@ -54,7 +54,7 @@ namespace WageringGG.Server.Handlers
             });
             try
             {
-                string serverId = _config["Stellar:Public"];
+                string serverId = _config["Stellar:PublicKey"];
                 ICollection<string> clients = WebAuthentication.VerifyChallengeTransactionThreshold(signedTransaction, serverId, 2, signerSummary);
                 if (clients.Count == 1)
                 {
