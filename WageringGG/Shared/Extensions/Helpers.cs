@@ -19,7 +19,7 @@ namespace WageringGG
         }
         public static string GetId(this ClaimsPrincipal User)
         {
-            return User.Claims.FirstOrDefault(x => x.Type == Claims.Id)?.Value;
+            return User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
         }
 
         public static string GetName(this ClaimsPrincipal User)

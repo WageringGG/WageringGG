@@ -183,7 +183,7 @@
                 HasKey = true;
             Wager.Hosts.Add(new WagerHostBid
             {
-                ProfileId = context.User.GetId(),
+                ProfileId = context.User.Claims.First(x => x.Type == WageringGG.Shared.Constants.Claims.Id)?.Value,
                 DisplayName = context.User.GetName(),
                 ReceivablePt = 100,
                 PayablePt = 100,

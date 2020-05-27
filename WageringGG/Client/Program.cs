@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using stellar_dotnet_sdk;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -21,10 +20,6 @@ namespace WageringGG.Client
             // Supply HttpClient instances that include access tokens when making requests to the server project
             builder.Services.AddTransient(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("WageringGG.ServerAPI"));
             builder.Services.AddApiAuthorization();
-            if (builder.HostEnvironment.IsDevelopment())
-                Network.UseTestNetwork();
-            else
-                Network.UsePublicNetwork();
 
             await builder.Build().RunAsync();
         }

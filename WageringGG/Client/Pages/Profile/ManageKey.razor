@@ -1,5 +1,4 @@
-﻿@using stellar_dotnet_sdk;
-@inject IConfiguration config
+﻿@inject IConfiguration config
 @inject HttpClient http
 
 <ErrorDisplay Errors="KeyErrors" />
@@ -10,7 +9,7 @@
         <input type="text" disabled class="form-control" value="@CurrentKey" />
     </div>
 }
-@if (Transaction == null)
+@if (/*Transaction*/ null == null)
 {
     <div class="form-group">
         <label>Public Key</label>
@@ -37,7 +36,6 @@ else
     private string CurrentKey { get; set; }
     private string PublicKey { get; set; }
     private string SecretSeed { get; set; }
-    private Transaction Transaction { get; set; }
     public ICollection<string> KeyErrors { get; set; } = new List<string>();
 
     protected override async Task OnParametersSetAsync()
@@ -61,16 +59,10 @@ else
             KeyErrors.Add("The Public Key is required.");
             return;
         }
-        Transaction = await http.GetFromJsonAsync<Transaction>($"/api/stellar?account={PublicKey}");
-        try
-        {
-            Network network = new Network(config["Stellar:Network"]);
-            WebAuthentication.ReadChallengeTransaction(Transaction, config["Stellar:ServerKey"], network);
-        }
-        catch (Exception e)
-        {
-            KeyErrors.Add(e.Message);
-        }
+        string response = await http.GetStringAsync($"/api/stellar?account={PublicKey}");
+        //Transaction = Transaction.FromEnvelopeXdr(response);
+        //Network network = new Network(config["Stellar:Network"]);
+        //WebAuthentication.ReadChallengeTransaction(Transaction, config["Stellar:ServerKey"], network);
     }
 
     private async Task SendTransaction()
@@ -81,9 +73,9 @@ else
             KeyErrors.Add("The Secret Seed is required.");
             return;
         }
-        var signature = KeyPair.FromSecretSeed(SecretSeed);
-        Transaction.Sign(signature);
-        var response = await http.PostAsJsonAsync("/api/stellar", Transaction.ToEnvelopeXdrBase64());
+        // var signature = KeyPair.FromSecretSeed(SecretSeed);
+        // Transaction.Sign(signature);
+        var response = await http.PostAsJsonAsync("/api/stellar", ""); //Transaction.ToEnvelopeXdrBase64());
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
         {
             var token = await response.Content.ReadAsStringAsync();

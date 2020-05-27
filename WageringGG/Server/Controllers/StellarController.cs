@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Configuration;
 using stellar_dotnet_sdk;
 using System;
@@ -36,11 +37,17 @@ namespace WageringGG.Server.Handlers
         }
 
         [HttpGet]
-        public IActionResult RequestChallenge([FromQuery] string account)
+        public async Task<IActionResult> RequestChallenge([FromQuery] string account)
         {
-            //check that id is not already set
+            ApplicationUser user = await _userManager.FindByIdAsync(User.GetId());
+            if (user == null)
+                return BadRequest(new string[] { "User not found." });
+            var claims = await _userManager.GetClaimsAsync(user);
+            var keyClaim = claims.KeyClaim();
+            if (keyClaim != null && keyClaim.Value == account)
+                return BadRequest(new string[] { $"User's public key is already {account}." });
             KeyPair serverKeys = KeyPair.FromSecretSeed(_config["Stellar:SecretSeed"]);
-            return Ok(WebAuthentication.BuildChallengeTransaction(serverKeys, account, "Wagering.GG"));
+            return Ok(WebAuthentication.BuildChallengeTransaction(serverKeys, account, "Wagering.GG").ToEnvelopeXdrBase64());
         }
 
         [HttpPost]
@@ -60,6 +67,8 @@ namespace WageringGG.Server.Handlers
                 {
                     string key = clients.First();
                     ApplicationUser user = await _userManager.FindByIdAsync(User.GetId());
+                    if (user == null)
+                        throw new Exception("User not found.");
                     var claims = await _userManager.GetClaimsAsync(user);
                     Profile profile = await _context.Profiles.FindAsync(user.Id);
                     var keyClaim = claims.KeyClaim();
