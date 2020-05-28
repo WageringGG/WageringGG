@@ -1,5 +1,6 @@
 ﻿@inject IConfiguration config
 @inject HttpClient http
+@inject IJSRuntime js
 
 <ErrorDisplay Errors="KeyErrors" />
 @if (!string.IsNullOrEmpty(CurrentKey))
@@ -59,10 +60,8 @@ else
             KeyErrors.Add("The Public Key is required.");
             return;
         }
-        string response = await http.GetStringAsync($"/api/stellar?account={PublicKey}");
-        //Transaction = Transaction.FromEnvelopeXdr(response);
-        //Network network = new Network(config["Stellar:Network"]);
-        //WebAuthentication.ReadChallengeTransaction(Transaction, config["Stellar:ServerKey"], network);
+        string challengeTx = await http.GetStringAsync($"/api/stellar?account={PublicKey}");
+        await js.InvokeVoidAsync("StellarSdk.Utils.readChallengeTx", challengeTx, config["Stellar:ServerKey"], config["Stellar:Passphrase"]);
     }
 
     private async Task SendTransaction()
