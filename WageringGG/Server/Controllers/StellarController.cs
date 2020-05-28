@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Configuration;
 using stellar_dotnet_sdk;
 using System;
@@ -47,7 +46,14 @@ namespace WageringGG.Server.Handlers
             if (keyClaim != null && keyClaim.Value == account)
                 return BadRequest(new string[] { $"User's public key is already {account}." });
             KeyPair serverKeys = KeyPair.FromSecretSeed(_config["Stellar:SecretSeed"]);
-            return Ok(WebAuthentication.BuildChallengeTransaction(serverKeys, account, "Wagering.GG").ToEnvelopeXdrBase64());
+            try
+            {
+                return Ok(WebAuthentication.BuildChallengeTransaction(serverKeys, account, "Wagering.GG").ToEnvelopeXdrBase64());
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new string[] { e.Message });
+            }
         }
 
         [HttpPost]
@@ -55,14 +61,12 @@ namespace WageringGG.Server.Handlers
         {
             Transaction signedTransaction = Transaction.FromEnvelopeXdr(transaction);
             Dictionary<string, int> signerSummary = new Dictionary<string, int>();
-            signedTransaction.Signatures.ForEach(x =>
-            {
-                signerSummary.Add(KeyPair.FromPublicKey(x.Signature.InnerValue).Address, 1);
-            });
+            signerSummary.Add(signedTransaction.Operations[0].SourceAccount.AccountId, 1);
+            signerSummary.Add(signedTransaction.SourceAccount.AccountId, 1);
             try
             {
                 string serverId = _config["Stellar:PublicKey"];
-                ICollection<string> clients = WebAuthentication.VerifyChallengeTransactionThreshold(signedTransaction, serverId, 2, signerSummary);
+                ICollection<string> clients = WebAuthentication.VerifyChallengeTransactionThreshold(signedTransaction, serverId, 1, signerSummary);
                 if (clients.Count == 1)
                 {
                     string key = clients.First();

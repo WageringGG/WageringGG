@@ -3,6 +3,15 @@
 @inject IJSRuntime js
 
 <ErrorDisplay Errors="KeyErrors" />
+@if (ShowSuccess)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        You have successfully set a new public key.
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <i class="mdi mdi-close"></i>
+        </button>
+    </div>
+}
 @if (!string.IsNullOrEmpty(CurrentKey))
 {
     <div class="form-group">
@@ -10,7 +19,7 @@
         <input type="text" disabled class="form-control" value="@CurrentKey" />
     </div>
 }
-@if (/*Transaction*/ null == null)
+@if (Transaction == null)
 {
     <div class="form-group">
         <label>Public Key</label>
@@ -37,7 +46,9 @@ else
     private string CurrentKey { get; set; }
     private string PublicKey { get; set; }
     private string SecretSeed { get; set; }
-    public ICollection<string> KeyErrors { get; set; } = new List<string>();
+    private string Transaction { get; set; }
+    public IEnumerable<string> KeyErrors { get; set; } = new List<string>();
+    private bool ShowSuccess { get; set; }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -54,34 +65,42 @@ else
     /// </summary>
     private async Task GetChallenge()
     {
-        KeyErrors.Clear();
         if (string.IsNullOrWhiteSpace(PublicKey))
         {
-            KeyErrors.Add("The Public Key is required.");
+            KeyErrors = new string[] { "The Public Key is required." };
             return;
         }
-        string challengeTx = await http.GetStringAsync($"/api/stellar?account={PublicKey}");
-        await js.InvokeVoidAsync("StellarSdk.Utils.readChallengeTx", challengeTx, config["Stellar:ServerKey"], config["Stellar:Passphrase"]);
+        var response = await http.GetAsync($"/api/stellar?account={PublicKey}");
+        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            Transaction = await response.Content.ReadAsStringAsync();
+            await js.InvokeVoidAsync("StellarSdk.Utils.readChallengeTx", Transaction, config["Stellar:ServerKey"], config["Stellar:Passphrase"]);
+        }
+        else
+        {
+            KeyErrors = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
+        }
     }
 
     private async Task SendTransaction()
     {
-        KeyErrors.Clear();
         if (string.IsNullOrWhiteSpace(SecretSeed))
         {
-            KeyErrors.Add("The Secret Seed is required.");
+            KeyErrors = new string[] { "The Secret Seed is required." };
             return;
         }
-        // var signature = KeyPair.FromSecretSeed(SecretSeed);
-        // Transaction.Sign(signature);
-        var response = await http.PostAsJsonAsync("/api/stellar", ""); //Transaction.ToEnvelopeXdrBase64());
+        string xdr = await js.InvokeAsync<string>("signTransaction", Transaction, SecretSeed, config["Stellar:Passphrase"]);
+        var response = await http.PostAsJsonAsync("/api/stellar", xdr);
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
         {
-            var token = await response.Content.ReadAsStringAsync();
+            CurrentKey = PublicKey;
+            PublicKey = null;
+            SecretSeed = null;
+            ShowSuccess = true;
         }
         else
         {
-            KeyErrors.Union(await response.Content.ReadFromJsonAsync<IEnumerable<string>>());
+            KeyErrors = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
         }
     }
 }

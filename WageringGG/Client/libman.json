@@ -4,24 +4,35 @@
   "libraries": [
     {
       "library": "jquery@3.5.1",
-      "files": [ "jquery.slim.min.js" ],
+      "files": [
+        "jquery.slim.min.js",
+        "jquery.slim.min.map",
+        "jquery.slim.js"
+      ],
       "destination": "wwwroot/lib/jQuery"
     },
     {
       "library": "popper.js@2.4.0",
-      "files": [ "umd/popper.min.js" ],
+      "files": [
+        "umd/popper.min.js",
+        "umd/popper.min.js.map",
+        "umd/popper.js"
+      ],
       "destination": "wwwroot/lib/popper"
     },
     {
       "provider": "unpkg",
       "library": "bootstrap@4.5.0",
-      "files": [ "dist/js/bootstrap.bundle.min.js" ],
+      "files": [
+        "dist/js/bootstrap.bundle.min.js",
+        "dist/js/bootstrap.bundle.js.map",
+        "dist/js/bootstrap.bundle.js"
+      ],
       "destination": "wwwroot/lib/"
     },
     {
       "library": "stellar-sdk@5.0.3",
-      "files": ["stellar-sdk.min.js"],
-      "destination": "wwwroot/lib/stellar-sdk"
+      "destination": "wwwroot/lib/dist/js"
     }
   ]
 }
