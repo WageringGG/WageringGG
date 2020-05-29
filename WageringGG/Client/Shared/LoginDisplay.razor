@@ -6,8 +6,7 @@
 
 <AuthorizeView>
     <Authorized>
-        <NotificationDisplay />
-        <a class="btn btn-secondary" href="/profile">
+        <a class="btn btn-secondary mr-1" href="/profile">
             <i class="mdi mdi-account"></i>
             @context.User.GetName()
         </a>
@@ -17,7 +16,7 @@
         </button>
     </Authorized>
     <NotAuthorized>
-        <a class="btn btn-secondary" href="authentication/register">
+        <a class="btn btn-secondary mr-1" href="authentication/register">
             <i class="mdi mdi-account-plus"></i>
             Register
         </a>

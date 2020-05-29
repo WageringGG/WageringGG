@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using stellar_dotnet_sdk;
-using xdr = stellar_dotnet_sdk.xdr;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,17 +18,15 @@ namespace WageringGG.Server.Handlers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class StellarController : ControllerBase
+    public class StellarAuthController : ControllerBase
     {
-        private readonly stellar_dotnet_sdk.Server _server;
         private readonly IConfiguration _config;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ApplicationDbContext _context;
 
-        public StellarController(stellar_dotnet_sdk.Server server, IConfiguration config, ApplicationDbContext context, UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+        public StellarAuthController(IConfiguration config, ApplicationDbContext context, UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
         {
-            _server = server;
             _config = config;
             _userManager = userManager;
             _signInManager = signInManager;

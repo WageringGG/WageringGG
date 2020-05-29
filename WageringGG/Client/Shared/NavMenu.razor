@@ -1,12 +1,15 @@
-﻿<nav class="navbar navbar-dark navbar-expand-md bg-gradient-primary">
-    <div class="navbar-brand font-weight-bold">
-        Wagering.GG
+﻿<nav class="navbar navbar-dark navbar-expand-lg bg-gradient-primary">
+    <div>
+        <div class="navbar-brand font-weight-bold">
+            Wagering.GG
+        </div>
+        <NotificationDisplay />
     </div>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <i class="mdi mdi-menu"></i>
     </button>
     <div class="navbar-collapse collapse" id="navbarNav">
-        <ul class="navbar-nav text-center">
+        <ul class="navbar-nav text-center ml-auto">
             <li class="nav-item">
                 <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                     <i class="mdi mdi-home"></i> Home
@@ -28,8 +31,6 @@
                 </NavLink>
             </li>
         </ul>
-        <div class="ml-auto">
-            <LoginDisplay />
-        </div>
+        <LoginDisplay />
     </div>
 </nav>

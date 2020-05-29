@@ -25,39 +25,17 @@ namespace WageringGG.Server.Handlers
             _signInManager = signInManager;
         }
 
-        [HttpPut("key/{key}")]
-        public async Task<IActionResult> EditPublicKey(string key)
+        [HttpDelete("publickey")]
+        public async Task<IActionResult> DeletePublicKey()
         {
-            if (!StrKey.IsValidEd25519PublicKey(key))
-            {
-                ModelState.AddModelError(string.Empty, $"{key} is not a valid stellar key");
-                return BadRequest(ModelState.GetErrors());
-            }
-            string? userId = User.GetId();
+            string userId = User.GetId();
             ApplicationUser user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                ModelState.AddModelError(string.Empty, $"Could not load user with id {userId}");
-                return BadRequest(ModelState.GetErrors());
-            }
             var claims = await _userManager.GetClaimsAsync(user);
-            var profile = await _context.Profiles.FindAsync(user.Id);
-
-            //ADD SEP-0010 PROTOCOL FOR VERIFYING OWNERSHIP
-            if (key != profile.PublicKey)
-            {
-                profile.PublicKey = key;
-                Claim keyClaim = claims.KeyClaim();
-                Claim newClaim = new Claim(Claims.PublicKey, key);
-
-                if (keyClaim == null)
-                    await _userManager.AddClaimAsync(user, newClaim);
-                else
-                    await _userManager.ReplaceClaimAsync(user, keyClaim, newClaim);
-                _context.Profiles.Update(profile);
-                _context.SaveChanges();
-                await _signInManager.RefreshSignInAsync(user);
-            }
+            Claim keyClaim = claims.KeyClaim();
+            if (keyClaim == null)
+                return Ok();
+            await _userManager.RemoveClaimAsync(user, keyClaim);
+            await _signInManager.RefreshSignInAsync(user);
             return Ok();
         }
     }
