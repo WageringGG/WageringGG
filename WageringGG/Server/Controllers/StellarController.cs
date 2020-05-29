@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using stellar_dotnet_sdk;
+using xdr = stellar_dotnet_sdk.xdr;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -57,16 +58,17 @@ namespace WageringGG.Server.Handlers
         }
 
         [HttpPost]
-        public async Task<IActionResult> VerifyTransaction([FromBody] string transaction)
+        public async Task<IActionResult> VerifyTransaction([FromBody] string envelope)
         {
-            Transaction signedTransaction = Transaction.FromEnvelopeXdr(transaction);
-            Dictionary<string, int> signerSummary = new Dictionary<string, int>();
-            signerSummary.Add(signedTransaction.Operations[0].SourceAccount.AccountId, 1);
-            signerSummary.Add(signedTransaction.SourceAccount.AccountId, 1);
+            Transaction transaction = Transaction.FromEnvelopeXdr(envelope);
+            Dictionary<string, int> signerSummary = new Dictionary<string, int>
+            {
+                { transaction.Operations[0].SourceAccount.AccountId, 1 }
+            };
             try
             {
                 string serverId = _config["Stellar:PublicKey"];
-                ICollection<string> clients = WebAuthentication.VerifyChallengeTransactionThreshold(signedTransaction, serverId, 1, signerSummary);
+                ICollection<string> clients = WebAuthentication.VerifyChallengeTransactionThreshold(transaction, serverId, 1, signerSummary);
                 if (clients.Count == 1)
                 {
                     string key = clients.First();
