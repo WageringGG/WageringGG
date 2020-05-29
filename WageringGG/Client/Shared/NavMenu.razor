@@ -1,4 +1,4 @@
-﻿<nav class="navbar navbar-dark navbar-expand-md bg-gradient-primary fixed-top">
+﻿<nav class="navbar navbar-dark navbar-expand-md bg-gradient-primary">
     <div class="navbar-brand font-weight-bold">
         Wagering.GG
     </div>
@@ -6,23 +6,30 @@
         <i class="mdi mdi-menu"></i>
     </button>
     <div class="navbar-collapse collapse" id="navbarNav">
-        <ul class="navbar-nav">
+        <ul class="navbar-nav text-center">
             <li class="nav-item">
                 <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                    Home
+                    <i class="mdi mdi-home"></i> Home
                 </NavLink>
             </li>
             <li class="nav-item">
                 <NavLink class="nav-link" href="about">
-                    About
+                    <i class="mdi mdi-information-outline"></i> About
                 </NavLink>
             </li>
             <li class="nav-item">
-                <NavLink class="nav-link" href="counter">
-                    Counter
+                <NavLink class="nav-link" href="host">
+                    <i class="mdi mdi-clipboard"></i> Host Panel
+                </NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="client">
+                    <i class="mdi mdi-clipboard-multiple"></i> Client Panel
                 </NavLink>
             </li>
         </ul>
-        <LoginDisplay />
+        <div class="ml-auto">
+            <LoginDisplay />
+        </div>
     </div>
 </nav>

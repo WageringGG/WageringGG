@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,11 +24,16 @@ namespace WageringGG.Server.Handlers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetNotifications()
+        public async Task<IActionResult> GetNotifications([FromQuery] long? lastDate = null)
         {
-            //maybe take x and reload when under n amount on client
             string? userId = User.GetId();
-            List<PersonalNotification> notifications = await _context.Notifications.Where(x => x.ProfileId == userId).OrderByDescending(x => x.Date).ToListAsync();
+            var query = _context.Notifications.Where(x => x.ProfileId == userId);
+            if(lastDate.HasValue)
+            {
+                DateTime date = new DateTime(lastDate.Value);
+                query = query.Where(x => x.Date > date);
+            }
+            List<PersonalNotification> notifications = await query.OrderByDescending(x => x.Date).ToListAsync();
             return Ok(notifications);
         }
 

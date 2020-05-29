@@ -22,12 +22,9 @@ namespace WageringGG.Server.Services
             context.IssuedClaims.AddRange(claims);
         }
 
-        public async Task IsActiveAsync(IsActiveContext context)
+        public Task IsActiveAsync(IsActiveContext context)
         {
-            //>Processing
-            var user = await _userManager.GetUserAsync(context.Subject);
-
-            context.IsActive = user != null;
+            return Task.CompletedTask;
         }
     }
 }

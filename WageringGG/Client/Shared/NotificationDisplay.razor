@@ -1,0 +1,93 @@
+﻿@using Microsoft.AspNetCore.SignalR.Client
+@inject HttpClient http
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject IConfiguration config
+@inject NavigationManager NavigationManager
+
+<button type="button" class="btn btn-outline-warning" data-toggle="modal" data-target="#notificationModal">
+    <i class="mdi mdi-bell"></i> <span class="badge badge-warning">@Notifications.Count</span>
+</button>
+<div class="modal fade" id="notificationModal" tabindex="-1" role="dialog" aria-labelledby="notificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notificationModalLabel">Notifications</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="mdi mdi-close"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                @foreach (PersonalNotification notification in Notifications)
+                {
+                    @notification.Message
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code{
+    @inject Microsoft.AspNetCore.Components.WebAssembly.Authentication.IAccessTokenProvider tokenProvider
+    HubConnection hubConnection { get; set; }
+    List<PersonalNotification> Notifications { get; set; } = new List<PersonalNotification>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ConnectToHub();
+        await GetNotifications();
+        await base.OnInitializedAsync();
+    }
+
+    private async Task GetNotifications()
+    {
+        long? lastDate = null;
+        if (await localStorage.ContainKeyAsync(config["Notification:Date"]))
+        {
+            lastDate = await localStorage.GetItemAsync<long>(config["Notification:Date"]);
+            Notifications.AddRange(await localStorage.GetItemAsync<IEnumerable<PersonalNotification>>(config["Notification:Values"]));
+        }
+        Dictionary<string, string> query = new Dictionary<string, string>();
+        if (lastDate.HasValue)
+            query.Add("lastDate", lastDate.ToString());
+        DateTime now = DateTime.Now;
+        string path = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString("/api/notification", query);
+        var response = await http.GetAsync(path);
+        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            Notifications.Union(await response.Content.ReadFromJsonAsync<IEnumerable<PersonalNotification>>());
+            await localStorage.SetItemAsync<long>(config["Notification:Date"], now.Ticks);
+            await localStorage.SetItemAsync<IEnumerable<PersonalNotification>>(config["Notification:Values"], Notifications);
+        }
+    }
+
+    private async Task ConnectToHub()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/group-hub"), options =>
+            {
+                options.AccessTokenProvider = () => GetToken();
+            })
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<PersonalNotification>("ReceiveNotification", notification =>
+        {
+            Notifications.Add(notification);
+            StateHasChanged();
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    private async Task<string> GetToken()
+    {
+        try
+        {
+            var result = await tokenProvider.RequestAccessToken();
+            if (result.TryGetToken(out Microsoft.AspNetCore.Components.WebAssembly.Authentication.AccessToken token))
+                return token.Value;
+        }
+        catch { }
+        return null;
+    }
+}

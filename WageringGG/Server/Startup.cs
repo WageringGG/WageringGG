@@ -4,11 +4,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using stellar_dotnet_sdk;
+using System.Linq;
 using WageringGG.Server.Data;
 using WageringGG.Server.Models;
 using WageringGG.Server.Services;
@@ -103,6 +105,11 @@ namespace WageringGG.Server
             services.AddControllersWithViews();
             services.AddRazorPages();
             services.AddSignalR();
+            services.AddResponseCompression(opts =>
+            {
+                opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+                    new[] { "application/octet-stream" });
+            });
 
             if (_env.IsDevelopment())
                 Network.UseTestNetwork();
@@ -129,6 +136,7 @@ namespace WageringGG.Server
                 app.UseHsts();
             }
 
+            app.UseResponseCompression();
             app.UseHttpsRedirection();
             app.UseBlazorFrameworkFiles();
             app.UseStaticFiles();
@@ -141,6 +149,7 @@ namespace WageringGG.Server
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapHub<Hubs.GroupHub>("/group-hub");
                 endpoints.MapRazorPages();
                 endpoints.MapControllers();
                 endpoints.MapFallbackToFile("index.html");

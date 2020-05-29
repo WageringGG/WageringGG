@@ -46,8 +46,8 @@ else
                 Query.TryAdd("minimumWager", minimumWager.ToString());
             if (queryParser.TryGetQueryString<int>("maximumWager", out int maximumWager))
                 Query.TryAdd("maximumWager", maximumWager.ToString());
-            string getQuery = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString($"/api/wager/{Game.Id}", Query);
-            Wagers = await http.GetFromJsonAsync<PaginatedList<Wager>>(getQuery);
+            string path = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString($"/api/wager/{Game.Id}", Query);
+            Wagers = await http.GetFromJsonAsync<PaginatedList<Wager>>(path);
         }
         await base.OnParametersSetAsync();
     }
