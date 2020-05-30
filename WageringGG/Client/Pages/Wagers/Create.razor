@@ -46,10 +46,10 @@
                                         @if (bid.IsEditing)
                                         {
                                             <td>
-                                                <InputNumber @bind-Value="bid.PayablePt" class="form-control" />
+                                                <input type="number" @bind-value="bid.PayablePt" class="form-control" />
                                             </td>
                                             <td>
-                                                <InputNumber @bind-Value="bid.ReceivablePt" class="form-control" />
+                                                <input type="number" @bind-value="bid.ReceivablePt" class="form-control" />
                                             </td>
                                         }
                                         else
@@ -123,13 +123,11 @@
                             <div class="col-12 col-sm-6">
                                 <div class="form-group">
                                     <label for="payablePt">Payable %</label>
-                                    <InputNumber @bind-Value="Host.PayablePt" class="form-control" id="payablePt">
-                                    </InputNumber>
+                                    <input type="number" @bind-value="Host.PayablePt" class="form-control" id="payablePt" />
                                 </div>
                                 <div class="form-group">
                                     <label for="receivablePt">Receivable %</label>
-                                    <InputNumber @bind-Value="Host.ReceivablePt" class="form-control" id="receivablePt">
-                                    </InputNumber>
+                                    <input type="number" @bind-value="Host.ReceivablePt" class="form-control" id="receivablePt" />
                                 </div>
                             </div>
                         </div>
@@ -206,7 +204,7 @@
 
     private void Normalize()
     {
-        int avg = 100 / Wager.Hosts.Count;
+        byte avg = (byte)(100 / Wager.Hosts.Count);
         Wager.Hosts.All(x =>
         {
             x.PayablePt = avg;

@@ -16,6 +16,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Migrations\20200530005843_AddFeatures.cs" />
+    <Compile Remove="Migrations\20200530005843_AddFeatures.Designer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="Pages\Shared\_Layout.cshtml" />
   </ItemGroup>
 

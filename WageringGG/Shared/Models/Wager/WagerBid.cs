@@ -6,11 +6,9 @@ namespace WageringGG.Shared.Models
     public class WagerBid : Bid
     {
         [Required]
-        [Column(TypeName = "tinyint unsigned")]
-        public int ReceivablePt { get; set; }
+        public byte ReceivablePt { get; set; }
         [Required]
-        [Column(TypeName = "tinyint unsigned")]
-        public int PayablePt { get; set; }
+        public byte PayablePt { get; set; }
         public bool IsOwner { get; set; }
 
         [NotMapped]

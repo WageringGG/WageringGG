@@ -2,17 +2,18 @@
 @inject HttpClient http
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 <h1 class="text-center">Host Wagers</h1>
-@foreach(Wager wager in Data)
-{
-    <h2>@wager.Description</h2>
-}
+@if (Data != null)
+    foreach (Wager wager in Data)
+    {
+        <h2>@wager.Description</h2>
+    }
 @code {
-    public List<Wager> Data { get; set; } = new List<Wager>();
+    public List<Wager> Data { get; set; }
     protected override async Task OnInitializedAsync()
     {
         var response = await http.GetAsync("/api/host/wagers");
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
-            Data.Union(await response.Content.ReadFromJsonAsync<IEnumerable<Wager>>());
+            Data = (await response.Content.ReadFromJsonAsync<IEnumerable<Wager>>()).ToList();
         await base.OnInitializedAsync();
     }
 }
