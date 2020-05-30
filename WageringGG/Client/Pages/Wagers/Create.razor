@@ -1,4 +1,4 @@
-﻿@inject HttpClient http
+﻿@inject AuthHttp http
 @inject NavigationManager navManager
 @inject IJSRuntime js
 
@@ -285,7 +285,7 @@
         if (string.IsNullOrEmpty(DisplayName))
             Profiles = new List<Profile>();
         else
-            Profiles = await http.GetFromJsonAsync<ICollection<Profile>>("/api/user/search/" + DisplayName);
+            Profiles = await http.Client.GetFromJsonAsync<ICollection<Profile>>("/api/user/search/" + DisplayName);
         StateHasChanged();
     }
 
@@ -293,7 +293,7 @@
     {
         if (!HasKey)
             return;
-        HttpResponseMessage response = await http.PostAsJsonAsync("/api/wager", Wager);
+        HttpResponseMessage response = await http.Client.PostAsJsonAsync("/api/wager", Wager);
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
         {
             int wagerId = await response.Content.ReadFromJsonAsync<int>();

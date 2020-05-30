@@ -4,23 +4,26 @@
 
 <h1 class="text-center">@Game.Name Wagers</h1>
 <Create Game="Game" />
-@if (Wagers.TotalPages == 0)
+@if (Wagers != null)
 {
-    <div class="text-center my-auto">
-        <h3>There's currently no wagers.</h3>
-        <p class="lead">Create your own to get started.</p>
-    </div>
-}
-else
-{
-    <div class="row">
-        @foreach (Wager wager in Wagers.List)
-        {
-            <div class="col-12 col-md-6 col-lg-4">
-                <WagerDisplay Wager="wager"></WagerDisplay>
-            </div>
-        }
-    </div>
+    @if (Wagers.TotalPages == 0)
+    {
+        <div class="text-center my-auto">
+            <h3>There's currently no wagers.</h3>
+            <p class="lead">Create your own to get started.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (Wager wager in Wagers.List)
+            {
+                <div class="col-12 col-md-6 col-lg-4">
+                    <WagerDisplay Wager="wager"></WagerDisplay>
+                </div>
+            }
+        </div>
+    }
 }
 
 @code {
@@ -28,7 +31,7 @@ else
     public string Name { get; set; }
     public Game Game { get; set; }
     public Dictionary<string, string> Query { get; set; } = new Dictionary<string, string>();
-    public PaginatedList<Wager> Wagers { get; set; } = new PaginatedList<Wager>();
+    public PaginatedList<Wager> Wagers { get; set; }
 
     protected override async Task OnParametersSetAsync()
     {

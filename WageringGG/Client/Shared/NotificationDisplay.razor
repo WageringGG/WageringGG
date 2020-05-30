@@ -1,5 +1,5 @@
 ﻿@using Microsoft.AspNetCore.SignalR.Client
-@inject HttpClient http
+@inject AuthHttp http
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject IConfiguration config
 @inject NavigationManager NavigationManager
@@ -51,7 +51,7 @@
             query.Add("lastDate", lastDate.ToString());
         DateTime now = DateTime.Now;
         string path = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString("/api/notification", query);
-        var response = await http.GetAsync(path);
+        var response = await http.Client.GetAsync(path);
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
         {
             Notifications.Union(await response.Content.ReadFromJsonAsync<IEnumerable<PersonalNotification>>());

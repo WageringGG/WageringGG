@@ -1,5 +1,5 @@
 ﻿@inject IConfiguration config
-@inject HttpClient http
+@inject AuthHttp http
 @inject IJSRuntime js
 
 <ErrorDisplay Errors="KeyErrors" />
@@ -78,7 +78,7 @@ else
             KeyErrors = new string[] { "The Public Key is required." };
             return;
         }
-        var response = await http.GetAsync($"/api/stellarauth?account={PublicKey}");
+        var response = await http.Client.GetAsync($"/api/stellarauth?account={PublicKey}");
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
         {
             Transaction = await response.Content.ReadAsStringAsync();
@@ -92,7 +92,7 @@ else
 
     private async Task DeleteKey()
     {
-        var response = await http.DeleteAsync("/api/profile/publickey");
+        var response = await http.Client.DeleteAsync("/api/profile/publickey");
         if(response.StatusCode == System.Net.HttpStatusCode.OK)
         {
             var claim = Claims.FindFirst(Constants.Claims.PublicKey);
@@ -112,7 +112,7 @@ else
             return;
         }
         string xdr = await js.InvokeAsync<string>("signTransaction", Transaction, SecretSeed, config["Stellar:Passphrase"]);
-        var response = await http.PostAsJsonAsync("/api/stellarauth", xdr);
+        var response = await http.Client.PostAsJsonAsync("/api/stellarauth", xdr);
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
         {
             Claims.AddClaim(new Claim(Constants.Claims.PublicKey, PublicKey));
