@@ -93,7 +93,7 @@ namespace WageringGG.Server.Handlers
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
                 return BadRequest(ModelState.GetErrors());
             }
-            if (wager.Status != (byte)Status.Created)
+            if (wager.Status != (byte)Status.Pending)
             {
                 ModelState.AddModelError(string.Empty, "Wager is not in the created.");
                 return BadRequest(ModelState.GetErrors());

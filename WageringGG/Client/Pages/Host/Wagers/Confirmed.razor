@@ -1,0 +1,18 @@
+﻿@layout HostWagerLayout
+@page "/host/wagers/confirmed"
+
+@if (Data != null)
+{
+    <div class="row">
+        @foreach (Wager wager in Data.Where(x => x.Status == (byte)Status.Confirmed))
+        {
+            <div class="col-12 col-lg-6">
+                <WagerDisplay Wager="wager" />
+            </div>
+        }
+    </div>
+}
+@code {
+    [CascadingParameter]
+    public IEnumerable<Wager> Data { get; set; }
+}

@@ -40,7 +40,7 @@ namespace WageringGG.Server.Controllers
                 ModelState.AddModelError(string.Empty, "not_found");
                 return BadRequest(ModelState.GetErrors());
             }
-            if (bid.Wager.Status != (byte)Status.Created)
+            if (bid.Wager.Status != (byte)Status.Pending)
             {
                 ModelState.AddModelError(string.Empty, "Wager is not in the created state.");
                 return BadRequest(ModelState.GetErrors());
@@ -90,7 +90,7 @@ namespace WageringGG.Server.Controllers
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
                 return BadRequest(ModelState.GetErrors());
             }
-            if (bid.Wager.Status != (byte)Status.Created)
+            if (bid.Wager.Status != (byte)Status.Pending)
             {
                 ModelState.AddModelError(string.Empty, "Wager is not in the created state.");
                 return BadRequest(ModelState.GetErrors());

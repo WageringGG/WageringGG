@@ -2,7 +2,7 @@
 {
     public enum Status
     {
-        Created = 0,
+        Pending = 0,
         Confirmed = 1,
         Canceled = 2,
         Closed = 3,
