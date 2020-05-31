@@ -96,7 +96,7 @@ else
     private async Task DeleteKey()
     {
         var response = await http.Client.DeleteAsync("/api/profile/publickey");
-        if(response.StatusCode == System.Net.HttpStatusCode.OK)
+        if (response.IsSuccessStatusCode)
         {
             var claim = Claims.FindFirst(Constants.Claims.PublicKey);
             if (Claims.TryRemoveClaim(claim))
@@ -116,7 +116,7 @@ else
         }
         string xdr = await js.InvokeAsync<string>("signTransaction", Transaction, SecretSeed, config["Stellar:Passphrase"]);
         var response = await http.Client.PostAsJsonAsync("/api/stellarauth", xdr);
-        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+        if (response.IsSuccessStatusCode)
         {
             Claims.AddClaim(new Claim(Constants.Claims.PublicKey, PublicKey));
             CurrentKey = PublicKey;

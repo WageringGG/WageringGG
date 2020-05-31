@@ -37,6 +37,7 @@ namespace WageringGG.Shared.Models
                 return GetGroupName.Wager(Id);
             }
         }
+
         public override IEnumerable<string> HostIds()
         {
             if (Hosts == null)

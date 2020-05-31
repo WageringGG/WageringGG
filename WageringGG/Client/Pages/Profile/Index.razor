@@ -2,3 +2,8 @@
 @page "/profile"
 
 <h3>Manage your profile</h3>
+<AuthorizeView>
+    <Authorized>
+        <a class="btn btn-primary" href="/user/@context.User.GetName()">View Profile</a>
+    </Authorized>
+</AuthorizeView>

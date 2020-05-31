@@ -32,7 +32,7 @@
     protected override async Task OnInitializedAsync()
     {
         var response = await http.Client.GetAsync("/api/host/wagers");
-        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+        if (response.IsSuccessStatusCode)
             Data = await response.Content.ReadFromJsonAsync<IEnumerable<Wager>>();
         await base.OnInitializedAsync();
     }

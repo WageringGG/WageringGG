@@ -2,7 +2,7 @@
 @inject NavigationManager navManager
 @inject IJSRuntime js
 
-<div class="row">
+<div class="row mb-1">
     <div class="col text-right">
         <button class="btn btn-secondary" data-toggle="modal" data-target="#createModal">
             <i class="mdi mdi-plus"></i> Create
@@ -294,12 +294,13 @@
         if (!HasKey)
             return;
         HttpResponseMessage response = await http.Client.PostAsJsonAsync("/api/wager", Wager);
-        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+        if (response.IsSuccessStatusCode)
         {
             int wagerId = await response.Content.ReadFromJsonAsync<int>();
+            await js.InvokeVoidAsync("blazorModal", "#createModal", "hide");
             navManager.NavigateTo($"/wagers/view/{wagerId}");
         }
-        else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        else
         {
             Errors = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
             SetErrors();

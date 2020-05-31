@@ -102,7 +102,7 @@ namespace WageringGG.Server
                 };
             });
 
-            services.AddControllersWithViews();
+            services.AddControllersWithViews().AddNewtonsoftJson(options => options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
             services.AddRazorPages();
             services.AddSignalR();
             services.AddResponseCompression(opts =>

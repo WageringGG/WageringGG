@@ -4,7 +4,7 @@
 @inject IConfiguration config
 @inject NavigationManager NavigationManager
 
-<button type="button" class="btn btn-outline-warning" data-toggle="modal" data-target="#notificationModal">
+<button type="button" class="btn btn-outline-warning" title="View your notifications" data-toggle="modal" data-target="#notificationModal">
     <i class="mdi mdi-bell"></i> <span class="badge badge-warning">@Notifications.Count</span>
 </button>
 <div class="modal fade" id="notificationModal" tabindex="-1" role="dialog" aria-labelledby="notificationModalLabel" aria-hidden="true">
@@ -52,12 +52,15 @@
         DateTime now = DateTime.Now;
         string path = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString("/api/notification", query);
         var response = await http.Client.GetAsync(path);
-        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+        if (response.IsSuccessStatusCode)
         {
-            Notifications.Union(await response.Content.ReadFromJsonAsync<IEnumerable<PersonalNotification>>());
+            var notifications = await response.Content.ReadFromJsonAsync<IEnumerable<PersonalNotification>>();
+            Notifications.AddRange(notifications);
+            Notifications.Sort((n1, n2) => DateTime.Compare(n1.Date, n2.Date));
             await localStorage.SetItemAsync<long>(config["Notification:Date"], now.Ticks);
             await localStorage.SetItemAsync<IEnumerable<PersonalNotification>>(config["Notification:Values"], Notifications);
         }
+        StateHasChanged();
     }
 
     private async Task ConnectToHub()

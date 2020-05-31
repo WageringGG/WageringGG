@@ -1,0 +1,40 @@
+﻿@page "/host/wagers/view/{id:int}"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject AuthHttp http
+
+<ErrorDisplay @bind-Errors="Errors" />
+<h1 class="text-center">@Enum.GetName(typeof(Status), Wager.Status) Wager</h1>
+<div class="row">
+    <div class="col-12 col-lg-8 mx-auto">
+        <h3>Hosts:</h3>
+        <WagerHostsDisplay Hosts="Wager.Hosts" />
+    </div>
+    <div class="col-12 col-lg-8 mx-auto">
+        <h3>Wager:</h3>
+        <WagerDisplay Wager="Wager" />
+    </div>
+    @if (Wager.Status == (byte)Status.Confirmed)
+    {
+        <div class="col-12 col-lg-8 mx-auto">
+            <h3>Challenges:</h3>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    public Wager Wager { get; set; } = new Wager();
+    public IEnumerable<string> Errors { get; set; } = new List<string>();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var response = await http.Client.GetAsync($"/api/host/wager/{Id}");
+        Console.Write(await response.Content.ReadAsStringAsync());
+        if (response.IsSuccessStatusCode)
+            Wager = await response.Content.ReadFromJsonAsync<Wager>();
+        else
+            Errors = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
+        await base.OnParametersSetAsync();
+    }
+}

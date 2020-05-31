@@ -23,12 +23,9 @@ namespace WageringGG.Server.Handlers
         public async Task<IActionResult> GetUser(string name)
         {
             name = name.ToUpper();
-            var user = await _context.Profiles.Where(x => x.NormalizedDisplayName == name).Include(x => x.Ratings).FirstOrDefaultAsync();
+            var user = await _context.Profiles.AsNoTracking().Where(x => x.NormalizedDisplayName == name).Include(x => x.Ratings).FirstOrDefaultAsync();
             if (user == null)
-            {
-                ModelState.AddModelError(string.Empty, Errors.NotFound);
-                return BadRequest(ModelState.GetErrors());
-            }
+                return BadRequest(new string[] { Errors.NotFound });
             return Ok(user);
         }
 
@@ -36,7 +33,7 @@ namespace WageringGG.Server.Handlers
         public async Task<IActionResult> SearchUsers(string query)
         {
             query = query.ToUpper();
-            var users = await _context.Profiles.Where(x => x.NormalizedDisplayName.Contains(query)).Take(ResultSize).ToListAsync();
+            var users = await _context.Profiles.AsNoTracking().Where(x => x.NormalizedDisplayName.Contains(query)).Take(ResultSize).ToListAsync();
             return Ok(users);
         }
     }

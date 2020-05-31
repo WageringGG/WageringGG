@@ -23,8 +23,7 @@ namespace WageringGG.Server.Handlers
         }
 
         [HttpGet("wagers")]
-        [Authorize]
-        public async Task<IActionResult> ControlWagers()
+        public async Task<IActionResult> GetHostWagers()
         {
             string? userId = User.GetId();
             IEnumerable<Wager> results = await _context.WagerHostBids.AsNoTracking().Where(x => x.ProfileId == userId).Include(x => x.Wager).Select(x => x.Wager).ToListAsync();
@@ -32,23 +31,16 @@ namespace WageringGG.Server.Handlers
         }
 
         [HttpGet("wager/{id}")]
-        [Authorize]
-        public async Task<IActionResult> GetControlWager(int id)
+        public async Task<IActionResult> GetHostWager(int id)
         {
             string? userId = User.GetId();
 
             Wager wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == id).Include(x => x.Hosts).ThenInclude(x => x.Profile).Include(x => x.Challenges).ThenInclude(x => x.Challengers).ThenInclude(x => x.Profile).FirstOrDefaultAsync();
 
             if (wager == null)
-            {
-                ModelState.AddModelError(string.Empty, Errors.NotFound);
-                return BadRequest(ModelState.GetErrors());
-            }
+                return BadRequest(new string[] { Errors.NotFound });
             if (!wager.Hosts.Any(x => x.ProfileId == userId))
-            {
-                ModelState.AddModelError(string.Empty, "You are not a host of this wager.");
-                return BadRequest(ModelState.GetErrors());
-            }
+                return BadRequest(new string[] { "You are not a host of this wager." });
             return Ok(wager);
         }
     }

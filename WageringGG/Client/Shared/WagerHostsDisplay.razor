@@ -1,0 +1,72 @@
+﻿<div class="card border-primary">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-borderless text-center">
+                <thead>
+                    <tr>
+                        <th scope="col">Name</th>
+                        <th scope="col">Payable (%)</th>
+                        <th scope="col">Receivable (%)</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (WagerHostBid host in Hosts)
+                    {
+                        <tr>
+                            <td>
+                                <a class="btn btn-outline-secondary btn-sm" href="@($"/user/{host.Profile.DisplayName}")" title="View profile">@host.Profile.DisplayName</a>
+                            </td>
+                            <td>@host.PayablePt%</td>
+                            <td>@host.ReceivablePt%</td>
+                            <td>
+                                @if (host.ProfileId == Id && host.Approved == null)
+                                {
+                                    <button class="btn btn-outline-danger btn-sm" title="Decline the wager."><i class="mdi mdi-cancel"></i></button>
+                                    <button class="btn btn-outline-success btn-sm" title="Accept the wager."><i class="mdi mdi-check"></i></button>
+                                }
+                                else
+                                {
+                                    @if (host.Approved.HasValue)
+                                    {
+                                        @if (host.Approved.Value == false)
+                                        {
+                                            <button class="btn btn-outline-danger btn-sm disabled" title="@($"{host.Profile.DisplayName} declined the wager.")"><i class="mdi mdi-cancel"></i></button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-outline-success btn-sm disabled" title="@($"{host.Profile.DisplayName} accepted the wager.")"><i class="mdi mdi-check"></i></button>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted">Pending...</small>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public IEnumerable<WagerHostBid> Hosts { get; set; }
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthenticationState { get; set; }
+
+    private string Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var context = await AuthenticationState;
+        if (context.User.Identity.IsAuthenticated)
+        {
+            Id = context.User.GetId();
+        }
+        await base.OnInitializedAsync();
+    }
+}

@@ -33,7 +33,7 @@ namespace WageringGG.Server.Handlers
                 DateTime date = new DateTime(lastDate.Value);
                 query = query.Where(x => x.Date > date);
             }
-            List<PersonalNotification> notifications = await query.OrderByDescending(x => x.Date).ToListAsync();
+            IEnumerable<PersonalNotification> notifications = await query.OrderByDescending(x => x.Date).ToListAsync();
             return Ok(notifications);
         }
 

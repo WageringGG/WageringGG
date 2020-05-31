@@ -3,6 +3,7 @@
 
 @inject NavigationManager navManager
 @inject SignOutSessionStateManager SignOutManager
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
 
 <AuthorizeView>
     <Authorized>
@@ -16,11 +17,11 @@
         </button>
     </Authorized>
     <NotAuthorized>
-        <a class="btn btn-secondary mr-1" href="authentication/register">
+        <a class="btn btn-secondary mr-1" href="authentication/register" @onclick="ClearStorage">
             <i class="mdi mdi-account-plus"></i>
             Register
         </a>
-        <a class="btn btn-dark" href="authentication/login">
+        <a class="btn btn-dark" href="authentication/login" @onclick="ClearStorage">
             <i class="mdi mdi-login"></i>
             Log in
         </a>
@@ -30,6 +31,12 @@
     private async Task BeginSignOut(MouseEventArgs args)
     {
         await SignOutManager.SetSignOutState();
+        await ClearStorage();
         navManager.NavigateTo("authentication/logout");
+    }
+
+    private async Task ClearStorage()
+    {
+        await localStorage.ClearAsync();
     }
 }

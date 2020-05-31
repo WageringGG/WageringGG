@@ -2,6 +2,8 @@
 using stellar_dotnet_sdk;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
 
 namespace WageringGG.Server
 {
@@ -26,6 +28,11 @@ namespace WageringGG.Server
             if (bounds.MinTime < date.Ticks && bounds.MaxTime > date.Ticks)
                 return true;
             return false;
+        }
+
+        public static string? GetId(this ClaimsPrincipal User)
+        {
+            return User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
         }
     }
 }

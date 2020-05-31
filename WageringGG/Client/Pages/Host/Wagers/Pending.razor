@@ -6,8 +6,8 @@
     <div class="row">
         @foreach (Wager wager in Data.Where(x => x.Status == (byte)Status.Pending))
         {
-            <div class="col-12 col-lg-6">
-                <WagerDisplay Wager="wager" />
+            <div class="col-12">
+                <WagerDisplay Wager="wager" Link="@($"/host/wagers/view/{wager.Id}")" />
             </div>
         }
     </div>

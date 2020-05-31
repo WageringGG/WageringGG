@@ -1,12 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using stellar_dotnet_sdk;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using WageringGG.Server.Data;
 using WageringGG.Server.Models;
-using WageringGG.Shared.Constants;
 
 namespace WageringGG.Server.Handlers
 {
@@ -17,11 +14,9 @@ namespace WageringGG.Server.Handlers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly ApplicationDbContext _context;
-        public ProfileController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+        public ProfileController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
         {
             _userManager = userManager;
-            _context = context;
             _signInManager = signInManager;
         }
 

@@ -1,0 +1,25 @@
+﻿@page "/user/{displayName}"
+@inject HttpClient http
+
+<ErrorDisplay @bind-Errors="Errors" />
+<h1 class="text-center">@DisplayName's Profile</h1>
+
+@code {
+    [Parameter]
+    public string DisplayName { get; set; }
+    public Profile Profile { get; set; } = new Profile();
+    public IEnumerable<string> Errors { get; set; } = new List<string>();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var response = await http.GetAsync($"/api/user/{DisplayName}");
+        if (response.IsSuccessStatusCode)
+        {
+            Profile = await response.Content.ReadFromJsonAsync<Profile>();
+            DisplayName = Profile.DisplayName;
+        }
+        else
+            Errors = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
+        await base.OnParametersSetAsync();
+    }
+}

@@ -18,8 +18,8 @@
         <div class="row">
             @foreach (Wager wager in Wagers.List)
             {
-                <div class="col-12 col-md-6 col-lg-4">
-                    <WagerDisplay Wager="wager"></WagerDisplay>
+                <div class="col-12 col-md-6">
+                    <WagerDisplay Wager="wager" Link="@($"/wagers/view/{wager.Id}")"></WagerDisplay>
                 </div>
             }
         </div>
