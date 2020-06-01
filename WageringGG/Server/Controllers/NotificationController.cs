@@ -37,7 +37,7 @@ namespace WageringGG.Server.Handlers
             return Ok(notifications);
         }
 
-        [HttpGet("delete/{id}")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteNotification(int id)
         {
             string? userId = User.GetId();

@@ -1,8 +1,9 @@
 ﻿@using Microsoft.AspNetCore.SignalR.Client
 @inject AuthHttp http
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
 @inject IConfiguration config
-@inject NavigationManager NavigationManager
+@inject NavigationManager navManager
 @inject IJSRuntime js
 
 <button type="button" class="btn btn-outline-warning" title="View your notifications" data-toggle="modal" data-target="#notificationModal">
@@ -19,13 +20,21 @@
             </div>
             <div class="modal-body">
                 <div class="list-group">
-                    @foreach (PersonalNotification notification in Notifications)
+                    @if (Notifications.Count == 0)
                     {
-                        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" href="@notification.Link" @onclick="CloseModal">
-                            @notification.Message
-                            <button class="btn btn-sm btn-outline-danger"><i class="mdi mdi-delete"></i></button>
-                        </a>
+                        <p class="lead mx-auto">You have no notifications.</p>
                     }
+                    else
+                        foreach (PersonalNotification notification in Notifications)
+                        {
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                @notification.Message
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteNotification(notification.Id)"><i class="mdi mdi-delete"></i></button>
+                                    <button class="btn btn-sm btn-outline-info" @onclick="() => GoTo(notification.Link)"><i class="mdi mdi-link"></i></button>
+                                </div>
+                            </div>
+                        }
                 </div>
             </div>
         </div>
@@ -37,6 +46,10 @@
     HubConnection hubConnection { get; set; }
     List<PersonalNotification> Notifications { get; set; } = new List<PersonalNotification>();
 
+    /// <summary>
+    /// Initializes NotificationDisplay
+    /// </summary>
+    /// <returns>async Task</returns>
     protected override async Task OnInitializedAsync()
     {
         await ConnectToHub();
@@ -44,6 +57,12 @@
         await base.OnInitializedAsync();
     }
 
+    /// <summary>
+    /// Gets localStorage notifications and last check date.
+    /// A request to server is made based off of localStorage.
+    /// New notifications are added to localStorage.
+    /// </summary>
+    /// <returns>async Task</returns>
     private async Task GetNotifications()
     {
         long? lastDate = null;
@@ -69,10 +88,14 @@
         StateHasChanged();
     }
 
+    /// <summary>
+    /// Connects client to SignalR hub.
+    /// </summary>
+    /// <returns>async Task</returns>
     private async Task ConnectToHub()
     {
         hubConnection = new HubConnectionBuilder()
-            .WithUrl(NavigationManager.ToAbsoluteUri("/group-hub"), options =>
+            .WithUrl(navManager.ToAbsoluteUri("/group-hub"), options =>
             {
                 options.AccessTokenProvider = () => GetToken();
             })
@@ -85,14 +108,53 @@
             StateHasChanged();
         });
 
+        hubConnection.On<WagerHostBid, byte>("ReceiveWagerHostBid", async (hostBid, status) =>
+        {
+        //trigger sessionstorage.changed in components needing this
+        await sessionStorage.SetItemAsync<WagerHostBid>("wagerHostBid", hostBid);
+        });
+
         await hubConnection.StartAsync();
     }
 
-    private async Task CloseModal()
+    /// <summary>
+    /// Closes notification modal and goes to a link.
+    /// </summary>
+    /// <param name="link">The link to go to.</param>
+    /// <returns>async Task</returns>
+    private async Task GoTo(string link)
     {
         await js.InvokeVoidAsync("blazorModal", "#notificationModal", "hide");
+        navManager.NavigateTo(link);
     }
 
+    /// <summary>
+    /// Delete request for notification on server.
+    /// Delete notification from localStorage.
+    /// </summary>
+    /// <param name="id">Notification Id</param>
+    /// <returns>async Task</returns>
+    private async Task DeleteNotification(int id)
+    {
+        PersonalNotification notification = Notifications.FirstOrDefault(x => x.Id == id);
+        if (notification != null)
+        {
+            if (await js.InvokeAsync<bool>("blazorConfirm", "Are you sure you want to delete this notification?"))
+            {
+                var response = await http.Client.DeleteAsync($"/api/notification/{id}");
+                if (response.IsSuccessStatusCode)
+                {
+                    Notifications.Remove(notification);
+                    await localStorage.SetItemAsync<IEnumerable<PersonalNotification>>(config["Notification:Values"], Notifications);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets the user's access token
+    /// </summary>
+    /// <returns>Access Token</returns>
     private async Task<string> GetToken()
     {
         try

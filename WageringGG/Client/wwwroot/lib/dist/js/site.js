@@ -5,6 +5,10 @@ window.blazorModal = (id, action) => {
 	$(id).modal(action);
 };
 
+window.blazorConfirm = (message) => {
+	return confirm(message);
+};
+
 window.StellarSdk = StellarSdk
 
 window.signTransaction = (tx, secret, phrase) => {

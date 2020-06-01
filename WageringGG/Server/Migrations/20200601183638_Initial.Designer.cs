@@ -10,8 +10,8 @@ using WageringGG.Server.Data;
 namespace WageringGG.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20200530010800_AddFeatures")]
-    partial class AddFeatures
+    [Migration("20200601183638_Initial")]
+    partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -99,14 +99,11 @@ namespace WageringGG.Server.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<string>("Data")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<byte>("DataModel")
-                        .HasColumnType("tinyint");
-
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Link")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Message")
                         .IsRequired()

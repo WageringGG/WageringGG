@@ -129,8 +129,7 @@ namespace WageringGG.Server.Migrations
                     ProfileId = table.Column<string>(nullable: true),
                     Message = table.Column<string>(nullable: false),
                     Date = table.Column<DateTime>(nullable: false),
-                    DataModel = table.Column<byte>(nullable: false),
-                    Data = table.Column<string>(nullable: true)
+                    Link = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
@@ -201,7 +200,7 @@ namespace WageringGG.Server.Migrations
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    ProfileId = table.Column<string>(nullable: true),
+                    ProfileId = table.Column<string>(nullable: false),
                     Approved = table.Column<bool>(nullable: true),
                     ReceivablePt = table.Column<byte>(nullable: false),
                     PayablePt = table.Column<byte>(nullable: false),
@@ -216,7 +215,7 @@ namespace WageringGG.Server.Migrations
                         column: x => x.ProfileId,
                         principalTable: "Profiles",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_WagerHostBids_Wagers_WagerId",
                         column: x => x.WagerId,
@@ -257,7 +256,7 @@ namespace WageringGG.Server.Migrations
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    ProfileId = table.Column<string>(nullable: true),
+                    ProfileId = table.Column<string>(nullable: false),
                     Approved = table.Column<bool>(nullable: true),
                     ReceivablePt = table.Column<byte>(nullable: false),
                     PayablePt = table.Column<byte>(nullable: false),
@@ -278,13 +277,19 @@ namespace WageringGG.Server.Migrations
                         column: x => x.ProfileId,
                         principalTable: "Profiles",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.InsertData(
                 table: "Games",
                 columns: new[] { "Id", "Name", "NormalizedName" },
-                values: new object[] { 1, "Fortnite", "fortnite" });
+                values: new object[,]
+                {
+                    { 1, "Fortnite", "fortnite" },
+                    { 2, "Modern Warfare", "modern-warfare" },
+                    { 3, "Apex Legends", "apex-legends" },
+                    { 4, "Valorant", "valorant" }
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Connections_ProfileId",
