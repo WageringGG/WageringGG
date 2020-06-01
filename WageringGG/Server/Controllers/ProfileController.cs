@@ -23,7 +23,7 @@ namespace WageringGG.Server.Handlers
         [HttpDelete("publickey")]
         public async Task<IActionResult> DeletePublicKey()
         {
-            string userId = User.GetId();
+            string? userId = User.GetId();
             ApplicationUser user = await _userManager.FindByIdAsync(userId);
             var claims = await _userManager.GetClaimsAsync(user);
             Claim keyClaim = claims.KeyClaim();

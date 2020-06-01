@@ -28,8 +28,8 @@ namespace WageringGG.Server.Controllers
             _hubContext = hubContext;
         }
 
-        [HttpPost("wager/accept/{id}")]
-        public async Task<IActionResult> AcceptBid(int id)
+        [HttpPost("wager/accept")]
+        public async Task<IActionResult> AcceptBid([FromBody] int id)
         {
             string? userId = User.GetId();
             string? userName = User.GetName();
@@ -62,8 +62,7 @@ namespace WageringGG.Server.Controllers
                 PersonalNotification notification = new PersonalNotification
                 {
                     Date = DateTime.Now,
-                    Data = bid.Wager.Id.ToString(),
-                    DataModel = (byte)DataModel.Wager
+                    Link = $"/host/wagers/view/{bid.Wager.Id}"
                 };
                 if (bid.Wager.IsApproved())
                 {
@@ -75,11 +74,11 @@ namespace WageringGG.Server.Controllers
                 List<PersonalNotification> notifications = NotificationHandler.AddNotificationToUsers(_context, bid.Wager.HostIds(), notification);
                 await SignalRHandler.SendNotificationsAsync(_context, _hubContext, bid.Wager.HostIds(), notifications);
             }
-            return Ok();
+            return Ok(bid.Wager?.Status);
         }
 
-        [HttpPost("wager/decline/{id}")]
-        public async Task<IActionResult> DeclineBid(int id)
+        [HttpPost("wager/decline")]
+        public async Task<IActionResult> DeclineBid([FromBody] int id)
         {
             string? userId = User.GetId();
             string? userName = User.GetName();
@@ -111,12 +110,11 @@ namespace WageringGG.Server.Controllers
             {
                 Date = DateTime.Now,
                 Message = $"{userName} has declined the wager.",
-                Data = bid.Wager.Id.ToString(),
-                DataModel = (byte)DataModel.Wager
+                Link = $"/host/wagers/view/{bid.Wager.Id}"
             };
             List<PersonalNotification> notifications = NotificationHandler.AddNotificationToUsers(_context, bid.Wager.HostIds(), notification);
             await SignalRHandler.SendNotificationsAsync(_context, _hubContext, bid.Wager.HostIds(), notifications);
-            return Ok();
+            return Ok(bid.Wager.Status);
         }
     }
 }

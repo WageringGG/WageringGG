@@ -7,7 +7,7 @@
 <div class="row">
     <div class="col-12 col-lg-8 mx-auto">
         <h3>Hosts:</h3>
-        <WagerHostsDisplay Hosts="Wager.Hosts" />
+        <WagerHostsDisplay Hosts="Wager.Hosts" ChangeCallback="SetStatus" />
     </div>
     <div class="col-12 col-lg-8 mx-auto">
         <h3>Wager:</h3>
@@ -36,5 +36,10 @@
         else
             Errors = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
         await base.OnParametersSetAsync();
+    }
+
+    private void SetStatus(Status status)
+    {
+        Wager.Status = (byte)status;
     }
 }

@@ -22,7 +22,7 @@ namespace WageringGG.Server.Handlers
         private readonly ApplicationDbContext _context;
         private readonly IHubContext<GroupHub> _hubContext;
         private readonly stellar.Server _server;
-        private const int ResultSize = 15;
+        private const int ResultSize = 16;
 
         public WagerController(ApplicationDbContext context, IHubContext<GroupHub> hubContext, stellar.Server server)
         {
@@ -86,7 +86,7 @@ namespace WageringGG.Server.Handlers
         {
             string? userId = User.GetId();
             string? userName = User.GetName();
-            Wager wager = await _context.Wagers.Where(x => x.Id == id).Include(x => x.Hosts).FirstOrDefaultAsync();
+            Wager wager = await _context.Wagers.Where(x => x.Id == id).Include(x => x.Hosts).Include(x => x.Challenges).ThenInclude(x => x.Challengers).FirstOrDefaultAsync();
 
             if (wager == null)
             {
@@ -108,11 +108,10 @@ namespace WageringGG.Server.Handlers
             {
                 Date = DateTime.Now,
                 Message = $"{userName} has canceled the wager.",
-                Data = wager.Id.ToString(),
-                DataModel = (byte)DataModel.Wager
+                Link = $"/wagers/view/{id}"
             };
             List<PersonalNotification> notifications = NotificationHandler.AddNotificationToUsers(_context, wager.HostIds(), notification);
-            await SignalRHandler.SendNotificationsAsync(_context, _hubContext, wager.HostIds(), notifications);
+            await SignalRHandler.SendNotificationsAsync(_context, _hubContext, wager.AllIds(), notifications);
             return Ok();
         }
 
@@ -193,8 +192,7 @@ namespace WageringGG.Server.Handlers
             {
                 Date = date,
                 Message = $"{userName} created a wager with you.",
-                Data = wager.Id.ToString(),
-                DataModel = (byte)DataModel.Wager
+                Link = $"/host/wagers/view/{wager.Id}"
             };
             IEnumerable<string> others = wager.HostIds().Where(x => x != userId);
             List<PersonalNotification> notifications = NotificationHandler.AddNotificationToUsers(_context, others, notification);

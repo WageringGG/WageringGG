@@ -6,6 +6,13 @@ namespace WageringGG.Server.Handlers
 {
     public static class NotificationHandler
     {
+        /// <summary>
+        /// Returns the set of notifications added to users with their corresponding DB Id.
+        /// </summary>
+        /// <param name="_context"></param>
+        /// <param name="userIds"></param>
+        /// <param name="notification"></param>
+        /// <returns></returns>
         public static List<PersonalNotification> AddNotificationToUsers(ApplicationDbContext _context, IEnumerable<string> userIds, PersonalNotification notification)
         {
             List<PersonalNotification> notifications = new List<PersonalNotification>();
@@ -14,8 +21,7 @@ namespace WageringGG.Server.Handlers
                 PersonalNotification personalNotification = new PersonalNotification
                 {
                     Date = notification.Date,
-                    DataModel = notification.DataModel,
-                    Data = notification.Data,
+                    Link = notification.Link,
                     Message = notification.Message,
                     ProfileId = id
                 };

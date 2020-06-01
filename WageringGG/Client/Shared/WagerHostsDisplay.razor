@@ -1,4 +1,6 @@
-﻿<div class="card border-primary">
+﻿@inject AuthHttp http
+
+<div class="card border-primary">
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-borderless text-center">
@@ -20,10 +22,10 @@
                             <td>@host.PayablePt%</td>
                             <td>@host.ReceivablePt%</td>
                             <td>
-                                @if (host.ProfileId == Id && host.Approved == null)
+                                @if (host.ProfileId == UserId && host.Approved == null)
                                 {
-                                    <button class="btn btn-outline-danger btn-sm" title="Decline the wager."><i class="mdi mdi-cancel"></i></button>
-                                    <button class="btn btn-outline-success btn-sm" title="Accept the wager."><i class="mdi mdi-check"></i></button>
+                                    <button class="btn btn-outline-danger btn-sm" title="Decline the wager." @onclick="() => DeclineWager(host.Id)"><i class="mdi mdi-cancel"></i></button>
+                                    <button class="btn btn-outline-success btn-sm" title="Accept the wager." @onclick="() => AcceptWager(host.Id)"><i class="mdi mdi-check"></i></button>
                                 }
                                 else
                                 {
@@ -55,18 +57,46 @@
 @code {
     [Parameter]
     public IEnumerable<WagerHostBid> Hosts { get; set; }
+    [Parameter]
+    public EventCallback<Status> ChangeCallback { get; set; }
     [CascadingParameter]
     public Task<AuthenticationState> AuthenticationState { get; set; }
 
-    private string Id { get; set; }
+    private string UserId { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         var context = await AuthenticationState;
         if (context.User.Identity.IsAuthenticated)
         {
-            Id = context.User.GetId();
+            UserId = context.User.GetId();
         }
         await base.OnInitializedAsync();
+    }
+
+    private async Task DeclineWager(int id)
+    {
+        var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/decline", id);
+        if (response.IsSuccessStatusCode)
+        {
+            var status = await response.Content.ReadFromJsonAsync<byte>();
+            var host = Hosts.FirstOrDefault(x => x.Id == id);
+            if (host != null)
+                host.Approved = false;
+            await ChangeCallback.InvokeAsync((Status)status);
+        }
+    }
+
+    private async Task AcceptWager(int id)
+    {
+        var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/accept", id);
+        if (response.IsSuccessStatusCode)
+        {
+            var status = await response.Content.ReadFromJsonAsync<byte>();
+            var host = Hosts.FirstOrDefault(x => x.Id == id);
+            if (host != null)
+                host.Approved = true;
+            await ChangeCallback.InvokeAsync((Status)status);
+        }
     }
 }

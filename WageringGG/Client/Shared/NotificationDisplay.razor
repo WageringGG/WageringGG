@@ -3,6 +3,7 @@
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject IConfiguration config
 @inject NavigationManager NavigationManager
+@inject IJSRuntime js
 
 <button type="button" class="btn btn-outline-warning" title="View your notifications" data-toggle="modal" data-target="#notificationModal">
     <i class="mdi mdi-bell"></i> <span class="badge badge-warning">@Notifications.Count</span>
@@ -17,10 +18,15 @@
                 </button>
             </div>
             <div class="modal-body">
-                @foreach (PersonalNotification notification in Notifications)
-                {
-                    @notification.Message
-                }
+                <div class="list-group">
+                    @foreach (PersonalNotification notification in Notifications)
+                    {
+                        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" href="@notification.Link" @onclick="CloseModal">
+                            @notification.Message
+                            <button class="btn btn-sm btn-outline-danger"><i class="mdi mdi-delete"></i></button>
+                        </a>
+                    }
+                </div>
             </div>
         </div>
     </div>
@@ -80,6 +86,11 @@
         });
 
         await hubConnection.StartAsync();
+    }
+
+    private async Task CloseModal()
+    {
+        await js.InvokeVoidAsync("blazorModal", "#notificationModal", "hide");
     }
 
     private async Task<string> GetToken()
