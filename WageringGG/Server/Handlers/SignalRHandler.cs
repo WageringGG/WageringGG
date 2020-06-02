@@ -29,13 +29,12 @@ namespace WageringGG.Server.Handlers
 
         public static async Task SendNotificationsAndBidAsync(ApplicationDbContext _context, IHubContext<GroupHub> _hubContext, IEnumerable<string> ids, (byte, WagerHostBid) bid, IEnumerable<PersonalNotification> notifications)
         {
-            List<Connection> connections = await _context.Connections.AsNoTracking().Where(x => x.Connected).Where(x => ids.Contains(x.ProfileId)).ToListAsync();
+            IEnumerable<Connection> connections = await GetConnectionsAsync(_context, ids);
             foreach (Connection connection in connections)
             {
-                await _hubContext.Clients.Client(connection.ConnectionId).SendAsync("ReceiveWagerHostBid", bid);
                 PersonalNotification notification = notifications.FirstOrDefault(x => x.ProfileId == connection.ProfileId);
                 if (notification != null)
-                    await _hubContext.Clients.Client(connection.ConnectionId).SendAsync("ReceiveNotification", notification);
+                    await _hubContext.Clients.Client(connection.ConnectionId).SendAsync("ReceiveWagerHostBid", bid, notification);
             }
         }
     }

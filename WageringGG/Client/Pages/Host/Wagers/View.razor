@@ -1,6 +1,7 @@
 ﻿@page "/host/wagers/view/{id:int}"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject AuthHttp http
+@inject ISessionStorageService sessionStorage
 
 <ErrorDisplay @bind-Errors="Errors" />
 <h1 class="text-center">@Enum.GetName(typeof(Status), Wager.Status) Wager</h1>
@@ -29,12 +30,31 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        sessionStorage.Changed += SessionStorageChanged;
         var response = await http.Client.GetAsync($"/api/host/wager/{Id}");
         if (response.IsSuccessStatusCode)
             Wager = await response.Content.ReadFromJsonAsync<Wager>();
         else
             Errors = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
         await base.OnParametersSetAsync();
+    }
+
+    private void SessionStorageChanged(object sender, Blazored.SessionStorage.ChangedEventArgs e)
+    {
+        Console.WriteLine(e.Key);
+        if (e.Key == "ReceiveWagerHostBid")
+        {
+            var data = ((byte, WagerHostBid))e.NewValue;
+            if (Wager.Id == data.Item2.WagerId)
+            {
+                var host = Wager.Hosts.FirstOrDefault(x => x.Id == data.Item2.Id);
+                if(host != null)
+                {
+                    host = data.Item2;
+                    StateHasChanged();
+                }
+            }
+        }
     }
 
     private void SetStatus(Status status)

@@ -1,5 +1,4 @@
 ﻿@inject AuthHttp http
-@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
 
 <div class="card border-primary">
     <div class="card-body">
@@ -14,41 +13,45 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (WagerHostBid host in Hosts)
-                    {
-                        <tr>
-                            <td>
-                                <a class="btn btn-outline-secondary btn-sm" href="@($"/user/{host.Profile.DisplayName}")" title="View profile">@host.Profile.DisplayName</a>
-                            </td>
-                            <td>@host.PayablePt%</td>
-                            <td>@host.ReceivablePt%</td>
-                            <td>
-                                @if (host.ProfileId == UserId && host.Approved == null)
-                                {
-                                    <button class="btn btn-outline-danger btn-sm" title="Decline the wager." @onclick="() => DeclineWager(host.Id)"><i class="mdi mdi-cancel"></i></button>
-                                    <button class="btn btn-outline-success btn-sm" title="Accept the wager." @onclick="() => AcceptWager(host.Id)"><i class="mdi mdi-check"></i></button>
-                                }
-                                else
-                                {
-                                    @if (host.Approved.HasValue)
-                                    {
-                                        @if (host.Approved.Value == false)
+                    <AuthorizeView>
+                        <Authorized>
+                            @foreach (WagerHostBid host in Hosts)
+                            {
+                                <tr>
+                                    <td>
+                                        <a class="btn btn-outline-secondary btn-sm" href="@($"/user/{host.Profile.DisplayName}")" title="View profile">@host.Profile.DisplayName</a>
+                                    </td>
+                                    <td>@host.PayablePt%</td>
+                                    <td>@host.ReceivablePt%</td>
+                                    <td>
+                                        @if (host.ProfileId == context.User.GetId() && host.Approved == null)
                                         {
-                                            <button class="btn btn-outline-danger btn-sm disabled" title="@($"{host.Profile.DisplayName} declined the wager.")"><i class="mdi mdi-cancel"></i></button>
+                                            <button class="btn btn-outline-danger btn-sm" title="Decline the wager." @onclick="() => DeclineWager(host.Id)"><i class="mdi mdi-cancel"></i></button>
+                                            <button class="btn btn-outline-success btn-sm" title="Accept the wager." @onclick="() => AcceptWager(host.Id)"><i class="mdi mdi-check"></i></button>
                                         }
                                         else
                                         {
-                                            <button class="btn btn-outline-success btn-sm disabled" title="@($"{host.Profile.DisplayName} accepted the wager.")"><i class="mdi mdi-check"></i></button>
+                                            @if (host.Approved.HasValue)
+                                            {
+                                                @if (host.Approved.Value == false)
+                                                {
+                                                    <button class="btn btn-outline-danger btn-sm disabled" title="@($"{host.Profile.DisplayName} declined the wager.")"><i class="mdi mdi-cancel"></i></button>
+                                                }
+                                                else
+                                                {
+                                                    <button class="btn btn-outline-success btn-sm disabled" title="@($"{host.Profile.DisplayName} accepted the wager.")"><i class="mdi mdi-check"></i></button>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <small class="text-muted">Pending...</small>
+                                            }
                                         }
-                                    }
-                                    else
-                                    {
-                                        <small class="text-muted">Pending...</small>
-                                    }
-                                }
-                            </td>
-                        </tr>
-                    }
+                                    </td>
+                                </tr>
+                            }
+                        </Authorized>
+                    </AuthorizeView>
                 </tbody>
             </table>
         </div>
@@ -60,35 +63,10 @@
     public IEnumerable<WagerHostBid> Hosts { get; set; }
     [Parameter]
     public EventCallback<Status> ChangeCallback { get; set; }
-    [CascadingParameter]
-    public Task<AuthenticationState> AuthenticationState { get; set; }
-
-    private string UserId { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        var context = await AuthenticationState;
-        if (context.User.Identity.IsAuthenticated)
-        {
-            sessionStorage.Changed += SessionStorageChanged;
-            UserId = context.User.GetId();
-        }
         await base.OnInitializedAsync();
-    }
-
-
-    private async void SessionStorageChanged(object sender, Blazored.SessionStorage.ChangedEventArgs e)
-    {
-        if (e.Key == "wagerHostBid")
-        {
-            var data = await sessionStorage.GetItemAsync<(byte, WagerHostBid)>(e.Key);
-            var host = Hosts.FirstOrDefault(x => x.Id == data.Item2.Id);
-            if(host != null)
-            {
-                host = data.Item2;
-                await ChangeCallback.InvokeAsync((Status)data.Item1);
-            }
-        }
     }
 
     private async Task DeclineWager(int id)

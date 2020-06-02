@@ -4,7 +4,7 @@
 @inject Microsoft.AspNetCore.Components.WebAssembly.Authentication.IAccessTokenProvider tokenProvider
 
 <NavMenu />
-<main role="main" class="container d-flex flex-column h-100">
+<main role="main" class="container d-flex flex-column">
     @Body
 </main>
 <footer class="mt-auto py-3">
@@ -62,6 +62,14 @@
         HubConnection.On<PersonalNotification>("ReceiveNotification", async notification =>
         {
             await sessionStorage.SetItemAsync<PersonalNotification>("ReceiveNotification", notification);
+        });
+
+        HubConnection.On<(byte, WagerHostBid), PersonalNotification>("ReceiveWagerHostBid", async (bid, notification) =>
+        {
+            Console.WriteLine(bid);
+            Console.WriteLine(notification);
+            await sessionStorage.SetItemAsync<PersonalNotification>("ReceiveNotification", notification);
+            await sessionStorage.SetItemAsync<(byte, WagerHostBid)>("ReceiveWagerHostBid", bid);
         });
 
         await HubConnection.StartAsync();

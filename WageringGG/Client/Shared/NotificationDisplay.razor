@@ -62,13 +62,12 @@
 
     private void ReceiveNotification(object sender, Blazored.SessionStorage.ChangedEventArgs e)
     {
-        Console.WriteLine(e.Key);
         if (e.Key == "ReceiveNotification")
         {
             var notification = (PersonalNotification)e.NewValue;
             if (notification != null)
             {
-                Notifications.Add(notification);
+                Notifications.Insert(0, notification);
                 StateHasChanged();
             }
         }
@@ -98,7 +97,7 @@
         {
             var notifications = await response.Content.ReadFromJsonAsync<IEnumerable<PersonalNotification>>();
             Notifications.AddRange(notifications);
-            Notifications.Sort((n1, n2) => DateTime.Compare(n1.Date, n2.Date));
+            Notifications.Sort((n1, n2) => DateTime.Compare(n2.Date, n1.Date));
             await localStorage.SetItemAsync<long>(config["Notification:Date"], now.Ticks);
             await localStorage.SetItemAsync<IEnumerable<PersonalNotification>>(config["Notification:Values"], Notifications);
         }
