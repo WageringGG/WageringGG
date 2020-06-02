@@ -30,7 +30,6 @@
     protected override async Task OnParametersSetAsync()
     {
         var response = await http.Client.GetAsync($"/api/host/wager/{Id}");
-        Console.Write(await response.Content.ReadAsStringAsync());
         if (response.IsSuccessStatusCode)
             Wager = await response.Content.ReadFromJsonAsync<Wager>();
         else

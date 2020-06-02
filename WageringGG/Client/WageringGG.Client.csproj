@@ -9,7 +9,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <None Include="wwwroot\lib\dist\js\site.js" />
+	  <None Include="wwwroot\js\blazor.js" />
 	</ItemGroup>
 
 	<ItemGroup>

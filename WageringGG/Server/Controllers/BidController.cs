@@ -73,7 +73,7 @@ namespace WageringGG.Server.Controllers
                     notification.Message = $"{userName} has accepted the wager.";
                 IEnumerable<string> otherHosts = bid.Wager.HostIds().Where(x => x != userId);
                 List<PersonalNotification> notifications = NotificationHandler.AddNotificationToUsers(_context, otherHosts, notification);
-                await SignalRHandler.SendNotificationsAsync(_context, _hubContext, otherHosts, notifications);
+                await SignalRHandler.SendNotificationsAndBidAsync(_context, _hubContext, otherHosts, (bid.Wager.Status, bid), notifications);
             }
             return Ok(bid.Wager?.Status);
         }
@@ -115,7 +115,7 @@ namespace WageringGG.Server.Controllers
             };
             IEnumerable<string> otherHosts = bid.Wager.HostIds().Where(x => x != userId);
             List<PersonalNotification> notifications = NotificationHandler.AddNotificationToUsers(_context, otherHosts, notification);
-            await SignalRHandler.SendNotificationsAsync(_context, _hubContext, otherHosts, notifications);
+            await SignalRHandler.SendNotificationsAndBidAsync(_context, _hubContext, otherHosts, (bid.Wager.Status, bid), notifications);
             return Ok(bid.Wager.Status);
         }
     }

@@ -25,7 +25,7 @@
       "library": "bootstrap@4.5.0",
       "files": [
         "dist/js/bootstrap.bundle.min.js",
-        "dist/js/bootstrap.bundle.js.map",
+        "dist/js/bootstrap.bundle.min.js.map",
         "dist/js/bootstrap.bundle.js"
       ],
       "destination": "wwwroot/lib/"
@@ -33,6 +33,10 @@
     {
       "library": "stellar-sdk@5.0.3",
       "destination": "wwwroot/lib/dist/js"
+    },
+    {
+      "library": "MaterialDesign-Webfont@5.3.45",
+      "destination": "wwwroot"
     }
   ]
 }

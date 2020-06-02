@@ -1,4 +1,7 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager navManager
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject Microsoft.AspNetCore.Components.WebAssembly.Authentication.IAccessTokenProvider tokenProvider
 
 <NavMenu />
 <main role="main" class="container d-flex flex-column h-100">
@@ -25,3 +28,58 @@
         </ul>
     </div>
 </footer>
+
+@code{
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthenticationState { get; set; }
+    public HubConnection HubConnection { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var context = await AuthenticationState;
+        if (context.User.Identity.IsAuthenticated)
+        {
+            await ConnectToHub();
+        }
+        await base.OnInitializedAsync();
+    }
+
+    /// <summary>
+    /// Connects client to SignalR hub.
+    /// Adds user to their SignalR groups.
+    /// </summary>
+    /// <returns>async Task</returns>
+    private async Task ConnectToHub()
+    {
+        HubConnection = new HubConnectionBuilder()
+            .WithUrl(navManager.ToAbsoluteUri("/group-hub"), options =>
+            {
+                options.AccessTokenProvider = () => GetToken();
+            })
+            .WithAutomaticReconnect()
+            .Build();
+
+        HubConnection.On<PersonalNotification>("ReceiveNotification", async notification =>
+        {
+            await sessionStorage.SetItemAsync<PersonalNotification>("ReceiveNotification", notification);
+        });
+
+        await HubConnection.StartAsync();
+    }
+
+    /// <summary>
+    /// Gets the user's access token
+    /// </summary>
+    /// <returns>Access Token</returns>
+    private async Task<string> GetToken()
+    {
+        try
+        {
+            var result = await tokenProvider.RequestAccessToken();
+            if (result.TryGetToken(out Microsoft.AspNetCore.Components.WebAssembly.Authentication.AccessToken token))
+                return token.Value;
+        }
+        catch { }
+        return null;
+    }
+}

@@ -3,8 +3,9 @@
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
 @inject IConfiguration config
-@inject NavigationManager navManager
 @inject IJSRuntime js
+@inject NavigationManager navManager
+@using Humanizer
 
 <button type="button" class="btn btn-outline-warning" title="View your notifications" data-toggle="modal" data-target="#notificationModal">
     <i class="mdi mdi-bell"></i> <span class="badge badge-warning">@Notifications.Count</span>
@@ -19,7 +20,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <div class="list-group">
+                <div class="list-group list-group-flush">
                     @if (Notifications.Count == 0)
                     {
                         <p class="lead mx-auto">You have no notifications.</p>
@@ -27,13 +28,17 @@
                     else
                         foreach (PersonalNotification notification in Notifications)
                         {
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                @notification.Message
-                                <div class="btn-group">
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteNotification(notification.Id)"><i class="mdi mdi-delete"></i></button>
-                                    <button class="btn btn-sm btn-outline-info" @onclick="() => GoTo(notification.Link)"><i class="mdi mdi-link"></i></button>
+                            <button class="list-group-item list-group-item-action" @onclick="() => GoTo(notification.Link)">
+                                <div class="d-flex w-100 justify-content-between">
+                                    @notification.Message
+                                    <button class="close text-danger" @onclick="() => DeleteNotification(notification.Id)" @onclick:stopPropagation="true"><i class="mdi mdi-delete"></i></button>
                                 </div>
-                            </div>
+                                <div class="d-flex align-items-end">
+                                    <small class="text-muted ml-auto">
+                                        @notification.Date.Humanize(true, DateTime.Now)
+                                    </small>
+                                </div>
+                            </button>
                         }
                 </div>
             </div>
@@ -42,8 +47,6 @@
 </div>
 
 @code{
-    @inject Microsoft.AspNetCore.Components.WebAssembly.Authentication.IAccessTokenProvider tokenProvider
-    HubConnection hubConnection { get; set; }
     List<PersonalNotification> Notifications { get; set; } = new List<PersonalNotification>();
 
     /// <summary>
@@ -52,9 +55,23 @@
     /// <returns>async Task</returns>
     protected override async Task OnInitializedAsync()
     {
-        await ConnectToHub();
+        sessionStorage.Changed += ReceiveNotification;
         await GetNotifications();
         await base.OnInitializedAsync();
+    }
+
+    private void ReceiveNotification(object sender, Blazored.SessionStorage.ChangedEventArgs e)
+    {
+        Console.WriteLine(e.Key);
+        if (e.Key == "ReceiveNotification")
+        {
+            var notification = (PersonalNotification)e.NewValue;
+            if (notification != null)
+            {
+                Notifications.Add(notification);
+                StateHasChanged();
+            }
+        }
     }
 
     /// <summary>
@@ -88,40 +105,6 @@
         StateHasChanged();
     }
 
-    /// <summary>
-    /// Connects client to SignalR hub.
-    /// </summary>
-    /// <returns>async Task</returns>
-    private async Task ConnectToHub()
-    {
-        hubConnection = new HubConnectionBuilder()
-            .WithUrl(navManager.ToAbsoluteUri("/group-hub"), options =>
-            {
-                options.AccessTokenProvider = () => GetToken();
-            })
-            .WithAutomaticReconnect()
-            .Build();
-
-        hubConnection.On<PersonalNotification>("ReceiveNotification", notification =>
-        {
-            Notifications.Add(notification);
-            StateHasChanged();
-        });
-
-        hubConnection.On<WagerHostBid, byte>("ReceiveWagerHostBid", async (hostBid, status) =>
-        {
-        //trigger sessionstorage.changed in components needing this
-        await sessionStorage.SetItemAsync<WagerHostBid>("wagerHostBid", hostBid);
-        });
-
-        await hubConnection.StartAsync();
-    }
-
-    /// <summary>
-    /// Closes notification modal and goes to a link.
-    /// </summary>
-    /// <param name="link">The link to go to.</param>
-    /// <returns>async Task</returns>
     private async Task GoTo(string link)
     {
         await js.InvokeVoidAsync("blazorModal", "#notificationModal", "hide");
@@ -149,21 +132,5 @@
                 }
             }
         }
-    }
-
-    /// <summary>
-    /// Gets the user's access token
-    /// </summary>
-    /// <returns>Access Token</returns>
-    private async Task<string> GetToken()
-    {
-        try
-        {
-            var result = await tokenProvider.RequestAccessToken();
-            if (result.TryGetToken(out Microsoft.AspNetCore.Components.WebAssembly.Authentication.AccessToken token))
-                return token.Value;
-        }
-        catch { }
-        return null;
     }
 }

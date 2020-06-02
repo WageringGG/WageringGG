@@ -70,9 +70,25 @@
         var context = await AuthenticationState;
         if (context.User.Identity.IsAuthenticated)
         {
+            sessionStorage.Changed += SessionStorageChanged;
             UserId = context.User.GetId();
         }
         await base.OnInitializedAsync();
+    }
+
+
+    private async void SessionStorageChanged(object sender, Blazored.SessionStorage.ChangedEventArgs e)
+    {
+        if (e.Key == "wagerHostBid")
+        {
+            var data = await sessionStorage.GetItemAsync<(byte, WagerHostBid)>(e.Key);
+            var host = Hosts.FirstOrDefault(x => x.Id == data.Item2.Id);
+            if(host != null)
+            {
+                host = data.Item2;
+                await ChangeCallback.InvokeAsync((Status)data.Item1);
+            }
+        }
     }
 
     private async Task DeclineWager(int id)

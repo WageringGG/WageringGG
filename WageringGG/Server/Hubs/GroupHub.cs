@@ -55,7 +55,7 @@ namespace WageringGG.Server.Hubs
         /// Used on startup for adding user to groups
         /// </summary>
         /// <param name="groups"></param>
-        /// <returns></returns>
+        /// <returns>async Task</returns>
         public async Task AddToGroups(string[] groups)
         {
             foreach (string groupName in groups)
