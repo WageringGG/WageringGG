@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WageringGG.Server.Data;
+using WageringGG.Server.Hubs;
 using WageringGG.Server.Models;
 using WageringGG.Shared.Constants;
 using WageringGG.Shared.Models;
@@ -19,12 +21,14 @@ namespace WageringGG.Server.Handlers
     {
         private readonly ApplicationDbContext _context;
         private readonly stellar.Server _server;
+        private readonly IHubContext<GroupHub> _hubContext;
         private const int ResultSize = 16;
 
-        public WagerController(ApplicationDbContext context, stellar.Server server)
+        public WagerController(ApplicationDbContext context, IHubContext<GroupHub> hubContext, stellar.Server server)
         {
             _context = context;
             _server = server;
+            _hubContext = hubContext;
         }
 
         //POST: api/wagers/search
@@ -61,6 +65,17 @@ namespace WageringGG.Server.Handlers
             }
             PaginatedList<Wager> results = await Paginator<Wager>.CreateAsync(wagerQuery.OrderByDescending(x => x.Date), page ?? 1, ResultSize);
             return Ok(results);
+        }
+
+        [HttpPut("status/{id}")]
+        [Authorize]
+        public async Task<IActionResult> SetStatus(int id, [FromBody] byte status)
+        {
+            string? userId = User.GetId();
+            var wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == id).Include(x => x.Hosts).Where(x => x.Hosts.Any(y => y.ProfileId == userId)).FirstOrDefaultAsync();
+            if (wager == null)
+                return BadRequest(new string[] { Errors.NotFound });
+            return Ok();
         }
 
         // GET: api/wagers/{id}
@@ -106,7 +121,8 @@ namespace WageringGG.Server.Handlers
                 Message = $"{userName} has canceled the wager.",
                 Link = $"/wagers/view/{id}"
             };
-            List<PersonalNotification> notifications = NotificationHandler.AddNotificationToUsers(_context, wager.HostIds(), notification);
+            NotificationHandler.AddNotificationToUsers(_context, wager.HostIds(), notification);
+            _context.SaveChanges();
             return Ok();
         }
 
@@ -115,7 +131,7 @@ namespace WageringGG.Server.Handlers
         // more details see https://aka.ms/RazorPagesCRUD.
         [Authorize]
         [HttpPost]
-        public IActionResult PostWager(Wager wagerData)
+        public async Task<IActionResult> PostWager(Wager wagerData)
         {
             string? userId = User.GetId();
             string? userName = User.GetName();
@@ -190,7 +206,8 @@ namespace WageringGG.Server.Handlers
                 Link = $"/host/wagers/view/{wager.Id}"
             };
             IEnumerable<string> others = wager.HostIds().Where(x => x != userId);
-            List<PersonalNotification> notifications = NotificationHandler.AddNotificationToUsers(_context, others, notification);
+            NotificationHandler.AddNotificationToUsers(_context, others, notification);
+            await HubHandler.SendGroupAsync(_hubContext, others.ToList(), wager.GroupName, notification);
             return Ok(wager.Id);
         }
     }

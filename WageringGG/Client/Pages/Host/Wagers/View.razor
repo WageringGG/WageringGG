@@ -5,10 +5,20 @@
 
 <ErrorDisplay @bind-Errors="Errors" />
 <h1 class="text-center">@Enum.GetName(typeof(Status), Wager.Status) Wager</h1>
+<div class="my-2">
+    @if (Wager.Status == (byte)Status.Confirmed)
+    {
+        <button class="btn btn-outline-danger ml-auto" @onclick="Close">Close</button>
+    }
+    else if (Wager.Status == (byte)Status.Closed)
+    {
+        <button class="btn btn-outline-success ml-auto" @onclick="Open">Open</button>
+    }
+</div>
 <div class="row">
     <div class="col-12 col-lg-8 mx-auto">
         <h3>Hosts:</h3>
-        <WagerHostsDisplay Hosts="Wager.Hosts" ChangeCallback="SetStatus" />
+        <WagerHostsDisplay Hosts="Wager.Hosts" WagerId="Wager.Id" ChangeCallback="SetStatus" />
     </div>
     <div class="col-12 col-lg-8 mx-auto">
         <h3>Wager:</h3>
@@ -25,6 +35,8 @@
 @code {
     [Parameter]
     public int Id { get; set; }
+    [CascadingParameter]
+    public HubConnection HubConnection { get; set; }
     public Wager Wager { get; set; } = new Wager();
     public IEnumerable<string> Errors { get; set; } = new List<string>();
 
@@ -39,23 +51,57 @@
         await base.OnParametersSetAsync();
     }
 
+    private async Task Open()
+    {
+        var response = await http.Client.PutAsJsonAsync($"/api/wager/status/{Wager.Id}", (byte)Status.Ongoing);
+        if (response.IsSuccessStatusCode)
+            await HubConnection.SendAsync("SetWagerStatus", Wager.GroupName, Wager.Id, (byte)Status.Ongoing);
+        else
+            Errors = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
+    }
+
+    private async Task Close()
+    {
+        var response = await http.Client.PutAsJsonAsync($"/api/wager/status/{Wager.Id}", (byte)Status.Closed);
+        if (response.IsSuccessStatusCode)
+            await HubConnection.SendAsync("SetWagerStatus", Wager.GroupName, Wager.Id, (byte)Status.Closed);
+        else
+            Errors = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
+    }
+
     private void SessionStorageChanged(object sender, Blazored.SessionStorage.ChangedEventArgs e)
     {
-        Console.WriteLine(e.Key);
-        if (e.Key == "ReceiveWagerHostBid")
+        if (e.Key == "WagerStatus")
         {
-            var data = ((byte, WagerHostBid))e.NewValue;
-            if (Wager.Id == data.Item2.WagerId)
+            var data = ((int, byte))e.NewValue;
+            if (Wager.Id == data.Item1)
             {
-                var host = Wager.Hosts.FirstOrDefault(x => x.Id == data.Item2.Id);
-                if(host != null)
+                Wager.Status = data.Item2;
+                StateHasChanged();
+            }
+        }
+        else if (e.Key == "WagerHostBid")
+        {
+            var data = (WagerHostBid)e.NewValue;
+            if (Wager.Id == data.WagerId)
+            {
+                var host = Wager.Hosts.FirstOrDefault(x => x.Id == data.Id);
+                if (host != null)
                 {
-                    Wager.Status = data.Item1;
-                    host = data.Item2;
+                    host = data;
                     StateHasChanged();
                 }
             }
         }
+    }
+
+    private async Task SendWagerHostBid(WagerHostBid bid)
+    {
+        PersonalNotification notification = new PersonalNotification
+        {
+            Date = DateTime.Now,
+        };
+        await HubConnection.InvokeAsync("SendWagerHostBid", Wager.GroupName, Wager.Status, bid, notification);
     }
 
     private void SetStatus(Status status)

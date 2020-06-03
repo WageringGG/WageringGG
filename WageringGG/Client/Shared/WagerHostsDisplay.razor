@@ -62,7 +62,9 @@
     [Parameter]
     public IEnumerable<WagerHostBid> Hosts { get; set; }
     [Parameter]
-    public EventCallback<Status> ChangeCallback { get; set; }
+    public EventCallback<Status> StatusCallback { get; set; }
+    [Parameter]
+    public EventCallback<WagerHostBid> BidCallback { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -78,7 +80,8 @@
             var host = Hosts.FirstOrDefault(x => x.Id == id);
             if (host != null)
                 host.Approved = false;
-            await ChangeCallback.InvokeAsync((Status)status);
+            await StatusCallback.InvokeAsync((Status)status);
+            await BidCallback.InvokeAsync(host);
         }
     }
 
@@ -91,7 +94,8 @@
             var host = Hosts.FirstOrDefault(x => x.Id == id);
             if (host != null)
                 host.Approved = true;
-            await ChangeCallback.InvokeAsync((Status)status);
+            await StatusCallback.InvokeAsync((Status)status);
+            await BidCallback.InvokeAsync(host);
         }
     }
 }

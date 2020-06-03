@@ -68,12 +68,24 @@
             await sessionStorage.SetItemAsync<PersonalNotification>("ReceiveNotification", notification);
         });
 
+        HubConnection.On<string, PersonalNotification>("ReceiveGroup", async (groupName, notification) =>
+        {
+            await sessionStorage.SetItemAsync<PersonalNotification>("ReceiveNotification", notification);
+            await HubConnection.InvokeAsync("AddToGroup", groupName);
+        });
+
         HubConnection.On<byte, WagerHostBid, PersonalNotification>("ReceiveWagerHostBid", async (status, bid, notification) =>
         {
             Console.WriteLine(bid);
             Console.WriteLine(notification);
-            await sessionStorage.SetItemAsync<PersonalNotification>("ReceiveNotification", notification);
-            await sessionStorage.SetItemAsync<(byte, WagerHostBid)>("ReceiveWagerHostBid", (status, bid));
+            await sessionStorage.SetItemAsync<PersonalNotification>("PersonalNotification", notification);
+            await sessionStorage.SetItemAsync<(int, byte)>("WagerStatus", (bid.WagerId, status));
+            await sessionStorage.SetItemAsync<WagerHostBid>("WagerHostBid", bid);
+        });
+
+        HubConnection.On<int, byte>("ReceiveWagerStatus", async (id, status) =>
+        {
+            await sessionStorage.SetItemAsync<(int, byte)>("WagerStatus", (id, status));
         });
 
         await HubConnection.StartAsync();

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using WageringGG.Server.Data;
 using WageringGG.Server.Handlers;
+using WageringGG.Server.Hubs;
 using WageringGG.Shared.Constants;
 using WageringGG.Shared.Models;
 
@@ -19,10 +20,12 @@ namespace WageringGG.Server.Controllers
     public class BidController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IHubContext<GroupHub> _hubContext;
 
-        public BidController(ApplicationDbContext context)
+        public BidController(ApplicationDbContext context, IHubContext<GroupHub> hubContext)
         {
             _context = context;
+            _hubContext = hubContext;
         }
 
         [HttpPost("wager/accept")]
@@ -54,24 +57,23 @@ namespace WageringGG.Server.Controllers
             }
 
             bid.Approved = true;
-            if (bid.Wager != null)
+            PersonalNotification notification = new PersonalNotification
             {
-                PersonalNotification notification = new PersonalNotification
-                {
-                    Date = DateTime.Now,
-                    Link = $"/host/wagers/view/{bid.Wager.Id}"
-                };
-                if (bid.Wager.IsApproved())
-                {
-                    bid.Wager.Status = (byte)Status.Confirmed;
-                    notification.Message = $"{userName} has accepted and confirmed the wager.";
-                }
-                else
-                    notification.Message = $"{userName} has accepted the wager.";
-                IEnumerable<string> otherHosts = bid.Wager.HostIds().Where(x => x != userId);
-                List<PersonalNotification> notifications = NotificationHandler.AddNotificationToUsers(_context, otherHosts, notification);
+                Date = DateTime.Now,
+                Link = $"/host/wagers/view/{bid.Wager.Id}"
+            };
+            if (bid.Wager.IsApproved())
+            {
+                bid.Wager.Status = (byte)Status.Confirmed;
+                notification.Message = $"{userName} has confirmed the wager.";
             }
-            return Ok(bid.Wager?.Status);
+            else
+                notification.Message = $"{userName} has accepted the wager.";
+            IEnumerable<string> otherHosts = bid.Wager.HostIds().Where(x => x != userId);
+            NotificationHandler.AddNotificationToUsers(_context, otherHosts, notification);
+            await HubHandler.SendNotificationsAsync(_hubContext, otherHosts.ToList(), notification);
+            _context.SaveChanges();
+            return Ok(bid.Wager.Status);
         }
 
         [HttpPost("wager/decline")]
@@ -110,7 +112,9 @@ namespace WageringGG.Server.Controllers
                 Link = $"/host/wagers/view/{bid.Wager.Id}"
             };
             IEnumerable<string> otherHosts = bid.Wager.HostIds().Where(x => x != userId);
-            List<PersonalNotification> notifications = NotificationHandler.AddNotificationToUsers(_context, otherHosts, notification);
+            NotificationHandler.AddNotificationToUsers(_context, otherHosts, notification);
+            await HubHandler.SendNotificationsAsync(_hubContext, otherHosts.ToList(), notification);
+            _context.SaveChanges();
             return Ok(bid.Wager.Status);
         }
     }

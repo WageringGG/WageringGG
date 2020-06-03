@@ -1,9 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using WageringGG.Server.Data;
 using WageringGG.Shared.Models;
 
 namespace WageringGG.Server.Hubs
@@ -29,6 +26,11 @@ namespace WageringGG.Server.Hubs
                 await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
         }
 
+        public async Task AddToGroup(string groupName)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+        }
+
         public async Task SendNotifications(string groupName, PersonalNotification notification)
         {
             await Clients.OthersInGroup(groupName).SendAsync("ReceiveNotification", notification);
@@ -37,6 +39,11 @@ namespace WageringGG.Server.Hubs
         public async Task SendWagerHostBid(string groupName, byte status, WagerHostBid bid, PersonalNotification notification)
         {
             await Clients.OthersInGroup(groupName).SendAsync("ReceiveWagerHostBid", status, bid, notification);
+        }
+
+        public async Task SendWagerStatus(string groupName, int wagerId, byte status)
+        {
+            await Clients.OthersInGroup(groupName).SendAsync("ReceiveWagerStatus", wagerId, status);
         }
     }
 }
