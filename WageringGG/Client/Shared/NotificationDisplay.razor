@@ -31,7 +31,7 @@
                             <button class="list-group-item list-group-item-action" @onclick="() => GoTo(notification.Link)">
                                 <div class="d-flex w-100 justify-content-between">
                                     @notification.Message
-                                    <button class="close text-danger" @onclick="() => DeleteNotification(notification.Id)" @onclick:stopPropagation="true"><i class="mdi mdi-delete"></i></button>
+                                    <button class="close text-danger" @onclick="() => DeleteNotification(notification.Date)" @onclick:stopPropagation="true"><i class="mdi mdi-delete"></i></button>
                                 </div>
                                 <div class="d-flex align-items-end">
                                     <small class="text-muted ml-auto">
@@ -116,14 +116,14 @@
     /// </summary>
     /// <param name="id">Notification Id</param>
     /// <returns>async Task</returns>
-    private async Task DeleteNotification(int id)
+    private async Task DeleteNotification(DateTime date)
     {
-        PersonalNotification notification = Notifications.FirstOrDefault(x => x.Id == id);
+        PersonalNotification notification = Notifications.FirstOrDefault(x => x.Date == date);
         if (notification != null)
         {
             if (await js.InvokeAsync<bool>("blazorConfirm", "Are you sure you want to delete this notification?"))
             {
-                var response = await http.Client.DeleteAsync($"/api/notification/{id}");
+                var response = await http.Client.DeleteAsync($"/api/notification/{date.Ticks}");
                 if (response.IsSuccessStatusCode)
                 {
                     Notifications.Remove(notification);

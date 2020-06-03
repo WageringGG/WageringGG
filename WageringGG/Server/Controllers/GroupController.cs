@@ -25,9 +25,9 @@ namespace WageringGG.Server.Handlers
         {
             var userId = User.GetId();
             //join tournamenthostbids etc
-            List<string> hostGroups = await _context.WagerHostBids.AsNoTracking().Where(x => x.ProfileId == userId).Select(x => GetGroupName.Wager(x.Id)).ToListAsync();
-            List<string> clientGroups = await _context.WagerChallengeBids.AsNoTracking().Where(x => x.ProfileId == userId).Select(x => GetGroupName.Wager(x.Id)).ToListAsync();
-            return Ok((hostGroups.Union(clientGroups), hostGroups.Count, clientGroups.Count));
+            IEnumerable<string> hostGroups = await _context.WagerHostBids.AsNoTracking().Where(x => x.ProfileId == userId).Select(x => GetGroupName.Wager(x.Id)).ToListAsync();
+            IEnumerable<string> clientGroups = await _context.WagerChallengeBids.AsNoTracking().Where(x => x.ProfileId == userId).Select(x => GetGroupName.Wager(x.Id)).ToListAsync();
+            return Ok(hostGroups);
         }
     }
 }

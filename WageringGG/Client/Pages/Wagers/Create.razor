@@ -149,8 +149,11 @@
     public Game Game { get; set; }
     [CascadingParameter]
     private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+    [CascadingParameter]
+    private HubConnection HubConnection { get; set; }
     [Parameter]
     public EventCallback<string> NameChanged { get; set; }
+    private AuthenticationState Context { get; set; }
     private Wager Wager { get; set; } = new Wager();
     private WagerHostBid Host { get; set; } = new WagerHostBid();
     private string DisplayName { get; set; }
@@ -172,17 +175,17 @@
     {
         EditContext = new EditContext(Wager);
         Debounce.Elapsed += SearchUsers;
-        AuthenticationState context = await AuthenticationStateTask;
+        Context = await AuthenticationStateTask;
         if (Game != null)
             Wager.GameId = Game.Id;
-        if (context.User.Identity.IsAuthenticated)
+        if (Context.User.Identity.IsAuthenticated)
         {
-            if (!string.IsNullOrEmpty(context.User.GetKey()))
+            if (!string.IsNullOrEmpty(Context.User.GetKey()))
                 HasKey = true;
             Wager.Hosts.Add(new WagerHostBid
             {
-                ProfileId = context.User.Claims.First(x => x.Type == WageringGG.Shared.Constants.Claims.Id)?.Value,
-                DisplayName = context.User.GetName(),
+                ProfileId = Context.User.GetId(),
+                DisplayName = Context.User.GetName(),
                 ReceivablePt = 100,
                 PayablePt = 100,
                 IsOwner = true
@@ -297,8 +300,19 @@
         if (response.IsSuccessStatusCode)
         {
             int wagerId = await response.Content.ReadFromJsonAsync<int>();
+            string link = $"/host/wagers/view/{wagerId}";
+            if (HubConnection.State == HubConnectionState.Connected)
+            {
+                PersonalNotification notification = new PersonalNotification
+                {
+                    Message = Context.User.GetName(),
+                    Date = DateTime.Now,
+                    Link = link
+                };
+                await HubConnection.SendAsync("SendNotifications", Wager.HostIds().Where(x => x != Context.User.GetId()), notification);
+            }
             await js.InvokeVoidAsync("blazorModal", "#createModal", "hide");
-            navManager.NavigateTo($"/wagers/view/{wagerId}");
+            navManager.NavigateTo(link);
         }
         else
         {

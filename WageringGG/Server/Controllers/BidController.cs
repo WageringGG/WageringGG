@@ -8,7 +8,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using WageringGG.Server.Data;
 using WageringGG.Server.Handlers;
-using WageringGG.Server.Hubs;
 using WageringGG.Shared.Constants;
 using WageringGG.Shared.Models;
 
@@ -20,12 +19,10 @@ namespace WageringGG.Server.Controllers
     public class BidController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly IHubContext<GroupHub> _hubContext;
 
-        public BidController(ApplicationDbContext context, IHubContext<GroupHub> hubContext)
+        public BidController(ApplicationDbContext context)
         {
             _context = context;
-            _hubContext = hubContext;
         }
 
         [HttpPost("wager/accept")]
@@ -73,7 +70,6 @@ namespace WageringGG.Server.Controllers
                     notification.Message = $"{userName} has accepted the wager.";
                 IEnumerable<string> otherHosts = bid.Wager.HostIds().Where(x => x != userId);
                 List<PersonalNotification> notifications = NotificationHandler.AddNotificationToUsers(_context, otherHosts, notification);
-                await SignalRHandler.SendNotificationsAndBidAsync(_context, _hubContext, otherHosts, (bid.Wager.Status, bid), notifications);
             }
             return Ok(bid.Wager?.Status);
         }
@@ -115,7 +111,6 @@ namespace WageringGG.Server.Controllers
             };
             IEnumerable<string> otherHosts = bid.Wager.HostIds().Where(x => x != userId);
             List<PersonalNotification> notifications = NotificationHandler.AddNotificationToUsers(_context, otherHosts, notification);
-            await SignalRHandler.SendNotificationsAndBidAsync(_context, _hubContext, otherHosts, (bid.Wager.Status, bid), notifications);
             return Ok(bid.Wager.Status);
         }
     }

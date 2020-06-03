@@ -6,7 +6,6 @@ namespace WageringGG.Shared.Models
 {
     public class PersonalNotification
     {
-        public int Id { get; set; }
         public string ProfileId { get; set; }
         public Profile Profile { get; set; }
         [Required]

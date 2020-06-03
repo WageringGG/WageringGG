@@ -37,19 +37,14 @@ namespace WageringGG.Server.Handlers
             return Ok(notifications);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteNotification(int id)
+        [HttpDelete("{date}")]
+        public async Task<IActionResult> DeleteNotification(long date)
         {
             string? userId = User.GetId();
-            PersonalNotification notification = await _context.Notifications.Where(x => x.Id == id).FirstOrDefaultAsync();
+            PersonalNotification notification = await _context.Notifications.FindAsync(new DateTime(date), userId);
             if (notification == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
-                return BadRequest(ModelState.GetErrors());
-            }
-            if (notification.ProfileId != userId)
-            {
-                ModelState.AddModelError(string.Empty, Errors.NotCorresponding);
                 return BadRequest(ModelState.GetErrors());
             }
             _context.Remove(notification);

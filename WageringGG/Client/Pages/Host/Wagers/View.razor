@@ -50,6 +50,7 @@
                 var host = Wager.Hosts.FirstOrDefault(x => x.Id == data.Item2.Id);
                 if(host != null)
                 {
+                    Wager.Status = data.Item1;
                     host = data.Item2;
                     StateHasChanged();
                 }

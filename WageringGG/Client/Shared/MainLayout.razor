@@ -1,11 +1,14 @@
 ﻿@inherits LayoutComponentBase
 @inject NavigationManager navManager
-@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject ISessionStorageService sessionStorage
+@inject AuthHttp http
 @inject Microsoft.AspNetCore.Components.WebAssembly.Authentication.IAccessTokenProvider tokenProvider
 
 <NavMenu />
 <main role="main" class="container d-flex flex-column">
-    @Body
+    <CascadingValue TValue="HubConnection" Value="HubConnection">
+        @Body
+    </CascadingValue>
 </main>
 <footer class="mt-auto py-3">
     <div class="container-fluid">
@@ -40,6 +43,7 @@
         if (context.User.Identity.IsAuthenticated)
         {
             await ConnectToHub();
+            await AddUserGroups();
         }
         await base.OnInitializedAsync();
     }
@@ -54,7 +58,7 @@
         HubConnection = new HubConnectionBuilder()
             .WithUrl(navManager.ToAbsoluteUri("/group-hub"), options =>
             {
-                options.AccessTokenProvider = () => GetToken();
+                options.AccessTokenProvider = async () => await GetToken();
             })
             .WithAutomaticReconnect()
             .Build();
@@ -64,15 +68,25 @@
             await sessionStorage.SetItemAsync<PersonalNotification>("ReceiveNotification", notification);
         });
 
-        HubConnection.On<(byte, WagerHostBid), PersonalNotification>("ReceiveWagerHostBid", async (bid, notification) =>
+        HubConnection.On<byte, WagerHostBid, PersonalNotification>("ReceiveWagerHostBid", async (status, bid, notification) =>
         {
             Console.WriteLine(bid);
             Console.WriteLine(notification);
             await sessionStorage.SetItemAsync<PersonalNotification>("ReceiveNotification", notification);
-            await sessionStorage.SetItemAsync<(byte, WagerHostBid)>("ReceiveWagerHostBid", bid);
+            await sessionStorage.SetItemAsync<(byte, WagerHostBid)>("ReceiveWagerHostBid", (status, bid));
         });
 
         await HubConnection.StartAsync();
+    }
+
+    private async Task AddUserGroups()
+    {
+        var response = await http.Client.GetAsync("/api/group");
+        if (response.IsSuccessStatusCode)
+        {
+            IEnumerable<string> groups = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
+            await HubConnection.InvokeAsync("AddToGroups", groups);
+        }
     }
 
     /// <summary>

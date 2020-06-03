@@ -1,13 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WageringGG.Server.Data;
-using WageringGG.Server.Hubs;
 using WageringGG.Server.Models;
 using WageringGG.Shared.Constants;
 using WageringGG.Shared.Models;
@@ -20,15 +18,13 @@ namespace WageringGG.Server.Handlers
     public class WagerController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly IHubContext<GroupHub> _hubContext;
         private readonly stellar.Server _server;
         private const int ResultSize = 16;
 
-        public WagerController(ApplicationDbContext context, IHubContext<GroupHub> hubContext, stellar.Server server)
+        public WagerController(ApplicationDbContext context, stellar.Server server)
         {
             _context = context;
             _server = server;
-            _hubContext = hubContext;
         }
 
         //POST: api/wagers/search
@@ -111,7 +107,6 @@ namespace WageringGG.Server.Handlers
                 Link = $"/wagers/view/{id}"
             };
             List<PersonalNotification> notifications = NotificationHandler.AddNotificationToUsers(_context, wager.HostIds(), notification);
-            await SignalRHandler.SendNotificationsAsync(_context, _hubContext, wager.AllIds(), notifications);
             return Ok();
         }
 
@@ -120,7 +115,7 @@ namespace WageringGG.Server.Handlers
         // more details see https://aka.ms/RazorPagesCRUD.
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> PostWager(Wager wagerData)
+        public IActionResult PostWager(Wager wagerData)
         {
             string? userId = User.GetId();
             string? userName = User.GetName();
@@ -196,7 +191,6 @@ namespace WageringGG.Server.Handlers
             };
             IEnumerable<string> others = wager.HostIds().Where(x => x != userId);
             List<PersonalNotification> notifications = NotificationHandler.AddNotificationToUsers(_context, others, notification);
-            await SignalRHandler.SendNotificationsAsync(_context, _hubContext, others, notifications);
             return Ok(wager.Id);
         }
     }
