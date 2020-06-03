@@ -309,7 +309,7 @@
                     Date = DateTime.Now,
                     Link = link
                 };
-                await HubConnection.SendAsync("SendNotifications", Wager.HostIds().Where(x => x != Context.User.GetId()), notification);
+                await HubConnection.SendAsync("SendNotifications", Wager.GroupName, notification);
             }
             await js.InvokeVoidAsync("blazorModal", "#createModal", "hide");
             navManager.NavigateTo(link);

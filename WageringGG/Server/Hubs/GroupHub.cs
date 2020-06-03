@@ -29,14 +29,14 @@ namespace WageringGG.Server.Hubs
                 await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
         }
 
-        public async Task SendNotifications(IReadOnlyList<string> users, PersonalNotification notification)
+        public async Task SendNotifications(string groupName, PersonalNotification notification)
         {
-            await Clients.Groups(users).SendAsync("ReceiveNotification", notification);
+            await Clients.OthersInGroup(groupName).SendAsync("ReceiveNotification", notification);
         }
 
-        public async Task SendWagerHostBid(IReadOnlyList<string> users, byte status, WagerHostBid bid, PersonalNotification notification)
+        public async Task SendWagerHostBid(string groupName, byte status, WagerHostBid bid, PersonalNotification notification)
         {
-            await Clients.Groups(users).SendAsync("ReceiveWagerHostBid", status, bid, notification);
+            await Clients.OthersInGroup(groupName).SendAsync("ReceiveWagerHostBid", status, bid, notification);
         }
     }
 }
