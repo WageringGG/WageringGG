@@ -22,6 +22,7 @@ namespace WageringGG.Shared.Models
         public IList<Notification> Notifications { get; set; } = new List<Notification>();
 
         [NotMapped]
+        [System.Text.Json.Serialization.JsonIgnore]
         public bool IsSelected { get; set; }
     }
 }

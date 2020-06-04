@@ -299,16 +299,9 @@
         HttpResponseMessage response = await http.Client.PostAsJsonAsync("/api/wager", Wager);
         if (response.IsSuccessStatusCode)
         {
-            int wagerId = await response.Content.ReadFromJsonAsync<int>();
-            string link = $"/host/wagers/view/{wagerId}";
-            Notification notification = new Notification
-            {
-                Message = Context.User.GetName(),
-                Date = DateTime.Now,
-                Link = link
-            };
+            Wager.Id = await response.Content.ReadFromJsonAsync<int>();
+            string link = $"/host/wagers/view/{Wager.Id}";
             await HubConnection.InvokeAsync("AddToGroup", Wager.GroupName);
-            await HubConnection.SendAsync("SendNotifications", Wager.GroupName, notification);
             await js.InvokeVoidAsync("blazorModal", "#createModal", "hide");
             navManager.NavigateTo(link);
         }
