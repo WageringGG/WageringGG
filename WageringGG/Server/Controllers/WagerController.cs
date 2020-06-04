@@ -75,6 +75,7 @@ namespace WageringGG.Server.Handlers
             var wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == id).Include(x => x.Hosts).Where(x => x.Hosts.Any(y => y.ProfileId == userId)).FirstOrDefaultAsync();
             if (wager == null)
                 return BadRequest(new string[] { Errors.NotFound });
+            //state diagram
             return Ok();
         }
 
@@ -115,7 +116,7 @@ namespace WageringGG.Server.Handlers
                 return BadRequest(ModelState.GetErrors());
             }
             wager.Status = (byte)Status.Canceled;
-            PersonalNotification notification = new PersonalNotification
+            Notification notification = new Notification
             {
                 Date = DateTime.Now,
                 Message = $"{userName} has canceled the wager.",
@@ -199,7 +200,7 @@ namespace WageringGG.Server.Handlers
 
             _context.Wagers.Add(wager);
             _context.SaveChanges();
-            PersonalNotification notification = new PersonalNotification
+            Notification notification = new Notification
             {
                 Date = date,
                 Message = $"{userName} created a wager with you.",

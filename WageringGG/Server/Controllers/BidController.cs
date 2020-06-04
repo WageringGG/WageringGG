@@ -58,7 +58,7 @@ namespace WageringGG.Server.Controllers
 
             bid.Approved = true;
             DateTime date = DateTime.Now;
-            PersonalNotification notification = new PersonalNotification
+            Notification notification = new Notification
             {
                 Date = date,
                 Link = $"/host/wagers/view/{bid.Wager.Id}"
@@ -74,7 +74,7 @@ namespace WageringGG.Server.Controllers
             NotificationHandler.AddNotificationToUsers(_context, otherHosts, notification);
             await HubHandler.SendNotificationsAsync(_hubContext, otherHosts.ToList(), notification);
             _context.SaveChanges();
-            return Ok(new StatusResponse { Status = bid.Wager.Status, Date = date.Ticks });
+            return Ok(bid.Wager.Status);
         }
 
         [HttpPost("wager/decline")]
@@ -107,7 +107,7 @@ namespace WageringGG.Server.Controllers
             bid.Approved = false;
             bid.Wager.Status = (byte)Status.Canceled;
             DateTime date = DateTime.Now;
-            PersonalNotification notification = new PersonalNotification
+            Notification notification = new Notification
             {
                 Date = date,
                 Message = $"{userName} has declined the wager.",
@@ -117,7 +117,7 @@ namespace WageringGG.Server.Controllers
             NotificationHandler.AddNotificationToUsers(_context, otherHosts, notification);
             await HubHandler.SendNotificationsAsync(_hubContext, otherHosts.ToList(), notification);
             _context.SaveChanges();
-            return Ok(new StatusResponse { Status = bid.Wager.Status, Date = date.Ticks });
+            return Ok(bid.Wager.Status);
         }
     }
 }

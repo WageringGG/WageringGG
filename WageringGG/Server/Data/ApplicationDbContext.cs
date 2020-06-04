@@ -20,7 +20,7 @@ namespace WageringGG.Server.Data
         #endregion
         public DbSet<Game> Games { get; set; }
         public DbSet<Rule> Rules { get; set; }
-        public DbSet<PersonalNotification> Notifications { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
         public DbSet<Rating> Ratings { get; set; }
 
         public ApplicationDbContext(DbContextOptions options) : base(options)
@@ -29,7 +29,7 @@ namespace WageringGG.Server.Data
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            builder.Entity<PersonalNotification>().HasKey(x => new { x.Date, x.ProfileId });
+            builder.Entity<Notification>().HasKey(x => new { x.Date, x.ProfileId });
             builder.Entity<Profile>().HasIndex(x => x.NormalizedDisplayName).IsUnique();
             builder.Entity<Profile>().HasAlternateKey(x => x.DisplayName);
             builder.Entity<Game>().HasIndex(x => x.NormalizedName).IsUnique();

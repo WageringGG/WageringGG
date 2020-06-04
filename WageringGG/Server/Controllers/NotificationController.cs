@@ -33,7 +33,7 @@ namespace WageringGG.Server.Handlers
                 DateTime date = new DateTime(lastDate.Value);
                 query = query.Where(x => x.Date > date);
             }
-            IEnumerable<PersonalNotification> notifications = await query.OrderByDescending(x => x.Date).ToListAsync();
+            IEnumerable<Notification> notifications = await query.OrderByDescending(x => x.Date).ToListAsync();
             return Ok(notifications);
         }
 
@@ -41,7 +41,7 @@ namespace WageringGG.Server.Handlers
         public async Task<IActionResult> DeleteNotification(long date)
         {
             string? userId = User.GetId();
-            PersonalNotification notification = await _context.Notifications.FindAsync(new DateTime(date), userId);
+            Notification notification = await _context.Notifications.FindAsync(new DateTime(date), userId);
             if (notification == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);

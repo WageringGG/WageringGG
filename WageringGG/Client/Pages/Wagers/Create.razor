@@ -301,16 +301,14 @@
         {
             int wagerId = await response.Content.ReadFromJsonAsync<int>();
             string link = $"/host/wagers/view/{wagerId}";
-            if (HubConnection.State == HubConnectionState.Connected)
+            Notification notification = new Notification
             {
-                PersonalNotification notification = new PersonalNotification
-                {
-                    Message = Context.User.GetName(),
-                    Date = DateTime.Now,
-                    Link = link
-                };
-                await HubConnection.SendAsync("SendNotifications", Wager.GroupName, notification);
-            }
+                Message = Context.User.GetName(),
+                Date = DateTime.Now,
+                Link = link
+            };
+            await HubConnection.InvokeAsync("AddToGroup", Wager.GroupName);
+            await HubConnection.SendAsync("SendNotifications", Wager.GroupName, notification);
             await js.InvokeVoidAsync("blazorModal", "#createModal", "hide");
             navManager.NavigateTo(link);
         }

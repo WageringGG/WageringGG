@@ -13,12 +13,12 @@ namespace WageringGG.Server.Handlers
         /// <param name="userIds"></param>
         /// <param name="notification"></param>
         /// <returns></returns>
-        public static void AddNotificationToUsers(ApplicationDbContext _context, IEnumerable<string> userIds, PersonalNotification notification)
+        public static void AddNotificationToUsers(ApplicationDbContext _context, IEnumerable<string> userIds, Notification notification)
         {
-            List<PersonalNotification> notifications = new List<PersonalNotification>();
+            List<Notification> notifications = new List<Notification>();
             foreach (string id in userIds)
             {
-                PersonalNotification personalNotification = new PersonalNotification
+                Notification personalNotification = new Notification
                 {
                     Date = notification.Date,
                     Link = notification.Link,

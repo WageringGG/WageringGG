@@ -44,13 +44,13 @@
 
     private void SessionStorageChanged(object sender, Blazored.SessionStorage.ChangedEventArgs e)
     {
-        if (e.Key == "ReceiveWagerHostBid")
+        if (e.Key == "WagerStatus")
         {
-            var data = ((byte, WagerHostBid))e.NewValue;
-            var wager = Data.FirstOrDefault(x => x.Id == data.Item2.WagerId);
+            var data = (WagerStatus)e.NewValue;
+            var wager = Data.FirstOrDefault(x => x.Id == data.WagerId);
             if (wager != null)
             {
-                wager.Status = data.Item1;
+                wager.Status = data.Status;
                 StateHasChanged();
             }
         }

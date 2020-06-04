@@ -31,14 +31,9 @@ namespace WageringGG.Server.Hubs
             await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
         }
 
-        public async Task SendNotifications(string groupName, PersonalNotification notification)
+        public async Task SendWagerHostBid(string groupName, WagerHostBid bid, WagerStatus status)
         {
-            await Clients.OthersInGroup(groupName).SendAsync("ReceiveNotification", notification);
-        }
-
-        public async Task SendWagerHostBid(string groupName, WagerHostBid bid, WagerStatus status, PersonalNotification notification)
-        {
-            await Clients.OthersInGroup(groupName).SendAsync("ReceiveWagerHostBid", bid, status, notification);
+            await Clients.OthersInGroup(groupName).SendAsync("ReceiveWagerHostBid", bid, status);
         }
 
         public async Task SendWagerStatus(string groupName, WagerStatus status)

@@ -20,6 +20,8 @@
     <Compile Remove="Migrations\20200530005843_AddFeatures.Designer.cs" />
     <Compile Remove="Migrations\20200531183547_Test.cs" />
     <Compile Remove="Migrations\20200531183547_Test.Designer.cs" />
+    <Compile Remove="Migrations\20200604064611_Notifications.cs" />
+    <Compile Remove="Migrations\20200604064611_Notifications.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>

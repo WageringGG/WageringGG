@@ -19,7 +19,7 @@ namespace WageringGG.Shared.Models
         public bool IsVerified { get; set; }
         public string PublicKey { get; set; }
         public ICollection<Rating> Ratings { get; set; } = new List<Rating>();
-        public IList<PersonalNotification> Notifications { get; set; } = new List<PersonalNotification>();
+        public IList<Notification> Notifications { get; set; } = new List<Notification>();
 
         [NotMapped]
         public bool IsSelected { get; set; }

@@ -68,28 +68,18 @@
     [Parameter]
     public string GroupName { get; set; }
 
-    protected override async Task OnInitializedAsync()
-    {
-        await base.OnInitializedAsync();
-    }
-
     private async Task DeclineWager(int id, string name)
     {
         //return date response too
         var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/decline", id);
         if (response.IsSuccessStatusCode)
         {
-            var data = await response.Content.ReadFromJsonAsync<StatusResponse>();
+            var data = await response.Content.ReadFromJsonAsync<byte>();
             var host = Hosts.FirstOrDefault(x => x.Id == id);
             if (host != null)
                 host.Approved = false;
-            await StatusCallback.InvokeAsync((Status)data.Status);
-            PersonalNotification notification = new PersonalNotification
-            {
-                Date = new DateTime(data.Date),
-                Message = $"{name} has declined the wager."
-            };
-            await HubConnection.InvokeAsync("SendWagerHostBid", GroupName, data.Status, host, notification);
+            await StatusCallback.InvokeAsync((Status)data);
+            await HubConnection.InvokeAsync("SendWagerHostBid", GroupName, host, new WagerStatus { Status = data, WagerId = host.WagerId });
         }
     }
 
@@ -98,17 +88,12 @@
         var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/accept", id);
         if (response.IsSuccessStatusCode)
         {
-            var data = await response.Content.ReadFromJsonAsync<StatusResponse>();
+            var data = await response.Content.ReadFromJsonAsync<byte>();
             var host = Hosts.FirstOrDefault(x => x.Id == id);
             if (host != null)
                 host.Approved = true;
-            await StatusCallback.InvokeAsync((Status)data.Status);
-            PersonalNotification notification = new PersonalNotification
-            {
-                Date = new DateTime(data.Date),
-                Message = $"{name} has accepted the wager."
-            };
-            await HubConnection.InvokeAsync("SendWagerHostBid", GroupName, data.Status, host, notification);
+            await StatusCallback.InvokeAsync((Status)data);
+            await HubConnection.InvokeAsync("SendWagerHostBid", GroupName, host, new WagerStatus { Status = data, WagerId = host.WagerId });
         }
     }
 }

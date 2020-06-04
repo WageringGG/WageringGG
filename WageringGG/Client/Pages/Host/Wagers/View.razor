@@ -57,7 +57,7 @@
         if (response.IsSuccessStatusCode)
         {
             Wager.Status = (byte)status;
-            await HubConnection.SendAsync("SetWagerStatus", Wager.GroupName, new WagerStatus { Status = Wager.Status, WagerId = Wager.Id });
+            await HubConnection.SendAsync("SendWagerStatus", Wager.GroupName, new WagerStatus { Status = Wager.Status, WagerId = Wager.Id });
             StateHasChanged();
         }
         else
@@ -68,10 +68,10 @@
     {
         if (e.Key == "WagerStatus")
         {
-            var data = ((int, byte))e.NewValue;
-            if (Wager.Id == data.Item1)
+            var data = (WagerStatus)e.NewValue;
+            if (Wager.Id == data.WagerId)
             {
-                Wager.Status = data.Item2;
+                Wager.Status = data.Status;
                 StateHasChanged();
             }
         }
@@ -88,15 +88,6 @@
                 }
             }
         }
-    }
-
-    private async Task SendWagerHostBid(WagerHostBid bid)
-    {
-        PersonalNotification notification = new PersonalNotification
-        {
-            Date = DateTime.Now,
-        };
-        await HubConnection.InvokeAsync("SendWagerHostBid", Wager.GroupName, Wager.Status, bid, notification);
     }
 
     private void SetStatus(Status status)

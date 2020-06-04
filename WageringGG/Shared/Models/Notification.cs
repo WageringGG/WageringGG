@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace WageringGG.Shared.Models
 {
-    public class PersonalNotification
+    public class Notification
     {
         public string ProfileId { get; set; }
         public Profile Profile { get; set; }
