@@ -26,8 +26,8 @@
                                     <td>
                                         @if (host.ProfileId == context.User.GetId() && host.Approved == null)
                                         {
-                                            <button class="btn btn-outline-danger btn-sm" title="Decline the wager." @onclick="() => DeclineWager(host.Id)"><i class="mdi mdi-cancel"></i></button>
-                                            <button class="btn btn-outline-success btn-sm" title="Accept the wager." @onclick="() => AcceptWager(host.Id)"><i class="mdi mdi-check"></i></button>
+                                            <button class="btn btn-outline-danger btn-sm" title="Decline the wager." @onclick="() => DeclineWager(host.Id, context.User.GetName())"><i class="mdi mdi-cancel"></i></button>
+                                            <button class="btn btn-outline-success btn-sm" title="Accept the wager." @onclick="() => AcceptWager(host.Id, context.User.GetName())"><i class="mdi mdi-check"></i></button>
                                         }
                                         else
                                         {
@@ -59,43 +59,56 @@
 </div>
 
 @code {
+    [CascadingParameter]
+    public HubConnection HubConnection { get; set; }
     [Parameter]
     public IEnumerable<WagerHostBid> Hosts { get; set; }
     [Parameter]
     public EventCallback<Status> StatusCallback { get; set; }
     [Parameter]
-    public EventCallback<WagerHostBid> BidCallback { get; set; }
+    public string GroupName { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
     }
 
-    private async Task DeclineWager(int id)
+    private async Task DeclineWager(int id, string name)
     {
+        //return date response too
         var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/decline", id);
         if (response.IsSuccessStatusCode)
         {
-            var status = await response.Content.ReadFromJsonAsync<byte>();
+            var data = await response.Content.ReadFromJsonAsync<StatusResponse>();
             var host = Hosts.FirstOrDefault(x => x.Id == id);
             if (host != null)
                 host.Approved = false;
-            await StatusCallback.InvokeAsync((Status)status);
-            await BidCallback.InvokeAsync(host);
+            await StatusCallback.InvokeAsync((Status)data.Status);
+            PersonalNotification notification = new PersonalNotification
+            {
+                Date = new DateTime(data.Date),
+                Message = $"{name} has declined the wager."
+            };
+            await HubConnection.InvokeAsync("SendWagerHostBid", GroupName, data.Status, host, notification);
         }
     }
 
-    private async Task AcceptWager(int id)
+    private async Task AcceptWager(int id, string name)
     {
         var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/accept", id);
         if (response.IsSuccessStatusCode)
         {
-            var status = await response.Content.ReadFromJsonAsync<byte>();
+            var data = await response.Content.ReadFromJsonAsync<StatusResponse>();
             var host = Hosts.FirstOrDefault(x => x.Id == id);
             if (host != null)
                 host.Approved = true;
-            await StatusCallback.InvokeAsync((Status)status);
-            await BidCallback.InvokeAsync(host);
+            await StatusCallback.InvokeAsync((Status)data.Status);
+            PersonalNotification notification = new PersonalNotification
+            {
+                Date = new DateTime(data.Date),
+                Message = $"{name} has accepted the wager."
+            };
+            await HubConnection.InvokeAsync("SendWagerHostBid", GroupName, data.Status, host, notification);
         }
     }
 }

@@ -36,14 +36,14 @@ namespace WageringGG.Server.Hubs
             await Clients.OthersInGroup(groupName).SendAsync("ReceiveNotification", notification);
         }
 
-        public async Task SendWagerHostBid(string groupName, byte status, WagerHostBid bid, PersonalNotification notification)
+        public async Task SendWagerHostBid(string groupName, WagerHostBid bid, WagerStatus status, PersonalNotification notification)
         {
-            await Clients.OthersInGroup(groupName).SendAsync("ReceiveWagerHostBid", status, bid, notification);
+            await Clients.OthersInGroup(groupName).SendAsync("ReceiveWagerHostBid", bid, status, notification);
         }
 
-        public async Task SendWagerStatus(string groupName, int wagerId, byte status)
+        public async Task SendWagerStatus(string groupName, WagerStatus status)
         {
-            await Clients.OthersInGroup(groupName).SendAsync("ReceiveWagerStatus", wagerId, status);
+            await Clients.OthersInGroup(groupName).SendAsync("ReceiveWagerStatus", status);
         }
     }
 }

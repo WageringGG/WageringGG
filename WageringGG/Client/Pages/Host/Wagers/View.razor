@@ -5,28 +5,28 @@
 
 <ErrorDisplay @bind-Errors="Errors" />
 <h1 class="text-center">@Enum.GetName(typeof(Status), Wager.Status) Wager</h1>
-<div class="my-2">
-    @if (Wager.Status == (byte)Status.Confirmed)
-    {
-        <button class="btn btn-outline-danger ml-auto" @onclick="Close">Close</button>
-    }
-    else if (Wager.Status == (byte)Status.Closed)
-    {
-        <button class="btn btn-outline-success ml-auto" @onclick="Open">Open</button>
-    }
-</div>
 <div class="row">
-    <div class="col-12 col-lg-8 mx-auto">
-        <h3>Hosts:</h3>
-        <WagerHostsDisplay Hosts="Wager.Hosts" WagerId="Wager.Id" ChangeCallback="SetStatus" />
+    <div class="col-12 col-lg-8 mx-auto my-1 text-right">
+        @if (Wager.Status == (byte)Status.Confirmed)
+        {
+            <button class="btn btn-outline-danger" @onclick="() => ChangeStatus(Status.Closed)">Close</button>
+        }
+        else if (Wager.Status == (byte)Status.Closed)
+        {
+            <button class="btn btn-outline-success ml-auto" @onclick="() => ChangeStatus(Status.Confirmed)">Open</button>
+        }
     </div>
-    <div class="col-12 col-lg-8 mx-auto">
+    <div class="col-12 col-lg-8 mx-auto my-1">
+        <h3>Hosts:</h3>
+        <WagerHostsDisplay Hosts="Wager.Hosts" StatusCallback="SetStatus" />
+    </div>
+    <div class="col-12 col-lg-8 mx-auto my-1">
         <h3>Wager:</h3>
         <WagerDisplay Wager="Wager" />
     </div>
     @if (Wager.Status == (byte)Status.Confirmed)
     {
-        <div class="col-12 col-lg-8 mx-auto">
+        <div class="col-12 col-lg-8 mx-auto my-1">
             <h3>Challenges:</h3>
         </div>
     }
@@ -51,20 +51,15 @@
         await base.OnParametersSetAsync();
     }
 
-    private async Task Open()
+    private async Task ChangeStatus(Status status)
     {
-        var response = await http.Client.PutAsJsonAsync($"/api/wager/status/{Wager.Id}", (byte)Status.Ongoing);
+        var response = await http.Client.PutAsJsonAsync($"/api/wager/status/{Wager.Id}", (byte)status);
         if (response.IsSuccessStatusCode)
-            await HubConnection.SendAsync("SetWagerStatus", Wager.GroupName, Wager.Id, (byte)Status.Ongoing);
-        else
-            Errors = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
-    }
-
-    private async Task Close()
-    {
-        var response = await http.Client.PutAsJsonAsync($"/api/wager/status/{Wager.Id}", (byte)Status.Closed);
-        if (response.IsSuccessStatusCode)
-            await HubConnection.SendAsync("SetWagerStatus", Wager.GroupName, Wager.Id, (byte)Status.Closed);
+        {
+            Wager.Status = (byte)status;
+            await HubConnection.SendAsync("SetWagerStatus", Wager.GroupName, new WagerStatus { Status = Wager.Status, WagerId = Wager.Id });
+            StateHasChanged();
+        }
         else
             Errors = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
     }
