@@ -62,11 +62,11 @@
     [CascadingParameter]
     public HubConnection HubConnection { get; set; }
     [Parameter]
+    public string GroupName { get; set; }
+    [Parameter]
     public IEnumerable<WagerHostBid> Hosts { get; set; }
     [Parameter]
     public EventCallback<Status> StatusCallback { get; set; }
-    [Parameter]
-    public string GroupName { get; set; }
 
     private async Task DeclineWager(int id, string name)
     {
