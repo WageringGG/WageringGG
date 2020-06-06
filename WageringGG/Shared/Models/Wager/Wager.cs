@@ -6,8 +6,8 @@ namespace WageringGG.Shared.Models
 {
     public class Wager : Group
     {
-        public ICollection<WagerHostBid> Hosts { get; set; } = new List<WagerHostBid>();
-        public ICollection<WagerChallenge> Challenges { get; set; } = new List<WagerChallenge>();
+        public List<WagerHostBid> Hosts { get; set; } = new List<WagerHostBid>();
+        public List<WagerChallenge> Challenges { get; set; } = new List<WagerChallenge>();
 
         [Column(TypeName = "decimal(18,7)")]
         public decimal? MinimumWager { get; set; }
@@ -15,7 +15,7 @@ namespace WageringGG.Shared.Models
         [Column(TypeName = "decimal(18,7)")]
         public decimal? MaximumWager { get; set; }
         public int ChallengeCount { get; set; }
-        public IList<WagerRule> Rules { get; set; } = new List<WagerRule>();
+        public List<WagerRule> Rules { get; set; } = new List<WagerRule>();
 
         public override bool IsApproved()
         {

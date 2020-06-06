@@ -80,10 +80,10 @@
             var data = (WagerHostBid)e.NewValue;
             if (Wager.Id == data.WagerId)
             {
-                var host = Wager.Hosts.FirstOrDefault(x => x.Id == data.Id);
-                if (host != null)
+                var index = Wager.Hosts.FindIndex(x => x.Id == data.Id);
+                if (index  > -1)
                 {
-                    host = data;
+                    Wager.Hosts[index] = data;
                     StateHasChanged();
                 }
             }

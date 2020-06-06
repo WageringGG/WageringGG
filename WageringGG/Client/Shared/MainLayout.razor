@@ -76,8 +76,6 @@
 
         HubConnection.On<WagerHostBid, WagerStatus>("ReceiveWagerHostBid", async (bid, status) =>
         {
-            Console.WriteLine(bid);
-            Console.WriteLine(status);
             await sessionStorage.SetItemAsync<WagerHostBid>("WagerHostBid", bid);
             await sessionStorage.SetItemAsync<WagerStatus>("WagerStatus", status);
         });
