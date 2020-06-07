@@ -9,7 +9,6 @@ namespace WageringGG.Shared.Models
         public byte ReceivablePt { get; set; }
         [Required]
         public byte PayablePt { get; set; }
-        public bool IsOwner { get; set; }
 
         [NotMapped]
         public string DisplayName { get; set; }

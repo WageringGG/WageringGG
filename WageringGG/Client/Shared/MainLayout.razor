@@ -65,12 +65,12 @@
 
         HubConnection.On<Notification>("ReceiveNotification", async notification =>
         {
-            await sessionStorage.SetItemAsync<Notification>("ReceiveNotification", notification);
+            await sessionStorage.SetItemAsync<Notification>("Notification", notification);
         });
 
         HubConnection.On<string, Notification>("ReceiveGroup", async (groupName, notification) =>
         {
-            await sessionStorage.SetItemAsync<Notification>("ReceiveNotification", notification);
+            await sessionStorage.SetItemAsync<Notification>("Notification", notification);
             await HubConnection.InvokeAsync("AddToGroup", groupName);
         });
 

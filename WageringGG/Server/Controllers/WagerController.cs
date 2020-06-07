@@ -146,19 +146,8 @@ namespace WageringGG.Server.Handlers
                 ModelState.AddModelError(string.Empty, "The hosts payable percentages do not add up to 100.");
             if (caller == null)
                 ModelState.AddModelError(string.Empty, "Caller must be a host.");
-            else if (!caller.IsOwner)
-                ModelState.AddModelError(string.Empty, "Caller must be the owner.");
             if (!wagerData.HostIds().IsUnique())
                 ModelState.AddModelError(string.Empty, "The hosts are not unique.");
-            try
-            {
-                if (wagerData.Hosts.Single(x => x.IsOwner) == null)
-                    throw new Exception("Only 1 owner should be specified.");
-            }
-            catch (Exception e)
-            {
-                ModelState.AddModelError(string.Empty, e.Message);
-            }
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
@@ -182,16 +171,12 @@ namespace WageringGG.Server.Handlers
                 WagerHostBid bid = new WagerHostBid
                 {
                     Approved = null,
-                    IsOwner = false,
                     ReceivablePt = host.ReceivablePt,
                     PayablePt = host.PayablePt,
                     ProfileId = host.ProfileId
                 };
-                if (host.IsOwner)
-                {
+                if (bid.ProfileId == userId)
                     bid.Approved = true;
-                    bid.IsOwner = true;
-                }
                 wager.Hosts.Add(bid);
             }
 

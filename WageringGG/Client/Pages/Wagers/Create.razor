@@ -67,7 +67,7 @@
                                                 {
                                                     <button type="button" class="btn btn-link"><i class="mdi mdi-pencil" @onclick="e => EditUser(bid)"></i></button>
                                                 }
-                                                @if (!bid.IsOwner)
+                                                @if (bid.ProfileId != Context.User.GetId())
                                                 {
                                                     <button type="button" class="btn btn-link" @onclick="e => RemoveUser(bid.ProfileId)"><i class="mdi mdi-delete"></i></button>
                                                 }
@@ -187,8 +187,7 @@
                 ProfileId = Context.User.GetId(),
                 DisplayName = Context.User.GetName(),
                 ReceivablePt = 100,
-                PayablePt = 100,
-                IsOwner = true
+                PayablePt = 100
             });
         }
         await base.OnInitializedAsync();
@@ -247,8 +246,7 @@
             ProfileId = profile.Id,
             DisplayName = profile.DisplayName,
             ReceivablePt = Host.ReceivablePt,
-            PayablePt = Host.PayablePt,
-            IsOwner = false
+            PayablePt = Host.PayablePt
         });
         ResetUser();
         await js.InvokeVoidAsync("blazorCollapse", "#addCollapse", "hide");

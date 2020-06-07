@@ -1,0 +1,38 @@
+﻿@using Humanizer
+@using System.Timers
+
+<small class="@Class">
+    @Display
+</small>
+
+@code {
+    [Parameter]
+    public DateTime Date { get; set; }
+    [Parameter]
+    public string Class { get; set; }
+    [Parameter]
+    public double Interval { get; set; } = 60000;
+    private string Display { get; set; }
+    private Timer Timer = new Timer();
+
+    protected override void OnInitialized()
+    {
+        Timer.Elapsed += Update;
+        Timer.Interval = Interval;
+        SetTime();
+        Timer.Start();
+        base.OnInitialized();
+    }
+
+    private void Update(object sender, ElapsedEventArgs e)
+    {
+        Console.WriteLine("ELAPSED");
+        SetTime();
+        StateHasChanged();
+    }
+
+    private void SetTime()
+    {
+        Display = Date.Humanize(true, DateTime.Now);
+    }
+}

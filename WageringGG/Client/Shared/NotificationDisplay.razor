@@ -34,9 +34,7 @@
                                     <button class="close text-danger" @onclick="() => DeleteNotification(notification.Date)" @onclick:stopPropagation="true"><i class="mdi mdi-delete"></i></button>
                                 </div>
                                 <div class="d-flex align-items-end">
-                                    <small class="text-muted ml-auto">
-                                        @notification.Date.Humanize(true, DateTime.Now)
-                                    </small>
+                                    <TimeAgo Class="text-muted ml-auto" Date="notification.Date" />
                                 </div>
                             </button>
                         }
@@ -62,7 +60,7 @@
 
     private void ReceiveNotification(object sender, Blazored.SessionStorage.ChangedEventArgs e)
     {
-        if (e.Key == "ReceiveNotification")
+        if (e.Key == "Notification")
         {
             var notification = (Notification)e.NewValue;
             if (notification != null)

@@ -42,5 +42,10 @@ namespace WageringGG.Shared.Constants
         {
             return Values.FirstOrDefault(x => x.NormalizedName == normalizedName)?.Name;
         }
+
+        public static string GetName(int id)
+        {
+            return Values.FirstOrDefault(x => x.Id == id)?.Name;
+        }
     }
 }

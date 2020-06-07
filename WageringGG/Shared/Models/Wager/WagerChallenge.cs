@@ -13,7 +13,7 @@ namespace WageringGG.Shared.Models
         public int WagerId { get; set; }
         public Wager Wager { get; set; }
 
-        public ICollection<WagerChallengeBid> Challengers { get; set; } = new List<WagerChallengeBid>();
+        public List<WagerChallengeBid> Challengers { get; set; } = new List<WagerChallengeBid>();
 
         [Required]
         public DateTime Date { get; set; }

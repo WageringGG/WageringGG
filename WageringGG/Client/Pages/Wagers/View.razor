@@ -1,8 +1,34 @@
 ﻿@page "/wagers/view/{id:int}"
+@inject HttpClient http
 
-<h1 class="text-center">Wager View</h1>
+<h1 class="text-center">@Constants.Games.GetName(Wager.GameId) Wager</h1>
+<div class="row">
+    <div class="col-12 col-lg-8 mx-auto my-1">
+        <h3>Hosts:</h3>
+        <WagerHostsDisplay Hosts="Wager.Hosts" />
+    </div>
+    <div class="col-12 col-lg-8 mx-auto my-1">
+        <h3>Wager:</h3>
+        <WagerDisplay Wager="Wager" />
+    </div>
+    @if (Wager.Status == (byte)Status.Confirmed)
+    {
+        <div class="col-12 col-lg-8 mx-auto my-1">
+            <h3>Challenges:</h3>
+        </div>
+    }
+</div>
 
 @code {
     [Parameter]
     public int Id { get; set; }
+    public Wager Wager { get; set; } = new Wager();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await http.GetAsync($"/api/wager/view/{Id}");
+        if (response.IsSuccessStatusCode)
+            Wager = await response.Content.ReadFromJsonAsync<Wager>();
+        await base.OnInitializedAsync();
+    }
 }

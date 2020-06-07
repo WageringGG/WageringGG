@@ -13,45 +13,41 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <AuthorizeView>
-                        <Authorized>
-                            @foreach (WagerHostBid host in Hosts)
-                            {
-                                <tr>
-                                    <td>
-                                        <a class="btn btn-outline-secondary btn-sm" href="@($"/user/{host.Profile.DisplayName}")" title="View profile">@host.Profile.DisplayName</a>
-                                    </td>
-                                    <td>@host.PayablePt%</td>
-                                    <td>@host.ReceivablePt%</td>
-                                    <td>
-                                        @if (host.ProfileId == context.User.GetId() && host.Approved == null)
+                    @foreach (WagerHostBid host in Hosts)
+                    {
+                        <tr>
+                            <td>
+                                <a class="btn btn-outline-secondary btn-sm" href="@($"/user/{host.Profile.DisplayName}")" title="View profile">@host.Profile.DisplayName</a>
+                            </td>
+                            <td>@host.PayablePt%</td>
+                            <td>@host.ReceivablePt%</td>
+                            <td>
+                                @if (host.ProfileId == UserId && host.Approved == null)
+                                {
+                                    <button class="btn btn-outline-danger btn-sm" title="Decline the wager." @onclick="() => DeclineWager(host.Id)"><i class="mdi mdi-cancel"></i></button>
+                                    <button class="btn btn-outline-success btn-sm" title="Accept the wager." @onclick="() => AcceptWager(host.Id)"><i class="mdi mdi-check"></i></button>
+                                }
+                                else
+                                {
+                                    @if (host.Approved.HasValue)
+                                    {
+                                        @if (host.Approved.Value == false)
                                         {
-                                            <button class="btn btn-outline-danger btn-sm" title="Decline the wager." @onclick="() => DeclineWager(host.Id, context.User.GetName())"><i class="mdi mdi-cancel"></i></button>
-                                            <button class="btn btn-outline-success btn-sm" title="Accept the wager." @onclick="() => AcceptWager(host.Id, context.User.GetName())"><i class="mdi mdi-check"></i></button>
+                                            <button class="btn btn-outline-danger btn-sm disabled" title="@($"{host.Profile.DisplayName} declined the wager.")"><i class="mdi mdi-cancel"></i></button>
                                         }
                                         else
                                         {
-                                            @if (host.Approved.HasValue)
-                                            {
-                                                @if (host.Approved.Value == false)
-                                                {
-                                                    <button class="btn btn-outline-danger btn-sm disabled" title="@($"{host.Profile.DisplayName} declined the wager.")"><i class="mdi mdi-cancel"></i></button>
-                                                }
-                                                else
-                                                {
-                                                    <button class="btn btn-outline-success btn-sm disabled" title="@($"{host.Profile.DisplayName} accepted the wager.")"><i class="mdi mdi-check"></i></button>
-                                                }
-                                            }
-                                            else
-                                            {
-                                                <small class="text-muted">Pending...</small>
-                                            }
+                                            <button class="btn btn-outline-success btn-sm disabled" title="@($"{host.Profile.DisplayName} accepted the wager.")"><i class="mdi mdi-check"></i></button>
                                         }
-                                    </td>
-                                </tr>
-                            }
-                        </Authorized>
-                    </AuthorizeView>
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted">Pending...</small>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
                 </tbody>
             </table>
         </div>
@@ -64,11 +60,13 @@
     [Parameter]
     public string GroupName { get; set; }
     [Parameter]
+    public string UserId { get; set; }
+    [Parameter]
     public IEnumerable<WagerHostBid> Hosts { get; set; }
     [Parameter]
     public EventCallback<Status> StatusCallback { get; set; }
 
-    private async Task DeclineWager(int id, string name)
+    private async Task DeclineWager(int id)
     {
         //return date response too
         var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/decline", id);
@@ -83,7 +81,7 @@
         }
     }
 
-    private async Task AcceptWager(int id, string name)
+    private async Task AcceptWager(int id)
     {
         var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/accept", id);
         if (response.IsSuccessStatusCode)

@@ -1,6 +1,4 @@
-﻿@using Humanizer
-
-<div class="card border-primary">
+﻿<div class="card border-primary">
     <div class="card-body">
         <h4 class="card-title">@Wager.Description</h4>
         <div class="table-responsive">
@@ -26,9 +24,7 @@
             {
                 <a class="btn btn-outline-secondary" href="@Link">View</a>
             }
-            <small class="mt-auto ml-auto text-muted">
-                @(Wager.Date.Humanize(true, DateTime.Now))
-            </small>
+            <TimeAgo Date="Wager.Date" Class="mt-auto ml-auto text-muted" />
         </div>
     </div>
 </div>
