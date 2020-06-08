@@ -11,9 +11,9 @@ namespace WageringGG.Shared.Models
 
         [Column(TypeName = "decimal(18,7)")]
         public decimal? MinimumWager { get; set; }
-
         [Column(TypeName = "decimal(18,7)")]
         public decimal? MaximumWager { get; set; }
+        public int PlayerCount { get; set; }
         public int ChallengeCount { get; set; }
         public List<WagerRule> Rules { get; set; } = new List<WagerRule>();
 

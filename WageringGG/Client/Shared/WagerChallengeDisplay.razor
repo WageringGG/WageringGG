@@ -1,9 +1,14 @@
 ﻿<div class="card border-primary">
     <div class="card-body">
-        <h4 class="card-title"> </h4>
+        <h2 class="card-title">@Challenge.Amount.ToString("C")</h2>
+        <div class="card-text">
+            <TimeAgo Class="text-muted ml-auto" Date="Challenge.Date" />
+        </div>
     </div>
 </div>
 @code {
     [Parameter]
     public WagerChallenge Challenge { get; set; }
+    [Parameter]
+    public bool IsHostView { get; set; } = false;
 }

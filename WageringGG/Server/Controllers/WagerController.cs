@@ -53,7 +53,7 @@ namespace WageringGG.Server.Handlers
             IQueryable<Wager> wagerQuery = _context.Wagers.AsNoTracking().Where(x => x.GameId == gameId).Where(x => !x.IsPrivate).Where(x => x.Status == confirmed);
 
             if (playerCount.HasValue)
-                wagerQuery = wagerQuery.Where(x => x.Hosts.Count == playerCount);
+                wagerQuery = wagerQuery.Where(x => x.PlayerCount == playerCount);
             if (minimumWager.HasValue)
                 wagerQuery = wagerQuery.Where(x => x.MinimumWager == null || (x.MinimumWager.HasValue && x.MinimumWager > minimumWager) || (x.MaximumWager.HasValue && x.MaximumWager > minimumWager));
             if (maximumWager.HasValue)
@@ -163,7 +163,8 @@ namespace WageringGG.Server.Handlers
                 IsPrivate = wagerData.IsPrivate,
                 Status = 0,
                 Hosts = new List<WagerHostBid>(),
-                ChallengeCount = 0
+                ChallengeCount = 0,
+                PlayerCount = wagerData.Hosts.Count
             };
 
             foreach (WagerHostBid host in wagerData.Hosts)
