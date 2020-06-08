@@ -2,10 +2,17 @@
     <div class="card-body">
         <h2 class="card-title">@Challenge.Amount.ToString("C")</h2>
         <div class="card-text">
+            @if (IsHostView)
+            {
+                <div class="d-flex text-right">
+                    <button class="btn btn-danger">Decline</button><button class="btn btn-success">Accept</button>
+                </div>
+            }
             <TimeAgo Class="text-muted ml-auto" Date="Challenge.Date" />
         </div>
     </div>
 </div>
+
 @code {
     [Parameter]
     public WagerChallenge Challenge { get; set; }
