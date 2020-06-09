@@ -210,6 +210,7 @@ namespace WageringGG.Server.Handlers
         {
             string? userKey = User.GetKey();
             string? userId = User.GetId();
+            string? userName = User.GetName();
             if (userKey == null)
                 ModelState.AddModelError(string.Empty, "You do not have a public key registered.");
             //check funds
@@ -223,7 +224,11 @@ namespace WageringGG.Server.Handlers
                 ModelState.AddModelError(string.Empty, "Caller must be a host.");
             if (!challengeData.ChallengerIds().IsUnique())
                 ModelState.AddModelError(string.Empty, "The id's are not unique.");
-            //check that wager is in a confirmed state accepting wagers
+            Wager wager = await _context.Wagers.Where(x => x.Id == wagerId).Include(x => x.Hosts).FirstOrDefaultAsync();
+            if (wager == null)
+                ModelState.AddModelError(string.Empty, "The wager could not be found.");
+            else if (wager.Status != (byte)Status.Confirmed)
+                ModelState.AddModelError(string.Empty, "The wager is not currently accepting challenges.");
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
@@ -255,6 +260,18 @@ namespace WageringGG.Server.Handlers
             _context.WagerChallenges.Add(challenge);
             _context.SaveChanges();
             //send notifications
+            if (challenge.Challengers.Count > 1)
+            {
+                Notification notification = new Notification
+                {
+                    Date = date,
+                    Message = $"{userName} created a wager challenge with you.",
+                    Link = $"/host/wagers/view/{wagerId}"
+                };
+                IEnumerable<string> users = challenge.ChallengerIds().Union(wager.HostIds());
+                NotificationHandler.AddNotificationToUsers(_context, users, notification);
+                await HubHandler.SendGroupAsync(_hubContext, users.ToList(), wager.GroupName, notification);
+            }
             return Ok();
         }
     }
