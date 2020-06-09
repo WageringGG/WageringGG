@@ -1,5 +1,5 @@
-﻿using WageringGG.Shared.Models;
-using System.Linq;
+﻿using System.Linq;
+using WageringGG.Shared.Models;
 
 namespace WageringGG.Shared.Constants
 {

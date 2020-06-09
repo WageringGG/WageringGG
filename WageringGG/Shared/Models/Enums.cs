@@ -6,7 +6,6 @@
         Confirmed = 1,
         Canceled = 2,
         Closed = 3,
-        Ongoing = 4,
         Completed = 8
     }
 

@@ -28,7 +28,7 @@ namespace WageringGG.Server.Handlers
         {
             string? userId = User.GetId();
             var query = _context.Notifications.Where(x => x.ProfileId == userId);
-            if(lastDate.HasValue)
+            if (lastDate.HasValue)
             {
                 DateTime date = new DateTime(lastDate.Value);
                 query = query.Where(x => x.Date > date);

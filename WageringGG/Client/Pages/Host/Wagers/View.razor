@@ -4,52 +4,62 @@
 @inject ISessionStorageService sessionStorage
 
 <ErrorDisplay @bind-Errors="Errors" />
-<h1 class="text-center">@Enum.GetName(typeof(Status), Wager.Status) Wager</h1>
-<div class="row">
-    <div class="col-12 col-lg-8 mx-auto my-1 text-right">
-        @if (Wager.Status == (byte)Status.Confirmed)
-        {
-            <button class="btn btn-outline-danger" @onclick="() => ChangeStatus(Status.Closed)">Close</button>
-        }
-        else if (Wager.Status == (byte)Status.Closed)
-        {
-            <button class="btn btn-outline-success ml-auto" @onclick="() => ChangeStatus(Status.Confirmed)">Open</button>
-        }
-    </div>
-    <div class="col-12 col-lg-8 mx-auto my-1">
-        <h3>Hosts:</h3>
-        <AuthorizeView>
-            <Authorized>
-                <WagerHostsDisplay Hosts="Wager.Hosts" GroupName="@Wager.GroupName" UserId="@context.User.GetId()" StatusCallback="SetStatus" />
-            </Authorized>
-        </AuthorizeView>
-    </div>
-    <div class="col-12 col-lg-8 mx-auto my-1">
-        <h3>Wager:</h3>
-        <WagerDisplay Wager="Wager" />
-    </div>
-    @if (Wager.Status == (byte)Status.Confirmed)
-    {
+@if (Wager != null)
+{
+    <h1 class="text-center">@Enum.GetName(typeof(Status), Wager.Status) Wager</h1>
+    <div class="row">
+        <div class="col-12 col-lg-8 mx-auto my-1 text-right">
+            @if (Wager.Status == (byte)Status.Confirmed)
+            {
+                <button class="btn btn-outline-danger" @onclick="() => ChangeStatus(Status.Closed)">Close</button>
+            }
+            else if (Wager.Status == (byte)Status.Closed)
+            {
+                <button class="btn btn-outline-success ml-auto" @onclick="() => ChangeStatus(Status.Confirmed)">Open</button>
+            }
+        </div>
         <div class="col-12 col-lg-8 mx-auto my-1">
-            <h3>Challenges:</h3>
-            <div class="row">
-                @foreach (WagerChallenge challenge in Wager.Challenges)
+            <h3>Hosts:</h3>
+            <AuthorizeView>
+                <Authorized>
+                    <WagerHostsDisplay Hosts="Wager.Hosts" GroupName="@Wager.GroupName" UserId="@context.User.GetId()" StatusCallback="SetStatus" />
+                </Authorized>
+            </AuthorizeView>
+        </div>
+        <div class="col-12 col-lg-8 mx-auto my-1">
+            <h3>Wager:</h3>
+            <WagerDisplay Wager="Wager" />
+        </div>
+        @if (Wager.Status != (byte)Status.Pending)
+        {
+            <div class="col-12 col-lg-8 mx-auto my-1">
+                <h3>Challenges:</h3>
+                @if (Wager.ChallengeCount == 0)
                 {
-                    <div class="col-6 col-md-4 col-lg-3 col-xl-2">
-                        <WagerChallengeDisplay Challenge="challenge" IsHostView="true"></WagerChallengeDisplay>
+                    <p class="text-center lead">There are currently no challenges.</p>
+                }
+                else
+                {
+                    <div class="row">
+                        @foreach (WagerChallenge challenge in Wager.Challenges)
+                        {
+                            <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+                                <WagerChallengeDisplay Challenge="challenge" IsHostView="true"></WagerChallengeDisplay>
+                            </div>
+                        }
                     </div>
                 }
             </div>
-        </div>
-    }
-</div>
+        }
+    </div>
+}
 
 @code {
     [Parameter]
     public int Id { get; set; }
     [CascadingParameter]
     public HubConnection HubConnection { get; set; }
-    public Wager Wager { get; set; } = new Wager();
+    public Wager Wager { get; set; }
     public IEnumerable<string> Errors { get; set; } = new List<string>();
 
     protected override async Task OnParametersSetAsync()
@@ -93,7 +103,7 @@
             if (Wager.Id == data.WagerId)
             {
                 var index = Wager.Hosts.FindIndex(x => x.Id == data.Id);
-                if (index  > -1)
+                if (index > -1)
                 {
                     Wager.Hosts[index] = data;
                     StateHasChanged();

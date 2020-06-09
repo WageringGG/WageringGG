@@ -1,28 +1,43 @@
 ﻿@page "/wagers/view/{id:int}"
 @inject HttpClient http
 
-<h1 class="text-center">@Constants.Games.GetName(Wager.GameId) Wager</h1>
-<div class="row">
-    <div class="col-12 col-lg-8 mx-auto my-1">
-        <h3>Hosts:</h3>
-        <WagerHostsDisplay Hosts="Wager.Hosts" />
-    </div>
-    <div class="col-12 col-lg-8 mx-auto my-1">
-        <h3>Wager:</h3>
-        <WagerDisplay Wager="Wager" />
-    </div>
-    @if (Wager.Status == (byte)Status.Confirmed)
-    {
+@if (Wager != null)
+{
+    <h1 class="text-center">@Constants.Games.GetName(Wager.GameId) Wager</h1>
+    <div class="row">
+        <div class="col-12 col-lg-8 mx-auto my-1">
+            <h3>Hosts:</h3>
+            <WagerHostsDisplay Hosts="Wager.Hosts" />
+        </div>
+        <div class="col-12 col-lg-8 mx-auto my-1">
+            <h3>Wager:</h3>
+            <WagerDisplay Wager="Wager" />
+        </div>
         <div class="col-12 col-lg-8 mx-auto my-1">
             <h3>Challenges:</h3>
+            @if (Wager.ChallengeCount == 0)
+            {
+                <p class="text-center lead">There are currently no challenges.</p>
+            }
+            else
+            {
+                <div class="row">
+                    @foreach (WagerChallenge challenge in Wager.Challenges)
+                    {
+                        <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+                            <WagerChallengeDisplay Challenge="challenge"></WagerChallengeDisplay>
+                        </div>
+                    }
+                </div>
+            }
         </div>
-    }
-</div>
+    </div>
+}
 
 @code {
     [Parameter]
     public int Id { get; set; }
-    public Wager Wager { get; set; } = new Wager();
+    public Wager Wager { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
