@@ -3,7 +3,11 @@
 @inject NavigationManager nav
 
 <h1 class="text-center">@Game.Name Wagers</h1>
-<Create Game="Game" />
+<AuthorizeView>
+    <Authorized>
+        <Create Context="context" Game="Game" />
+    </Authorized>
+</AuthorizeView>
 @if (Wagers != null)
 {
     @if (Wagers.TotalPages == 0)

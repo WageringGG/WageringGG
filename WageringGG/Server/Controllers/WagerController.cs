@@ -132,22 +132,26 @@ namespace WageringGG.Server.Handlers
         // more details see https://aka.ms/RazorPagesCRUD.
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> PostWager(Wager wagerData)
+        public async Task<IActionResult> CreateWager(Wager wagerData)
         {
             string? userId = User.GetId();
             string? userName = User.GetName();
+            string? userKey = User.GetKey();
+            if (userKey == null)
+                ModelState.AddModelError(string.Empty, "You do not have a public key registered.");
+            //check funds
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
 
-            WagerHostBid caller = wagerData.Hosts.FirstOrDefault(x => x.ProfileId == userId);
             if (wagerData.Hosts.Sum(x => x.ReceivablePt) != 100)
-                ModelState.AddModelError(string.Empty, "The hosts receivable percentages do not add up to 100.");
+                ModelState.AddModelError(string.Empty, "The receivable percentages do not add up to 100.");
             if (wagerData.Hosts.Sum(x => x.PayablePt) != 100)
-                ModelState.AddModelError(string.Empty, "The hosts payable percentages do not add up to 100.");
-            if (caller == null)
+                ModelState.AddModelError(string.Empty, "The payable percentages do not add up to 100.");
+            if (!wagerData.Hosts.Any(x => x.ProfileId == userId))
                 ModelState.AddModelError(string.Empty, "Caller must be a host.");
             if (!wagerData.HostIds().IsUnique())
-                ModelState.AddModelError(string.Empty, "The hosts are not unique.");
+                ModelState.AddModelError(string.Empty, "The id's are not unique.");
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
@@ -161,8 +165,7 @@ namespace WageringGG.Server.Handlers
                 MinimumWager = wagerData.MinimumWager,
                 MaximumWager = wagerData.MaximumWager,
                 IsPrivate = wagerData.IsPrivate,
-                Status = 0,
-                Hosts = new List<WagerHostBid>(),
+                Status = (byte)Status.Pending,
                 ChallengeCount = 0,
                 PlayerCount = wagerData.Hosts.Count
             };
@@ -186,16 +189,73 @@ namespace WageringGG.Server.Handlers
 
             _context.Wagers.Add(wager);
             _context.SaveChanges();
-            Notification notification = new Notification
+            if (wager.Hosts.Count > 1)
             {
-                Date = date,
-                Message = $"{userName} created a wager with you.",
-                Link = $"/host/wagers/view/{wager.Id}"
-            };
-            IEnumerable<string> others = wager.HostIds().Where(x => x != userId);
-            NotificationHandler.AddNotificationToUsers(_context, others, notification);
-            await HubHandler.SendGroupAsync(_hubContext, others.ToList(), wager.GroupName, notification);
+                Notification notification = new Notification
+                {
+                    Date = date,
+                    Message = $"{userName} created a wager with you.",
+                    Link = $"/host/wagers/view/{wager.Id}"
+                };
+                IEnumerable<string> others = wager.HostIds().Where(x => x != userId);
+                NotificationHandler.AddNotificationToUsers(_context, others, notification);
+                await HubHandler.SendGroupAsync(_hubContext, others.ToList(), wager.GroupName, notification);
+            }
             return Ok(wager.Id);
+        }
+
+        [HttpPost("challenge/{wagerId}")]
+        [Authorize]
+        public async Task<IActionResult> CreateChallenge([FromRoute] int wagerId, [FromBody] WagerChallenge challengeData)
+        {
+            string? userKey = User.GetKey();
+            string? userId = User.GetId();
+            if (userKey == null)
+                ModelState.AddModelError(string.Empty, "You do not have a public key registered.");
+            //check funds
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState.GetErrors());
+            if (challengeData.Challengers.Sum(x => x.ReceivablePt) != 100)
+                ModelState.AddModelError(string.Empty, "The receivable percentages do not add up to 100.");
+            if (challengeData.Challengers.Sum(x => x.PayablePt) != 100)
+                ModelState.AddModelError(string.Empty, "The payable percentages do not add up to 100.");
+            if (!challengeData.Challengers.Any(x => x.ProfileId == userId))
+                ModelState.AddModelError(string.Empty, "Caller must be a host.");
+            if (!challengeData.ChallengerIds().IsUnique())
+                ModelState.AddModelError(string.Empty, "The id's are not unique.");
+            //check that wager is in a confirmed state accepting wagers
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState.GetErrors());
+            DateTime date = DateTime.Now;
+            WagerChallenge challenge = new WagerChallenge
+            {
+                Amount = challengeData.Amount,
+                Date = date,
+                IsAccepted = false,
+                Status = (byte)Status.Pending,
+                WagerId = wagerId
+            };
+            foreach (WagerChallengeBid bid in challengeData.Challengers)
+            {
+                WagerChallengeBid challengeBid = new WagerChallengeBid
+                {
+                    Approved = null,
+                    PayablePt = bid.PayablePt,
+                    ReceivablePt = bid.ReceivablePt,
+                    ProfileId = bid.ProfileId
+                };
+                if (bid.ProfileId == userId)
+                    challengeBid.Approved = true;
+                challenge.Challengers.Add(challengeBid);
+            }
+            if (challenge.IsApproved())
+                challenge.Status = (byte)Status.Confirmed;
+
+            _context.WagerChallenges.Add(challenge);
+            _context.SaveChanges();
+            //send notifications
+            return Ok();
         }
     }
 }

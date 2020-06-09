@@ -1,8 +1,11 @@
-﻿@foreach (string error in Errors)
+﻿@if (Errors != null)
 {
-    <div class="alert alert-danger" role="alert">
-        @error
-    </div>
+    @foreach (string error in Errors)
+    {
+        <div class="alert alert-danger" role="alert">
+            @error
+        </div>
+    }
 }
 
 @code {

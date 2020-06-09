@@ -2,21 +2,21 @@
 @inject NavigationManager navManager
 @inject IJSRuntime js
 
-<div class="d-flex my-2">
-    <button class="btn btn-outline-secondary ml-auto" data-toggle="modal" data-target="#createModal">
-        <i class="mdi mdi-plus"></i> Create
+<div class="d-flex">
+    <button class="btn btn-outline-secondary ml-auto" data-toggle="modal" data-target="#applyModal">
+        <i class="mdi mdi-plus"></i> Apply
     </button>
 </div>
-<div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+<div class="modal fade" id="applyModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalLabel">Create a Wager</h5>
+                <h5 class="modal-title" id="modalLabel">Apply to this Wager</h5>
                 <button type="button" class="close text-danger" data-dismiss="modal" aria-label="Close">
                     <i class="mdi mdi-close"></i>
                 </button>
             </div>
-            <EditForm EditContext="EditContext" OnValidSubmit="SubmitWager" OnInvalidSubmit="SetErrors">
+            <EditForm EditContext="EditContext" OnValidSubmit="SubmitChallenge" OnInvalidSubmit="SetErrors">
                 <div class="modal-body">
                     <DataAnnotationsValidator />
                     @if (!HasKey)
@@ -37,7 +37,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (WagerHostBid bid in Wager.Hosts)
+                                @foreach (WagerChallengeBid bid in Challenge.Challengers)
                                 {
                                     <tr>
                                         <td>@bid.DisplayName</td>
@@ -75,26 +75,12 @@
                                 }
                                 <tr class="border-top">
                                     <th scope="row">Total:</th>
-                                    <td>@Wager.Hosts.Sum(x => x.PayablePt)%</td>
-                                    <td>@Wager.Hosts.Sum(x => x.ReceivablePt)%</td>
+                                    <td>@Challenge.Challengers.Sum(x => x.PayablePt)%</td>
+                                    <td>@Challenge.Challengers.Sum(x => x.ReceivablePt)%</td>
                                     <td><button type="button" class="btn btn-sm btn-outline-secondary" @onclick="Normalize">Normalize</button></td>
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
-                    <div class="form-row">
-                        <div class="col-9">
-                            <div class="form-group">
-                                <label for="description">Description</label>
-                                <InputText class="form-control" @bind-Value="Wager.Description" />
-                            </div>
-                        </div>
-                        <div class="col-3 my-auto">
-                            <div class="form-group form-check">
-                                <InputCheckbox @bind-Value="Wager.IsPrivate" class="form-check-input" />
-                                <label class="form-check-label">Private</label>
-                            </div>
-                        </div>
                     </div>
                     <button type="button" class="btn btn-sm btn-outline-primary btn-block" data-toggle="collapse" data-target="#addCollapse" aria-expanded="false" aria-controls="addCollapse">
                         <i class="mdi mdi-account-plus"></i> Add User
@@ -121,11 +107,11 @@
                             <div class="col-12 col-sm-6">
                                 <div class="form-group">
                                     <label for="payablePt">Payable %</label>
-                                    <input type="number" @bind-value="Host.PayablePt" class="form-control" id="payablePt" />
+                                    <input type="number" @bind-value="Challenger.PayablePt" class="form-control" id="payablePt" />
                                 </div>
                                 <div class="form-group">
                                     <label for="receivablePt">Receivable %</label>
-                                    <input type="number" @bind-value="Host.ReceivablePt" class="form-control" id="receivablePt" />
+                                    <input type="number" @bind-value="Challenger.ReceivablePt" class="form-control" id="receivablePt" />
                                 </div>
                             </div>
                         </div>
@@ -144,18 +130,14 @@
 @code {
     @using System.Timers;
     [Parameter]
-    public Game Game { get; set; }
-    [CascadingParameter]
-    private HubConnection HubConnection { get; set; }
-    [Parameter]
     public AuthenticationState Context { get; set; }
-    private Wager Wager { get; set; } = new Wager();
-    private WagerHostBid Host { get; set; } = new WagerHostBid();
-    private string DisplayName { get; set; }
-    private ICollection<Profile> Profiles { get; set; } = new List<Profile>();
-    private Timer Debounce { get; set; } = new Timer(750) { AutoReset = false };
+    private WagerChallenge Challenge { get; set; } = new WagerChallenge();
+    private WagerChallengeBid Challenger { get; set; } = new WagerChallengeBid();
     private IEnumerable<string> Errors { get; set; }
+    private Timer Debounce { get; set; } = new Timer(750) { AutoReset = false };
+    private ICollection<Profile> Profiles { get; set; } = new List<Profile>();
     private EditContext EditContext { get; set; }
+    private string DisplayName { get; set; }
     private bool HasKey { get; set; } = false;
     private Profile SelectedProfile
     {
@@ -167,15 +149,13 @@
 
     protected override void OnInitialized()
     {
-        EditContext = new EditContext(Wager);
+        EditContext = new EditContext(Challenge);
         Debounce.Elapsed += SearchUsers;
-        if (Game != null)
-            Wager.GameId = Game.Id;
         if (Context.User.Identity.IsAuthenticated)
         {
             if (!string.IsNullOrEmpty(Context.User.GetKey()))
                 HasKey = true;
-            Wager.Hosts.Add(new WagerHostBid
+            Challenge.Challengers.Add(new WagerChallengeBid
             {
                 ProfileId = Context.User.GetId(),
                 DisplayName = Context.User.GetName(),
@@ -186,10 +166,29 @@
         base.OnInitialized();
     }
 
-    private async Task GoToProfile()
+    private async Task AddUser()
     {
-        await js.InvokeVoidAsync("blazorModal", "#createModal", "hide");
-        navManager.NavigateTo("/profile");
+        Profile profile = SelectedProfile;
+        if (profile == null)
+        {
+            await js.InvokeVoidAsync("alert", "No user has been selected.");
+            return;
+        }
+        if (Challenge.Challengers.Any(x => x.DisplayName == profile.DisplayName))
+        {
+            await js.InvokeVoidAsync("alert", $"{profile.DisplayName} is already a member.");
+            return;
+        }
+
+        Challenge.Challengers.Add(new WagerChallengeBid
+        {
+            ProfileId = profile.Id,
+            DisplayName = profile.DisplayName,
+            ReceivablePt = Challenger.ReceivablePt,
+            PayablePt = Challenger.PayablePt
+        });
+        ResetUser();
+        await js.InvokeVoidAsync("blazorCollapse", "#addCollapse", "hide");
     }
 
     private void SetErrors()
@@ -197,10 +196,39 @@
         Errors = EditContext.GetValidationMessages();
     }
 
+    private void ResetUser()
+    {
+        Challenger = new WagerChallengeBid();
+        Profiles = new List<Profile>();
+        DisplayName = null;
+    }
+
+    private void RemoveUser(string profileId)
+    {
+        WagerChallengeBid bid = Challenge.Challengers.FirstOrDefault(x => x.ProfileId == profileId);
+        if (bid == null)
+            return;
+        Challenge.Challengers.Remove(bid);
+    }
+
+    private void EditUser(WagerChallengeBid bid)
+    {
+        if (bid == null)
+            return;
+        bid.IsEditing = true;
+    }
+
+    private void SaveEdit(WagerChallengeBid bid)
+    {
+        if (bid == null)
+            return;
+        bid.IsEditing = false;
+    }
+
     private void Normalize()
     {
-        byte avg = (byte)(100 / Wager.Hosts.Count);
-        Wager.Hosts.All(x =>
+        byte avg = (byte)(100 / Challenge.Challengers.Count);
+        Challenge.Challengers.All(x =>
         {
             x.PayablePt = avg;
             x.ReceivablePt = avg;
@@ -220,58 +248,10 @@
         DisplayName = profile.DisplayName;
     }
 
-    private async Task AddUser()
+    private async Task GoToProfile()
     {
-        Profile profile = SelectedProfile;
-        if (profile == null)
-        {
-            await js.InvokeVoidAsync("alert", "No user has been selected.");
-            return;
-        }
-        if (Wager.Hosts.Any(x => x.DisplayName == profile.DisplayName))
-        {
-            await js.InvokeVoidAsync("alert", $"{profile.DisplayName} is already a member.");
-            return;
-        }
-
-        Wager.Hosts.Add(new WagerHostBid
-        {
-            ProfileId = profile.Id,
-            DisplayName = profile.DisplayName,
-            ReceivablePt = Host.ReceivablePt,
-            PayablePt = Host.PayablePt
-        });
-        ResetUser();
-        await js.InvokeVoidAsync("blazorCollapse", "#addCollapse", "hide");
-    }
-
-    private void ResetUser()
-    {
-        Host = new WagerHostBid();
-        Profiles = new List<Profile>();
-        DisplayName = null;
-    }
-
-    private void RemoveUser(string profileId)
-    {
-        WagerHostBid bid = Wager.Hosts.FirstOrDefault(x => x.ProfileId == profileId);
-        if (bid == null)
-            return;
-        Wager.Hosts.Remove(bid);
-    }
-
-    private void EditUser(WagerHostBid bid)
-    {
-        if (bid == null)
-            return;
-        bid.IsEditing = true;
-    }
-
-    private void SaveEdit(WagerHostBid bid)
-    {
-        if (bid == null)
-            return;
-        bid.IsEditing = false;
+        await js.InvokeVoidAsync("blazorModal", "#applyModal", "hide");
+        navManager.NavigateTo("/profile");
     }
 
     private async void SearchUsers(object source, ElapsedEventArgs e)
@@ -283,18 +263,18 @@
         StateHasChanged();
     }
 
-    private async Task SubmitWager()
+    private async Task SubmitChallenge()
     {
         if (!HasKey)
             return;
-        HttpResponseMessage response = await http.Client.PostAsJsonAsync("/api/wager", Wager);
+        HttpResponseMessage response = await http.Client.PostAsJsonAsync("/api/wager/challenge", Challenge);
         if (response.IsSuccessStatusCode)
         {
-            Wager.Id = await response.Content.ReadFromJsonAsync<int>();
-            string link = $"/host/wagers/view/{Wager.Id}";
-            await HubConnection.InvokeAsync("AddToGroup", Wager.GroupName);
-            await js.InvokeVoidAsync("blazorModal", "#createModal", "hide");
-            navManager.NavigateTo(link);
+            Challenge.Id = await response.Content.ReadFromJsonAsync<int>();
+            //string link = $"/host/wagers/view/{Wager.Id}";
+            //await HubConnection.InvokeAsync("AddToGroup", Wager.GroupName);
+            await js.InvokeVoidAsync("blazorModal", "#applyModal", "hide");
+            //navManager.NavigateTo(link);
         }
         else
         {

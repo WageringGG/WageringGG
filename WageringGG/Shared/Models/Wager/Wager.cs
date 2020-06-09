@@ -40,8 +40,6 @@ namespace WageringGG.Shared.Models
 
         public override IEnumerable<string> HostIds()
         {
-            if (Hosts == null)
-                return new List<string>();
             return Hosts.Select(x => x.ProfileId);
         }
 
@@ -50,7 +48,7 @@ namespace WageringGG.Shared.Models
             IEnumerable<string> result = Enumerable.Empty<string>();
             foreach (WagerChallenge challenge in Challenges)
             {
-                result = result.Union(challenge.Challengers.Select(x => x.ProfileId));
+                result = result.Union(challenge.ChallengerIds());
             }
             return result.Distinct();
         }

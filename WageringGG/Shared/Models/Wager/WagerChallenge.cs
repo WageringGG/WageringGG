@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 #nullable disable
 namespace WageringGG.Shared.Models
@@ -33,6 +34,11 @@ namespace WageringGG.Shared.Models
             if (Challengers.Count == 0)
                 return false;
             return true;
+        }
+
+        public IEnumerable<string> ChallengerIds()
+        {
+            return Challengers.Select(x => x.ProfileId);
         }
     }
 }

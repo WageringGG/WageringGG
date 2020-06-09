@@ -10,7 +10,10 @@ namespace WageringGG
         public static bool IsUnique<T>(this IEnumerable<T> list)
         {
             var hs = new HashSet<T>();
-            return list.All(hs.Add);
+            foreach (var item in list)
+                if (!hs.Add(item))
+                    return false;
+            return true;
         }
 
         public static string GetKey(this ClaimsPrincipal User)
