@@ -11,7 +11,9 @@ using WageringGG.Server.Hubs;
 using WageringGG.Server.Models;
 using WageringGG.Shared.Constants;
 using WageringGG.Shared.Models;
-using stellar = stellar_dotnet_sdk;
+using stellar_dotnet_sdk;
+using stellar_dotnet_sdk.responses;
+using stellar_dotnet_sdk.xdr;
 
 namespace WageringGG.Server.Handlers
 {
@@ -20,11 +22,11 @@ namespace WageringGG.Server.Handlers
     public class WagerController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly stellar.Server _server;
+        private readonly stellar_dotnet_sdk.Server _server;
         private readonly IHubContext<GroupHub> _hubContext;
         private const int ResultSize = 16;
 
-        public WagerController(ApplicationDbContext context, IHubContext<GroupHub> hubContext, stellar.Server server)
+        public WagerController(ApplicationDbContext context, IHubContext<GroupHub> hubContext, stellar_dotnet_sdk.Server server)
         {
             _context = context;
             _server = server;
@@ -122,7 +124,7 @@ namespace WageringGG.Server.Handlers
                 Message = $"{userName} has canceled the wager.",
                 Link = $"/wagers/view/{id}"
             };
-            NotificationHandler.AddNotificationToUsers(_context, wager.HostIds(), notification);
+            await NotificationHandler.AddNotificationToUsers(_context, _hubContext, wager.HostIds(), notification);
             _context.SaveChanges();
             return Ok();
         }
@@ -139,7 +141,6 @@ namespace WageringGG.Server.Handlers
             string? userKey = User.GetKey();
             if (userKey == null)
                 ModelState.AddModelError(string.Empty, "You do not have a public key registered.");
-            //check funds
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
@@ -155,6 +156,17 @@ namespace WageringGG.Server.Handlers
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
+
+            AccountResponse account = await _server.Accounts.Account(userKey);
+            Balance balance = account.Balances.FirstOrDefault(x => x.AssetType == "native");
+            if (balance == null)
+                return BadRequest(new string[] { "You do not have any Stellar Lumens. " });
+            if (decimal.TryParse(balance.BalanceString, out decimal balanceAmount))
+            {
+               // if (balanceAmount < wagerData.MinimumWager)
+            }
+            else
+                ModelState.AddModelError(string.Empty, "Cannot read the Lumens balance.");
 
             DateTime date = DateTime.Now;
             Wager wager = new Wager //prevents overposting
@@ -197,9 +209,9 @@ namespace WageringGG.Server.Handlers
                     Message = $"{userName} created a wager with you.",
                     Link = $"/host/wagers/view/{wager.Id}"
                 };
-                IEnumerable<string> others = wager.HostIds().Where(x => x != userId);
-                NotificationHandler.AddNotificationToUsers(_context, others, notification);
-                await HubHandler.SendGroupAsync(_hubContext, others.ToList(), wager.GroupName, notification);
+                IEnumerable<string> users = wager.HostIds();
+                await NotificationHandler.AddNotificationToUsers(_context, _hubContext, users.Where(x => x != userId), notification);
+                await HubHandler.SendGroupAsync(_hubContext, users, wager.GroupName);
             }
             return Ok(wager.Id);
         }
@@ -224,14 +236,22 @@ namespace WageringGG.Server.Handlers
                 ModelState.AddModelError(string.Empty, "Caller must be a host.");
             if (!challengeData.ChallengerIds().IsUnique())
                 ModelState.AddModelError(string.Empty, "The id's are not unique.");
-            Wager wager = await _context.Wagers.Where(x => x.Id == wagerId).Include(x => x.Hosts).FirstOrDefaultAsync();
-            if (wager == null)
-                ModelState.AddModelError(string.Empty, "The wager could not be found.");
-            else if (wager.Status != (byte)Status.Confirmed)
-                ModelState.AddModelError(string.Empty, "The wager is not currently accepting challenges.");
-
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
+            Wager wager = await _context.Wagers.Where(x => x.Id == wagerId).Include(x => x.Hosts).FirstOrDefaultAsync();
+            if (wager == null)
+                return BadRequest(new string[] { "The wager could not be found." });
+            if (wager.Status != (byte)Status.Confirmed)
+                ModelState.AddModelError(string.Empty, "The wager is not currently accepting challenges." );
+            if (wager.MaximumWager.HasValue && challengeData.Amount > wager.MaximumWager.Value)
+                ModelState.AddModelError(string.Empty, "The challenge amount is more than the maximum wager amount.");
+            if (wager.MinimumWager.HasValue && challengeData.Amount < wager.MinimumWager.Value)
+                ModelState.AddModelError(string.Empty, "The challenge amount is more than the maximum wager amount.");
+            if (wager.HostIds().Intersect(challengeData.ChallengerIds()).Count() > 0)
+                ModelState.AddModelError(string.Empty, "A wager host cannot challenge themself.");
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState.GetErrors());
+
             DateTime date = DateTime.Now;
             WagerChallenge challenge = new WagerChallenge
             {
@@ -255,22 +275,33 @@ namespace WageringGG.Server.Handlers
                 challenge.Challengers.Add(challengeBid);
             }
             if (challenge.IsApproved())
+            {
                 challenge.Status = (byte)Status.Confirmed;
+                //send notification
+                Notification notification = new Notification
+                {
+                    Date = date,
+                    Message = "There is a new wager challenge.",
+                    Link = $"/host/wagers/view/{wagerId}"
+                };
+                IEnumerable<string> users = wager.HostIds();
+                await NotificationHandler.AddNotificationToUsers(_context, _hubContext, users, notification);
+            }
 
             _context.WagerChallenges.Add(challenge);
             _context.SaveChanges();
-            //send notifications
+
             if (challenge.Challengers.Count > 1)
             {
                 Notification notification = new Notification
                 {
                     Date = date,
                     Message = $"{userName} created a wager challenge with you.",
-                    Link = $"/host/wagers/view/{wagerId}"
+                    Link = $"/client/wagers/view/{wagerId}"
                 };
-                IEnumerable<string> users = challenge.ChallengerIds().Union(wager.HostIds());
-                NotificationHandler.AddNotificationToUsers(_context, users, notification);
-                await HubHandler.SendGroupAsync(_hubContext, users.ToList(), wager.GroupName, notification);
+                IEnumerable<string> users = challenge.ChallengerIds();
+                await NotificationHandler.AddNotificationToUsers(_context, _hubContext, users.Where(x => x != userId), notification);
+                await HubHandler.SendGroupAsync(_hubContext, users, wager.GroupName);
             }
             return Ok();
         }

@@ -11,7 +11,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalLabel">Apply to this Wager</h5>
+                <h5 class="modal-title" id="modalLabel">Apply to this wager</h5>
                 <button type="button" class="close text-danger" data-dismiss="modal" aria-label="Close">
                     <i class="mdi mdi-close"></i>
                 </button>
@@ -82,6 +82,12 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="row">
+                        <div class="form-group col-6 ml-auto">
+                            <label for="amount">Amount</label>
+                            <input type="number" class="form-control" id="amount" @bind-value="Challenge.Amount">
+                        </div>
+                    </div>
                     <button type="button" class="btn btn-sm btn-outline-primary btn-block" data-toggle="collapse" data-target="#addCollapse" aria-expanded="false" aria-controls="addCollapse">
                         <i class="mdi mdi-account-plus"></i> Add User
                     </button>
@@ -131,6 +137,8 @@
     @using System.Timers;
     [Parameter]
     public AuthenticationState Context { get; set; }
+    [Parameter]
+    public int WagerId { get; set; }
     private WagerChallenge Challenge { get; set; } = new WagerChallenge();
     private WagerChallengeBid Challenger { get; set; } = new WagerChallengeBid();
     private IEnumerable<string> Errors { get; set; }
@@ -267,14 +275,13 @@
     {
         if (!HasKey)
             return;
-        HttpResponseMessage response = await http.Client.PostAsJsonAsync("/api/wager/challenge", Challenge);
+        HttpResponseMessage response = await http.Client.PostAsJsonAsync($"/api/wager/challenge/{WagerId}", Challenge);
         if (response.IsSuccessStatusCode)
         {
             Challenge.Id = await response.Content.ReadFromJsonAsync<int>();
-            //string link = $"/host/wagers/view/{Wager.Id}";
-            //await HubConnection.InvokeAsync("AddToGroup", Wager.GroupName);
+            string link = $"/host/wagers/view/{WagerId}";
             await js.InvokeVoidAsync("blazorModal", "#applyModal", "hide");
-            //navManager.NavigateTo(link);
+            navManager.NavigateTo(link);
         }
         else
         {

@@ -292,7 +292,6 @@
         {
             Wager.Id = await response.Content.ReadFromJsonAsync<int>();
             string link = $"/host/wagers/view/{Wager.Id}";
-            await HubConnection.InvokeAsync("AddToGroup", Wager.GroupName);
             await js.InvokeVoidAsync("blazorModal", "#createModal", "hide");
             navManager.NavigateTo(link);
         }

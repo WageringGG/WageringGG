@@ -1,5 +1,9 @@
+using Microsoft.AspNetCore.SignalR;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using WageringGG.Server.Data;
+using WageringGG.Server.Hubs;
 using WageringGG.Shared.Models;
 
 namespace WageringGG.Server.Handlers
@@ -13,7 +17,7 @@ namespace WageringGG.Server.Handlers
         /// <param name="userIds"></param>
         /// <param name="notification"></param>
         /// <returns></returns>
-        public static void AddNotificationToUsers(ApplicationDbContext _context, IEnumerable<string> userIds, Notification notification)
+        public static async Task AddNotificationToUsers(ApplicationDbContext _context, IHubContext<GroupHub> _hubContext, IEnumerable<string> userIds, Notification notification)
         {
             List<Notification> notifications = new List<Notification>();
             foreach (string id in userIds)
@@ -27,10 +31,8 @@ namespace WageringGG.Server.Handlers
                 };
                 notifications.Add(personalNotification);
             }
-            if (notifications.Count > 0)
-            {
-                _context.Notifications.AddRange(notifications);
-            }
+            await _hubContext.Clients.Groups(userIds.ToList()).SendAsync("ReceiveNotification", notification);
+            _context.Notifications.AddRange(notifications);
         }
     }
 }
