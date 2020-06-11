@@ -14,6 +14,7 @@ namespace WageringGG.Server.Data
         public DbSet<WagerChallengeBid> WagerChallengeBids { get; set; }
         public DbSet<WagerHostBid> WagerHostBids { get; set; }
         public DbSet<WagerRule> WagerRules { get; set; }
+        public DbSet<WagerApproval> WagerApprovals { get; set; }
         #endregion
         #region Tournaments
         public DbSet<Tournament> Tournaments { get; set; }
@@ -30,8 +31,9 @@ namespace WageringGG.Server.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.Entity<Notification>().HasKey(x => new { x.Date, x.ProfileId });
+            builder.Entity<WagerApproval>().HasKey(x => new { x.HostId, x.ChallengeId });
+            builder.Entity<WagerApproval>().HasOne(x => x.Host).WithMany().OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Profile>().HasIndex(x => x.NormalizedDisplayName).IsUnique();
-            builder.Entity<Profile>().HasAlternateKey(x => x.DisplayName);
             builder.Entity<Game>().HasIndex(x => x.NormalizedName).IsUnique();
 
             builder.Entity<Game>().HasData(Constants.Games.Values);

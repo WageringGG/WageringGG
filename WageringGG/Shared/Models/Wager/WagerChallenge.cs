@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 #nullable disable
 namespace WageringGG.Shared.Models
@@ -12,8 +13,10 @@ namespace WageringGG.Shared.Models
         public int Id { get; set; }
 
         public int WagerId { get; set; }
+        [JsonIgnore]
         public Wager Wager { get; set; }
 
+        public List<WagerApproval> Approvals { get; set; } = new List<WagerApproval>();
         public List<WagerChallengeBid> Challengers { get; set; } = new List<WagerChallengeBid>();
 
         [Required]

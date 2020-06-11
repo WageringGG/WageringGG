@@ -22,6 +22,12 @@
     <Compile Remove="Migrations\20200531183547_Test.Designer.cs" />
     <Compile Remove="Migrations\20200604064611_Notifications.cs" />
     <Compile Remove="Migrations\20200604064611_Notifications.Designer.cs" />
+    <Compile Remove="Migrations\20200611052454_Approvals.cs" />
+    <Compile Remove="Migrations\20200611052454_Approvals.Designer.cs" />
+    <Compile Remove="Migrations\20200611054034_Approvals.cs" />
+    <Compile Remove="Migrations\20200611054034_Approvals.Designer.cs" />
+    <Compile Remove="Migrations\20200611054740_Approvals.cs" />
+    <Compile Remove="Migrations\20200611054740_Approvals.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>

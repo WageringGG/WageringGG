@@ -153,6 +153,8 @@ namespace WageringGG.Server.Handlers
                 ModelState.AddModelError(string.Empty, "Caller must be a host.");
             if (!wagerData.HostIds().IsUnique())
                 ModelState.AddModelError(string.Empty, "The id's are not unique.");
+            if (wagerData.MinimumWager.HasValue && wagerData.MaximumWager.HasValue && wagerData.MinimumWager.Value > wagerData.MaximumWager.Value)
+                ModelState.AddModelError(string.Empty, "The minimum wager cannot be less than the maximum wager.");
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
@@ -163,10 +165,16 @@ namespace WageringGG.Server.Handlers
                 return BadRequest(new string[] { "You do not have any Stellar Lumens. " });
             if (decimal.TryParse(balance.BalanceString, out decimal balanceAmount))
             {
-               // if (balanceAmount < wagerData.MinimumWager)
+                if (wagerData.MinimumWager.HasValue && balanceAmount < wagerData.MinimumWager.Value)
+                    ModelState.AddModelError(string.Empty, "You have insufficient funds for the minimum wager amount.");
+                if (wagerData.MaximumWager.HasValue && balanceAmount < wagerData.MaximumWager.Value)
+                    ModelState.AddModelError(string.Empty, "You have insufficient funds for the maximum wager amount.");
             }
             else
                 ModelState.AddModelError(string.Empty, "Cannot read the Lumens balance.");
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState.GetErrors());
 
             DateTime date = DateTime.Now;
             Wager wager = new Wager //prevents overposting
@@ -252,6 +260,23 @@ namespace WageringGG.Server.Handlers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
 
+            AccountResponse account = await _server.Accounts.Account(userKey);
+            Balance balance = account.Balances.FirstOrDefault(x => x.AssetType == "native");
+            if (balance == null)
+                return BadRequest(new string[] { "You do not have any Stellar Lumens. " });
+            if (decimal.TryParse(balance.BalanceString, out decimal balanceAmount))
+            {
+                WagerChallengeBid bid = challengeData.Challengers.First(x => x.ProfileId == userId);
+                decimal portion = balanceAmount * bid.PayablePt / 100;
+                if (balanceAmount < portion)
+                    return BadRequest(new string[] { $"You have insufficient funds ({balanceAmount} XLM) for the wager amount ({portion} XLM)." });
+            }
+            else
+                ModelState.AddModelError(string.Empty, "Cannot read the Lumens balance.");
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState.GetErrors());
+
             DateTime date = DateTime.Now;
             WagerChallenge challenge = new WagerChallenge
             {
@@ -270,8 +295,6 @@ namespace WageringGG.Server.Handlers
                     ReceivablePt = bid.ReceivablePt,
                     ProfileId = bid.ProfileId
                 };
-                if (bid.ProfileId == userId)
-                    challengeBid.Approved = true;
                 challenge.Challengers.Add(challengeBid);
             }
             if (challenge.IsApproved())
