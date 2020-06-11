@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WageringGG.Server.Data;
+using WageringGG.Shared.Constants;
 using WageringGG.Shared.Models;
 
 namespace WageringGG.Server.Handlers
@@ -21,12 +22,24 @@ namespace WageringGG.Server.Handlers
             _context = context;
         }
 
-        [HttpGet("WagerChallenge")]
-        public async Task<IActionResult> WagerChallenges()
+        [HttpGet("wagers")]
+        public async Task<IActionResult> GetWagerChallenges()
         {
             string? userId = User.GetId();
-            List<WagerChallenge> results = await _context.WagerChallengeBids.AsNoTracking().Where(x => x.ProfileId == userId).Include(x => x.Challenge).ThenInclude(x => x.Challengers).ThenInclude(x => x.Profile).Select(x => x.Challenge).ToListAsync();
+            IEnumerable<WagerChallenge> results = await _context.WagerChallengeBids.AsNoTracking().Where(x => x.ProfileId == userId).Include(x => x.Challenge).Select(x => x.Challenge).ToListAsync();
             return Ok(results);
+        }
+
+        [HttpGet("wager/{id}")]
+        public async Task<IActionResult> GetWagerChallenge(int id)
+        {
+            string? userId = User.GetId();
+            WagerChallenge challenge = await _context.WagerChallenges.AsNoTracking().Where(x => x.Id == id).Include(x => x.Challengers).ThenInclude(x => x.Profile).FirstOrDefaultAsync();
+            if (challenge == null)
+                return BadRequest(new string[] { Errors.NotFound });
+            if (!challenge.Challengers.Any(x => x.ProfileId == userId))
+                return BadRequest(new string[] { "You are not an owner of the wager challenge." });
+            return Ok(challenge);
         }
     }
 }

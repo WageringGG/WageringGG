@@ -250,7 +250,7 @@ namespace WageringGG.Server.Handlers
             if (wager == null)
                 return BadRequest(new string[] { "The wager could not be found." });
             if (wager.Status != (byte)Status.Confirmed)
-                ModelState.AddModelError(string.Empty, "The wager is not currently accepting challenges." );
+                ModelState.AddModelError(string.Empty, "The wager is not currently accepting challenges.");
             if (wager.MaximumWager.HasValue && challengeData.Amount > wager.MaximumWager.Value)
                 ModelState.AddModelError(string.Empty, "The challenge amount is more than the maximum wager amount.");
             if (wager.MinimumWager.HasValue && challengeData.Amount < wager.MinimumWager.Value)
@@ -272,10 +272,7 @@ namespace WageringGG.Server.Handlers
                     return BadRequest(new string[] { $"You have insufficient funds ({balanceAmount} XLM) for the wager amount ({portion} XLM)." });
             }
             else
-                ModelState.AddModelError(string.Empty, "Cannot read the Lumens balance.");
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState.GetErrors());
+                return BadRequest(new string[] { "Cannot read the Lumens balance." });
 
             DateTime date = DateTime.Now;
             WagerChallenge challenge = new WagerChallenge
@@ -326,6 +323,7 @@ namespace WageringGG.Server.Handlers
                 await NotificationHandler.AddNotificationToUsers(_context, _hubContext, users.Where(x => x != userId), notification);
                 await HubHandler.SendGroupAsync(_hubContext, users, wager.GroupName);
             }
+            //after this let users sign transactions
             return Ok();
         }
     }

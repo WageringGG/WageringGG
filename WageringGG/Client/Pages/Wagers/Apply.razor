@@ -279,7 +279,7 @@
         if (response.IsSuccessStatusCode)
         {
             Challenge.Id = await response.Content.ReadFromJsonAsync<int>();
-            string link = $"/host/wagers/view/{WagerId}";
+            string link = $"/client/wagers/view/{WagerId}";
             await js.InvokeVoidAsync("blazorModal", "#applyModal", "hide");
             navManager.NavigateTo(link);
         }
