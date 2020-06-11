@@ -1,5 +1,89 @@
-﻿@layout WagerLayout
-@page "/client/wagers"
+﻿@page "/client/wagers"
+@page "/client/wagers/{value}"
+@inject AuthHttp http
+@inject ISessionStorageService sessionStorage
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
-<!--blank bc nothing chosen-->
+<div class="row my-2">
+    <div class="col-12 col-sm-4 my-2">
+        <div class="list-group" role="tablist">
+            @foreach (string status in Enum.GetNames(typeof(Status)))
+            {
+                <NavLink class="list-group-item list-group-item-action d-flex align-items-center" href="@($"/client/wagers/{status}")" role="tab">
+                    @status <span class="badge badge-info ml-auto">@Data.Where(x => x.Status == (byte)Enum.Parse(typeof(Status), status)).Count()</span>
+                </NavLink>
+            }
+        </div>
+    </div>
+    <div class="col-12 col-sm-8">
+        <div class="tab-content">
+            <div class="tab-pane active" role="tabpanel">
+                @if (View != null)
+                {
+                    @if (View.Count() == 0)
+                    {
+                        <p class="text-center my-2 lead">
+                            There's currently no @Enum.GetName(typeof(Status), Status) wagers.
+                        </p>
+                    }
+                    else
+                    {
+                        <div class="row">
+                            @foreach (WagerChallenge challenge in Data)
+                            {
+                                <div class="col-12 my-2">
+                                    <WagerChallengeDisplay Challenge="challenge" />
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
 
+@code{
+    [Parameter]
+    public string Value { get; set; }
+    private Status Status { get; set; }
+    private IEnumerable<WagerChallenge> Data { get; set; } = Enumerable.Empty<WagerChallenge>();
+    private List<WagerChallenge> View { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        sessionStorage.Changed += SessionStorageChanged;
+        var response = await http.Client.GetAsync("/api/client/wagers");
+        if (response.IsSuccessStatusCode)
+        {
+            Data = await response.Content.ReadFromJsonAsync<IEnumerable<WagerChallenge>>();
+            Data = Data.OrderByDescending(x => x.Date);
+        }
+        await base.OnInitializedAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(Value))
+        {
+            if (Enum.TryParse(typeof(Status), Value, out object result))
+            {
+                Status = (Status)result;
+            }
+        }
+        await base.OnParametersSetAsync();
+    }
+
+    private void SessionStorageChanged(object sender, Blazored.SessionStorage.ChangedEventArgs e)
+    {
+        if (e.Key == "WagerStatus")
+        {
+            var data = (WagerStatus)e.NewValue;
+            var wager = Data.FirstOrDefault(x => x.Id == data.WagerId);
+            if (wager != null)
+            {
+                wager.Status = data.Status;
+                StateHasChanged();
+            }
+        }
+    }
+}
