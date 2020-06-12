@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
+using stellar_dotnet_sdk.responses;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,10 +13,6 @@ using WageringGG.Server.Hubs;
 using WageringGG.Server.Models;
 using WageringGG.Shared.Constants;
 using WageringGG.Shared.Models;
-using stellar_dotnet_sdk;
-using stellar_dotnet_sdk.responses;
-using stellar_dotnet_sdk.xdr;
-using Microsoft.EntityFrameworkCore.Internal;
 
 namespace WageringGG.Server.Handlers
 {
