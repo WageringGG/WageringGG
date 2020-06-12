@@ -14,6 +14,7 @@ using WageringGG.Shared.Models;
 using stellar_dotnet_sdk;
 using stellar_dotnet_sdk.responses;
 using stellar_dotnet_sdk.xdr;
+using Microsoft.EntityFrameworkCore.Internal;
 
 namespace WageringGG.Server.Handlers
 {
@@ -159,8 +160,13 @@ namespace WageringGG.Server.Handlers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
 
-            AccountResponse account = await _server.Accounts.Account(userKey);
-            Balance balance = account.Balances.FirstOrDefault(x => x.AssetType == "native");
+            Balance? balance = null;
+            try
+            {
+                AccountResponse account = await _server.Accounts.Account(userKey);
+                balance = account.Balances.FirstOrDefault(x => x.AssetType == "native");
+            }
+            catch { }
             if (balance == null)
                 return BadRequest(new string[] { "You do not have any Stellar Lumens. " });
             if (decimal.TryParse(balance.BalanceString, out decimal balanceAmount))
@@ -209,6 +215,7 @@ namespace WageringGG.Server.Handlers
 
             _context.Wagers.Add(wager);
             _context.SaveChanges();
+            IEnumerable<string> users = wager.HostIds();
             if (wager.Hosts.Count > 1)
             {
                 Notification notification = new Notification
@@ -217,10 +224,9 @@ namespace WageringGG.Server.Handlers
                     Message = $"{userName} created a wager with you.",
                     Link = $"/host/wagers/view/{wager.Id}"
                 };
-                IEnumerable<string> users = wager.HostIds();
                 await NotificationHandler.AddNotificationToUsers(_context, _hubContext, users.Where(x => x != userId), notification);
-                await HubHandler.SendGroupAsync(_hubContext, users, wager.GroupName);
             }
+            await HubHandler.SendGroupAsync(_hubContext, users, wager.GroupName);
             return Ok(wager.Id);
         }
 
@@ -304,13 +310,14 @@ namespace WageringGG.Server.Handlers
                     Message = "There is a new wager challenge.",
                     Link = $"/host/wagers/view/{wagerId}"
                 };
-                IEnumerable<string> users = wager.HostIds();
-                await NotificationHandler.AddNotificationToUsers(_context, _hubContext, users, notification);
+                IEnumerable<string> hosts = wager.HostIds();
+                await NotificationHandler.AddNotificationToUsers(_context, _hubContext, hosts, notification);
             }
 
             _context.WagerChallenges.Add(challenge);
             _context.SaveChanges();
 
+            IEnumerable<string> users = challenge.ChallengerIds();
             if (challenge.Challengers.Count > 1)
             {
                 Notification notification = new Notification
@@ -319,10 +326,9 @@ namespace WageringGG.Server.Handlers
                     Message = $"{userName} created a wager challenge with you.",
                     Link = $"/client/wagers/view/{wagerId}"
                 };
-                IEnumerable<string> users = challenge.ChallengerIds();
                 await NotificationHandler.AddNotificationToUsers(_context, _hubContext, users.Where(x => x != userId), notification);
-                await HubHandler.SendGroupAsync(_hubContext, users, wager.GroupName);
             }
+            await HubHandler.SendGroupAsync(_hubContext, users, wager.GroupName);
             //after this let users sign transactions
             return Ok();
         }

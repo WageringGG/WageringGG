@@ -68,6 +68,7 @@
             if (Enum.TryParse(typeof(Status), Value, out object result))
             {
                 Status = (Status)result;
+                View = Data.Where(x => x.Status == (byte)Status).ToList();
             }
         }
         await base.OnParametersSetAsync();

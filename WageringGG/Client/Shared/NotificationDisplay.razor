@@ -58,7 +58,7 @@
         await base.OnInitializedAsync();
     }
 
-    private void ReceiveNotification(object sender, Blazored.SessionStorage.ChangedEventArgs e)
+    private async void ReceiveNotification(object sender, Blazored.SessionStorage.ChangedEventArgs e)
     {
         if (e.Key == "Notification")
         {
@@ -66,6 +66,7 @@
             if (notification != null)
             {
                 Notifications.Insert(0, notification);
+                await js.InvokeVoidAsync("getNotification", "Wagering.gg", notification.Message);
                 StateHasChanged();
             }
         }
