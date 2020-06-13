@@ -1,4 +1,7 @@
+using Humanizer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System.Collections.Generic;
 using WageringGG.Shared.Models;
 using Constants = WageringGG.Shared.Constants;
 #nullable disable
@@ -36,6 +39,20 @@ namespace WageringGG.Server.Data
             builder.Entity<Profile>().HasIndex(x => x.NormalizedDisplayName).IsUnique();
             builder.Entity<Game>().HasIndex(x => x.NormalizedName).IsUnique();
 
+            /*const int users = 10;
+            Profile[] profiles = new Profile[users];
+            List<Wager> wagers = new List<Wager>();
+            for (int i = 0; i < users; i++)
+            {
+                profiles[i] = new Profile
+                {
+                    DisplayName = $"user_{i}",
+                    NormalizedDisplayName = $"USER_{i}",
+                    Id = $"FAKEID{i}",
+                };
+            }
+
+            builder.Entity<Profile>().HasData(profiles);*/
             builder.Entity<Game>().HasData(Constants.Games.Values);
             base.OnModelCreating(builder);
         }

@@ -278,7 +278,6 @@
         HttpResponseMessage response = await http.Client.PostAsJsonAsync($"/api/wager/challenge/{WagerId}", Challenge);
         if (response.IsSuccessStatusCode)
         {
-            Challenge.Id = await response.Content.ReadFromJsonAsync<int>();
             string link = $"/client/wagers/view/{WagerId}";
             await js.InvokeVoidAsync("blazorModal", "#applyModal", "hide");
             navManager.NavigateTo(link);
