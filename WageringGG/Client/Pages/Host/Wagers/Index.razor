@@ -1,5 +1,80 @@
-﻿@layout WagerLayout
-@page "/host/wagers"
+﻿@page "/host/wagers"
+@inject AuthHttp http
+@inject ISessionStorageService sessionStorage
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
-<!--blank bc nothing chosen-->
+<div class="row my-2">
+    <div class="col-12 col-sm-4 my-2">
+        <div class="list-group" role="tablist">
+            @foreach (string status in Enum.GetNames(typeof(Status)))
+            {
+                <a class="list-group-item list-group-item-action d-flex align-items-center" data-toggle="list" href="#@status.ToLower()" role="tab">
+                    @status <span class="badge badge-info ml-auto">@(Data?.Count(x => x.Status == (byte)Enum.Parse<Status>(status)))</span>
+                </a>
+            }
+        </div>
+    </div>
+    <div class="col-12 col-sm-8">
+        <div class="tab-content">
+            @if (Data != null)
+                @foreach (string status in Enum.GetNames(typeof(Status)))
+                {
+                    <div class="tab-pane" role="tabpanel" id="@status.ToLower()">
+                        @{
+                            Status currentStatus = (Status)Enum.Parse(typeof(Status), status);
+                            IEnumerable<Wager> View = Data.Where(x => x.Status == (byte)currentStatus);
+                        }
+                        @if (View != null)
+                        {
+                            @if (View.Count() == 0)
+                            {
+                                <p class="text-center my-2 lead">
+                                    There's currently no @status.ToLower() wagers.
+                                </p>
+                            }
+                            else
+                            {
+                                <div class="row">
+                                    @foreach (Wager wager in Data)
+                                    {
+                                        <div class="col-12 my-2">
+                                            <WagerDisplay Wager="wager" Link="@($"/host/wagers/view/{wager.Id}")" />
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+        </div>
+    </div>
+</div>
 
+@code{
+    public IEnumerable<Wager> Data { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        sessionStorage.Changed += SessionStorageChanged;
+        var response = await http.Client.GetAsync("/api/host/wagers");
+        if (response.IsSuccessStatusCode)
+        {
+            Data = await response.Content.ReadFromJsonAsync<IEnumerable<Wager>>();
+            Data = Data.OrderByDescending(x => x.Date);
+        }
+        await base.OnInitializedAsync();
+    }
+
+    private void SessionStorageChanged(object sender, Blazored.SessionStorage.ChangedEventArgs e)
+    {
+        if (e.Key == "WagerStatus")
+        {
+            var data = (WagerStatus)e.NewValue;
+            var wager = Data.FirstOrDefault(x => x.Id == data.WagerId);
+            if (wager != null)
+            {
+                wager.Status = data.Status;
+                StateHasChanged();
+            }
+        }
+    }
+}
