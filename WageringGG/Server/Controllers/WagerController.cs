@@ -185,7 +185,7 @@ namespace WageringGG.Server.Handlers
             {
                 GameId = wagerData.GameId,
                 Date = date,
-                Description = wagerData.Description,
+                Title = wagerData.Title,
                 MinimumWager = wagerData.MinimumWager,
                 MaximumWager = wagerData.MaximumWager,
                 IsPrivate = wagerData.IsPrivate,
@@ -250,7 +250,7 @@ namespace WageringGG.Server.Handlers
                 ModelState.AddModelError(string.Empty, "The id's are not unique.");
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
-            Wager wager = await _context.Wagers.Where(x => x.Id == wagerId).Include(x => x.Hosts).FirstOrDefaultAsync();
+            Wager wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == wagerId).Include(x => x.Hosts).FirstOrDefaultAsync();
             if (wager == null)
                 return BadRequest(new string[] { "The wager could not be found." });
             if (wager.Status != (byte)Status.Confirmed)
@@ -297,19 +297,6 @@ namespace WageringGG.Server.Handlers
                     ProfileId = bid.ProfileId
                 };
                 challenge.Challengers.Add(challengeBid);
-            }
-            if (challenge.IsApproved())
-            {
-                challenge.Status = (byte)Status.Confirmed;
-                //send notification
-                Notification notification = new Notification
-                {
-                    Date = date,
-                    Message = "There is a new wager challenge.",
-                    Link = $"/host/wagers/view/{wagerId}"
-                };
-                IEnumerable<string> hosts = wager.HostIds();
-                await NotificationHandler.AddNotificationToUsers(_context, _hubContext, hosts, notification);
             }
 
             _context.WagerChallenges.Add(challenge);

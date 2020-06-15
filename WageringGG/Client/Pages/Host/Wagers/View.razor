@@ -22,7 +22,18 @@
             <h3>Hosts:</h3>
             <AuthorizeView>
                 <Authorized>
-                    <WagerHostsDisplay Hosts="Wager.Hosts" GroupName="@Wager.GroupName" UserId="@context.User.GetId()" StatusCallback="SetStatus" />
+                    <WagerBidsDisplay Hosts="Wager.Hosts">
+                        @{
+                            WagerHostBid host = Wager.Hosts.FirstOrDefault(x => x.ProfileId == context.User.GetId());
+                        }
+                        @if (host != null && !host.Approved.HasValue)
+                        {
+                            <div class="text-right">
+                                <button class="btn btn-danger" title="Decline the wager." @onclick="() => DeclineWager(host.Id)">Decline</button>
+                                <button class="btn btn-success" title="Accept the wager." @onclick="() => AcceptWager(host.Id)">Accept</button>
+                            </div>
+                        }
+                    </WagerBidsDisplay>
                 </Authorized>
             </AuthorizeView>
         </div>
@@ -44,7 +55,9 @@
                         @foreach (WagerChallenge challenge in Wager.Challenges)
                         {
                             <div class="col-6 col-md-4 col-lg-3 col-xl-2">
-                                <WagerChallengeDisplay Challenge="challenge" IsHostView="true"></WagerChallengeDisplay>
+                                <WagerChallengeDisplay Challenge="challenge">
+                                    <!--ACCEPT/DECLINE BUTTONS-->
+                                </WagerChallengeDisplay>
                             </div>
                         }
                     </div>
@@ -112,8 +125,32 @@
         }
     }
 
-    private void SetStatus(Status status)
+    private async Task DeclineWager(int id)
     {
-        Wager.Status = (byte)status;
+        //return date response too
+        var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/decline", id);
+        if (response.IsSuccessStatusCode)
+        {
+            var data = await response.Content.ReadFromJsonAsync<byte>();
+            var host = Wager.Hosts.FirstOrDefault(x => x.Id == id);
+            if (host != null)
+                host.Approved = false;
+            Wager.Status = data;
+            await HubConnection.InvokeAsync("SendWagerHostBid", Wager.GroupName, host, new WagerStatus { Status = data, WagerId = host.WagerId });
+        }
+    }
+
+    private async Task AcceptWager(int id)
+    {
+        var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/accept", id);
+        if (response.IsSuccessStatusCode)
+        {
+            var data = await response.Content.ReadFromJsonAsync<byte>();
+            var host = Wager.Hosts.FirstOrDefault(x => x.Id == id);
+            if (host != null)
+                host.Approved = true;
+            Wager.Status = data;
+            await HubConnection.InvokeAsync("SendWagerHostBid", Wager.GroupName, host, new WagerStatus { Status = data, WagerId = host.WagerId });
+        }
     }
 }

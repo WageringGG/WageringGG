@@ -117,5 +117,23 @@ namespace WageringGG.Server.Controllers
             _context.SaveChanges();
             return Ok(bid.Wager.Status);
         }
+
+        //bid confirm
+        /*
+            if (challenge.IsApproved())
+            {
+                challenge.Status = (byte)Status.Confirmed;
+                wager.ChallengeCount++;
+                //send notification
+                Notification notification = new Notification
+                {
+                    Date = date,
+                    Message = "There is a new wager challenge.",
+                    Link = $"/host/wagers/view/{wagerId}"
+                };
+                IEnumerable<string> hosts = wager.HostIds();
+                await NotificationHandler.AddNotificationToUsers(_context, _hubContext, hosts, notification);
+            }
+         */
     }
 }

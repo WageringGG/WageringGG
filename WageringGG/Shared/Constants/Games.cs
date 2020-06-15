@@ -30,6 +30,12 @@ namespace WageringGG.Shared.Constants
                 Id = 4,
                 Name = "Valorant",
                 NormalizedName = "valorant"
+            },
+            new Game
+            {
+                Id = 5,
+                Name = "Fifa 20",
+                NormalizedName = "fifa20"
             }
         };
 

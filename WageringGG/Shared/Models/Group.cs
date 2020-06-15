@@ -13,7 +13,7 @@ namespace WageringGG.Shared.Models
 
         [Required]
         [StringLength(50, MinimumLength = 5)]
-        public string Description { get; set; }
+        public string Title { get; set; }
 
         [Required]
         public DateTime Date { get; set; }

@@ -37,8 +37,10 @@
                                 <div class="row">
                                     @foreach (WagerChallenge challenge in Data)
                                     {
-                                        <div class="col-12 my-2">
-                                            <WagerChallengeDisplay Challenge="challenge" />
+                                        <div class="col-12 col-sm-6 col-lg-4 my-2">
+                                            <WagerChallengeDisplay Challenge="challenge">
+                                                <a class="btn btn-outline-secondary" href="/client/wagers/@challenge.Id">View</a>
+                                            </WagerChallengeDisplay>
                                         </div>
                                     }
                                 </div>
