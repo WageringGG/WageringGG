@@ -92,7 +92,7 @@
         if (response.IsSuccessStatusCode)
         {
             Wager.Status = (byte)status;
-            await HubConnection.SendAsync("SendWagerStatus", Wager.GroupName, new WagerStatus { Status = Wager.Status, WagerId = Wager.Id });
+            await HubConnection.SendAsync("SendWagerStatus", Wager.GroupName, new IdStatus { Status = Wager.Status, Id = Wager.Id });
             StateHasChanged();
         }
         else
@@ -103,8 +103,8 @@
     {
         if (e.Key == "WagerStatus")
         {
-            var data = (WagerStatus)e.NewValue;
-            if (Wager.Id == data.WagerId)
+            var data = (IdStatus)e.NewValue;
+            if (Wager.Id == data.Id)
             {
                 Wager.Status = data.Status;
                 StateHasChanged();
@@ -136,7 +136,7 @@
             if (host != null)
                 host.Approved = false;
             Wager.Status = data;
-            await HubConnection.InvokeAsync("SendWagerHostBid", Wager.GroupName, host, new WagerStatus { Status = data, WagerId = host.WagerId });
+            await HubConnection.InvokeAsync("SendWagerHostBid", Wager.GroupName, host, new IdStatus { Status = data, Id = host.WagerId });
         }
     }
 
@@ -150,7 +150,7 @@
             if (host != null)
                 host.Approved = true;
             Wager.Status = data;
-            await HubConnection.InvokeAsync("SendWagerHostBid", Wager.GroupName, host, new WagerStatus { Status = data, WagerId = host.WagerId });
+            await HubConnection.InvokeAsync("SendWagerHostBid", Wager.GroupName, host, new IdStatus { Status = data, Id = host.WagerId });
         }
     }
 }

@@ -1,8 +1,8 @@
 ﻿namespace WageringGG.Shared.Models
 {
-    public class WagerStatus
+    public class IdStatus
     {
-        public int WagerId { get; set; }
+        public int Id { get; set; }
         public byte Status { get; set; }
     }
 }

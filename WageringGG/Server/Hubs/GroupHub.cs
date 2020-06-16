@@ -31,12 +31,12 @@ namespace WageringGG.Server.Hubs
             await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
         }
 
-        public async Task SendWagerHostBid(string groupName, WagerHostBid bid, WagerStatus status)
+        public async Task SendWagerHostBid(string groupName, WagerHostBid bid, IdStatus status)
         {
             await Clients.OthersInGroup(groupName).SendAsync("ReceiveWagerHostBid", bid, status);
         }
 
-        public async Task SendWagerStatus(string groupName, WagerStatus status)
+        public async Task SendWagerStatus(string groupName, IdStatus status)
         {
             await Clients.OthersInGroup(groupName).SendAsync("ReceiveWagerStatus", status);
         }
