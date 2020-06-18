@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WageringGG.Shared.Models
 {
-    public class Tournament : Group
+    public class Tournament : Mode
     {
         [Column(TypeName = "decimal(18,7)")]
         public decimal Entry { get; set; }
@@ -12,6 +12,7 @@ namespace WageringGG.Shared.Models
         {
             throw new System.NotImplementedException();
         }
+
         public override string GroupName
         {
             get

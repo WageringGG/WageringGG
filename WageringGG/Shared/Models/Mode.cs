@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace WageringGG.Shared.Models
 {
-    public abstract class Group : Approvable
+    public abstract class Mode : Approvable
     {
         public int Id { get; set; }
         public int GameId { get; set; }
@@ -18,8 +18,6 @@ namespace WageringGG.Shared.Models
         [Required]
         public DateTime Date { get; set; }
         public bool IsPrivate { get; set; }
-
-        public abstract string GroupName { get; }
 
         public abstract IEnumerable<string> HostIds();
         public abstract IEnumerable<string> ClientIds();

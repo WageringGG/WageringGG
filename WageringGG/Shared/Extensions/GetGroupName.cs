@@ -11,5 +11,10 @@
         {
             return $"tournament_{id}";
         }
+
+        public static string WagerChallenge(int id)
+        {
+            return $"wager_challenge_{id}";
+        }
     }
 }

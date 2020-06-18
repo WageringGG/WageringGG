@@ -26,6 +26,14 @@ namespace WageringGG.Shared.Models
         public decimal Amount { get; set; }
         public bool IsAccepted { get; set; }
 
+        public override string GroupName
+        {
+            get
+            {
+                return GetGroupName.WagerChallenge(Id);
+            }
+        }
+
         public override bool IsApproved()
         {
             if (Status == 1)

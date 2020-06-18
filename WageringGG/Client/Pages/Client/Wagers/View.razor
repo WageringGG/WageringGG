@@ -82,29 +82,29 @@
     private async Task DeclineBid(int id)
     {
         //return date response too
-        var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/decline", id);
+        var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/challenge/decline", id);
         if (response.IsSuccessStatusCode)
         {
             var data = await response.Content.ReadFromJsonAsync<byte>();
-            var host = Challenge.Challengers.FirstOrDefault(x => x.Id == id);
-            if (host != null)
-                host.Approved = false;
+            var bid = Challenge.Challengers.FirstOrDefault(x => x.Id == id);
+            if (bid != null)
+                bid.Approved = false;
             Challenge.Status = data;
-            await HubConnection.InvokeAsync("SendWagerChallengeBid", Challenge.GroupName, host, new IdStatus { Status = data, Id = Challenge.Id });
+            await HubConnection.InvokeAsync("SendWagerChallengeBid", Challenge.GroupName, bid, new IdStatus { Status = data, Id = Challenge.Id });
         }
     }
 
     private async Task AcceptBid(int id)
     {
-        var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/accept", id);
+        var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/challenge/accept", id);
         if (response.IsSuccessStatusCode)
         {
             var data = await response.Content.ReadFromJsonAsync<byte>();
-            var host = Challenge.Challengers.FirstOrDefault(x => x.Id == id);
-            if (host != null)
-                host.Approved = true;
+            var bid = Challenge.Challengers.FirstOrDefault(x => x.Id == id);
+            if (bid != null)
+                bid.Approved = true;
             Challenge.Status = data;
-            await HubConnection.InvokeAsync("SendWagerHostBid", Challenge.GroupName, host, new IdStatus { Status = data, Id = host.WagerId });
+            await HubConnection.InvokeAsync("SendWagerChallengeBid", Challenge.GroupName, bid, new IdStatus { Status = data, Id = Challenge.Id });
         }
     }
 }

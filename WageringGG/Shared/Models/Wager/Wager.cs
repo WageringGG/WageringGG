@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace WageringGG.Shared.Models
 {
-    public class Wager : Group
+    public class Wager : Mode
     {
         public List<WagerHostBid> Hosts { get; set; } = new List<WagerHostBid>();
         public List<WagerChallenge> Challenges { get; set; } = new List<WagerChallenge>();
