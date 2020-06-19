@@ -68,8 +68,8 @@
     {
         if (e.Key == "WagerStatus")
         {
-            var data = (WagerStatus)e.NewValue;
-            var wager = Data.FirstOrDefault(x => x.Id == data.WagerId);
+            var data = (IdStatus)e.NewValue;
+            var wager = Data.FirstOrDefault(x => x.Id == data.Id);
             if (wager != null)
             {
                 wager.Status = data.Status;

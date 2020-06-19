@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 #nullable disable
 
 namespace WageringGG.Shared.Models
@@ -22,7 +23,7 @@ namespace WageringGG.Shared.Models
         public IList<Notification> Notifications { get; set; } = new List<Notification>();
 
         [NotMapped]
-        [System.Text.Json.Serialization.JsonIgnore]
+        [JsonIgnore]
         public bool IsSelected { get; set; }
     }
 }

@@ -1,7 +1,4 @@
-using Humanizer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using System.Collections.Generic;
 using WageringGG.Shared.Models;
 using Constants = WageringGG.Shared.Constants;
 #nullable disable

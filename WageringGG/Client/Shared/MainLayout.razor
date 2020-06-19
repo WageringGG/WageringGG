@@ -73,15 +73,15 @@
             await HubConnection.InvokeAsync("AddToGroup", groupName);
         });
 
-        HubConnection.On<WagerHostBid, WagerStatus>("ReceiveWagerHostBid", async (bid, status) =>
+        HubConnection.On<WagerHostBid, IdStatus>("ReceiveWagerHostBid", async (bid, status) =>
         {
             await sessionStorage.SetItemAsync<WagerHostBid>("WagerHostBid", bid);
-            await sessionStorage.SetItemAsync<WagerStatus>("WagerStatus", status);
+            await sessionStorage.SetItemAsync<IdStatus>("WagerStatus", status);
         });
 
-        HubConnection.On<WagerStatus>("ReceiveWagerStatus", async status =>
+        HubConnection.On<IdStatus>("ReceiveWagerStatus", async status =>
         {
-            await sessionStorage.SetItemAsync<WagerStatus>("WagerStatus", status);
+            await sessionStorage.SetItemAsync<IdStatus>("WagerStatus", status);
         });
 
         await HubConnection.StartAsync();
