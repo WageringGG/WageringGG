@@ -15,7 +15,6 @@ namespace WageringGG.Shared.Models
         public decimal? MaximumWager { get; set; }
         public int PlayerCount { get; set; }
         public int ChallengeCount { get; set; }
-        public List<WagerRule> Rules { get; set; } = new List<WagerRule>();
 
         public override bool IsApproved()
         {
