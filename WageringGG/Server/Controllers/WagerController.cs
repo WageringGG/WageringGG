@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
+using NSec.Cryptography;
 using stellar_dotnet_sdk.responses;
 using System;
 using System.Collections.Generic;
@@ -124,6 +125,25 @@ namespace WageringGG.Server.Handlers
                 Link = $"/wagers/view/{id}"
             };
             await NotificationHandler.AddNotificationToUsers(_context, _hubContext, wager.HostIds(), notification);
+            _context.SaveChanges();
+            return Ok();
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteWager(int id)
+        {
+            string? userId = User.GetId();
+
+            Wager wager = await _context.Wagers.Where(x => x.Id == id).Include(x => x.Hosts).FirstOrDefaultAsync();
+            if (wager == null)
+                return BadRequest(new string[] { Errors.NotFound });
+            if (!wager.Hosts.Any(x => x.ProfileId == userId))
+                return BadRequest(new string[] { "You are not a wager host." });
+            if(wager.Status == (byte)Status.Canceled)
+                return BadRequest(new string[] { "The wager must be in the canceled state to be deleted." });
+
+            _context.Wagers.Remove(wager);
             _context.SaveChanges();
             return Ok();
         }

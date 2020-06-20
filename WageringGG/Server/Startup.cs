@@ -14,7 +14,6 @@ using System.Linq;
 using WageringGG.Server.Data;
 using WageringGG.Server.Models;
 using WageringGG.Server.Services;
-using stellar = stellar_dotnet_sdk;
 
 namespace WageringGG.Server
 {
@@ -94,7 +93,7 @@ namespace WageringGG.Server
                     // If the request is for our hub...
                     var path = context.HttpContext.Request.Path;
                     if (!string.IsNullOrEmpty(accessToken) &&
-                        (path.StartsWithSegments("/group-hub")))
+                        path.StartsWithSegments("/group-hub"))
                     {
                         // Read the token out of the query string
                         context.Token = accessToken;
@@ -118,7 +117,7 @@ namespace WageringGG.Server
                 Network.UseTestNetwork();
             else
                 Network.UsePublicNetwork();
-            services.AddSingleton(new stellar.Server(_config["Stellar:URI"]));
+            services.AddSingleton(new stellar_dotnet_sdk.Server(_config["Stellar:URI"]));
             if (!_env.IsDevelopment())
                 services.AddScoped<IEmailSender, EmailSender>();
         }

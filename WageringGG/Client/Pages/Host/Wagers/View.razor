@@ -17,6 +17,17 @@
             {
                 <button class="btn btn-outline-success ml-auto" @onclick="() => ChangeStatus(Status.Confirmed)">Open</button>
             }
+            else if (Wager.Status == (byte)Status.Canceled)
+            {
+                if (IsDeleted)
+                {
+                    <div class="alert alert-warning" role="alert">This wager has been deleted.</div>
+                }
+                else
+                {
+                    <button class="btn btn-outline-danger ml-auto" @onclick="Delete">Delete</button>
+                }
+            }
         </div>
         <div class="col-12 col-lg-8 mx-auto my-1">
             <h3>Hosts:</h3>
@@ -29,8 +40,8 @@
                         @if (host != null && !host.Approved.HasValue)
                         {
                             <div class="text-right">
-                                <button class="btn btn-danger" title="Decline the wager." @onclick="() => DeclineWager(host.Id)">Decline</button>
-                                <button class="btn btn-success" title="Accept the wager." @onclick="() => AcceptWager(host.Id)">Accept</button>
+                                <button class="btn btn-danger" title="Decline the wager." @onclick="() => Decline(host.Id)">Decline</button>
+                                <button class="btn btn-success" title="Accept the wager." @onclick="() => Accept(host.Id)">Accept</button>
                             </div>
                         }
                     </WagerBidsDisplay>
@@ -72,8 +83,9 @@
     public int Id { get; set; }
     [CascadingParameter]
     public HubConnection HubConnection { get; set; }
-    public Wager Wager { get; set; }
-    public IEnumerable<string> Errors { get; set; } = new List<string>();
+    private Wager Wager { get; set; }
+    private bool IsDeleted { get; set; }
+    private IEnumerable<string> Errors { get; set; } = new List<string>();
 
     protected override async Task OnParametersSetAsync()
     {
@@ -125,7 +137,15 @@
         }
     }
 
-    private async Task DeclineWager(int id)
+    private async Task Delete()
+    {
+        IsDeleted = true;
+        var response = await http.Client.DeleteAsync($"/api/wager/delete/{Id}");
+        if (!response.IsSuccessStatusCode)
+            IsDeleted = false;
+    }
+
+    private async Task Decline(int id)
     {
         //return date response too
         var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/decline", id);
@@ -140,7 +160,7 @@
         }
     }
 
-    private async Task AcceptWager(int id)
+    private async Task Accept(int id)
     {
         var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/accept", id);
         if (response.IsSuccessStatusCode)

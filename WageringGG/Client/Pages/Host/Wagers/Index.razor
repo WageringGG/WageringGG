@@ -21,28 +21,24 @@
                 {
                     <div class="tab-pane" role="tabpanel" id="@status.ToLower()">
                         @{
-                            Status currentStatus = (Status)Enum.Parse(typeof(Status), status);
-                            IEnumerable<Wager> View = Data.Where(x => x.Status == (byte)currentStatus);
+                            IEnumerable<Wager> View = Data.Where(x => x.Status == (byte)Enum.Parse<Status>(status));
                         }
-                        @if (View != null)
+                        @if (View.Count() == 0)
                         {
-                            @if (View.Count() == 0)
-                            {
-                                <p class="text-center my-2 lead">
-                                    There's currently no @status.ToLower() wagers.
-                                </p>
-                            }
-                            else
-                            {
-                                <div class="row">
-                                    @foreach (Wager wager in Data)
-                                    {
-                                        <div class="col-12 my-2">
-                                            <WagerDisplay Wager="wager" Link="@($"/host/wagers/view/{wager.Id}")" />
-                                        </div>
-                                    }
-                                </div>
-                            }
+                            <p class="text-center my-2 lead">
+                                There's currently no @status.ToLower() wagers.
+                            </p>
+                        }
+                        else
+                        {
+                            <div class="row">
+                                @foreach (Wager wager in View)
+                                {
+                                    <div class="col-12 my-2">
+                                        <WagerDisplay Wager="wager" Link="@($"/host/wagers/view/{wager.Id}")" />
+                                    </div>
+                                }
+                            </div>
                         }
                     </div>
                 }

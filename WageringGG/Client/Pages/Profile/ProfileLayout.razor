@@ -6,9 +6,13 @@
 <div class="row">
     <div class="col-12 col-sm-4 my-2">
         <div class="list-group" role="tablist">
-            <NavLink class="list-group-item list-group-item-action" href="/profile" role="tab" Match="NavLinkMatch.All">General</NavLink>
             <NavLink class="list-group-item list-group-item-action" href="/profile/public-key" role="tab">Public Key</NavLink>
             <a class="list-group-item list-group-item-action" href="/Identity/Account/Manage" role="tab" aria-controls="profile">Account</a>
+            <AuthorizeView>
+                <Authorized>
+                    <a class="list-group-item list-group-item-action" href="/user/@context.User.GetName()" role="tab">View Profile</a>
+                </Authorized>
+            </AuthorizeView>
         </div>
     </div>
     <div class="col-12 col-sm-8">
