@@ -2,6 +2,7 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject AuthHttp http
 @inject ISessionStorageService sessionStorage
+@implements IDisposable
 
 <ErrorDisplay @bind-Errors="Errors" />
 @if (Wager != null)
@@ -92,10 +93,19 @@
         sessionStorage.Changed += SessionStorageChanged;
         var response = await http.Client.GetAsync($"/api/host/wager/{Id}");
         if (response.IsSuccessStatusCode)
+        {
             Wager = await response.Content.ReadFromJsonAsync<Wager>();
+            await HubConnection.InvokeAsync("AddToGroup", Wager.GroupName);
+        }
         else
             Errors = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
         await base.OnParametersSetAsync();
+    }
+
+    async void IDisposable.Dispose()
+    {
+        if (Wager != null)
+            await HubConnection.InvokeAsync("RemoveFromGroup", Wager.GroupName);
     }
 
     private async Task ChangeStatus(Status status)

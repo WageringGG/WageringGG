@@ -1,11 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 using WageringGG.Shared.Models;
 
 namespace WageringGG.Server.Hubs
 {
-    [Authorize]
     public class GroupHub : Hub
     {
         public override async Task OnConnectedAsync()
@@ -15,20 +13,14 @@ namespace WageringGG.Server.Hubs
             await base.OnConnectedAsync();
         }
 
-        /// <summary>
-        /// Used on startup for adding user to groups
-        /// </summary>
-        /// <param name="groups">User's list of groups</param>
-        /// <returns>async Task</returns>
-        public async Task AddToGroups(string[] groups)
-        {
-            foreach (string groupName in groups)
-                await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
-        }
-
         public async Task AddToGroup(string groupName)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+        }
+
+        public async Task RemoveFromGroup(string groupName)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
         }
 
         public async Task SendWagerHostBid(string groupName, WagerHostBid bid, IdStatus status)

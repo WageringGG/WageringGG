@@ -43,7 +43,6 @@
         if (context.User.Identity.IsAuthenticated)
         {
             await ConnectToHub();
-            await AddUserGroups();
         }
         await base.OnInitializedAsync();
     }
@@ -56,10 +55,7 @@
     private async Task ConnectToHub()
     {
         HubConnection = new HubConnectionBuilder()
-            .WithUrl(navManager.ToAbsoluteUri("/group-hub"), options =>
-            {
-                options.AccessTokenProvider = async () => await GetToken();
-            })
+            .WithUrl(navManager.ToAbsoluteUri("/group-hub"))
             .WithAutomaticReconnect()
             .Build();
 
@@ -85,31 +81,5 @@
         });
 
         await HubConnection.StartAsync();
-    }
-
-    private async Task AddUserGroups()
-    {
-        var response = await http.Client.GetAsync("/api/group");
-        if (response.IsSuccessStatusCode)
-        {
-            IEnumerable<string> groups = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
-            await HubConnection.InvokeAsync("AddToGroups", groups);
-        }
-    }
-
-    /// <summary>
-    /// Gets the user's access token
-    /// </summary>
-    /// <returns>Access Token</returns>
-    private async Task<string> GetToken()
-    {
-        try
-        {
-            var result = await tokenProvider.RequestAccessToken();
-            if (result.TryGetToken(out Microsoft.AspNetCore.Components.WebAssembly.Authentication.AccessToken token))
-                return token.Value;
-        }
-        catch { }
-        return null;
     }
 }

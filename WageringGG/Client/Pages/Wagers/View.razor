@@ -1,5 +1,6 @@
 ﻿@page "/wagers/view/{id:int}"
 @inject HttpClient http
+@implements IDisposable
 
 @if (Wager != null)
 {
@@ -44,13 +45,29 @@
 @code {
     [Parameter]
     public int Id { get; set; }
-    public Wager Wager { get; set; }
+    [CascadingParameter]
+    public HubConnection HubConnection { get; set; }
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthenticationState { get; set; }
+    private Wager Wager { get; set; }
+    private bool IsAuthenticated { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         var response = await http.GetAsync($"/api/wager/view/{Id}");
         if (response.IsSuccessStatusCode)
+        {
             Wager = await response.Content.ReadFromJsonAsync<Wager>();
+            IsAuthenticated = (await AuthenticationState).User.Identity.IsAuthenticated;
+            if (IsAuthenticated)
+                await HubConnection.InvokeAsync("AddToGroup", Wager.GroupName);
+        }
         await base.OnInitializedAsync();
+    }
+
+    async void IDisposable.Dispose()
+    {
+        if (Wager != null && IsAuthenticated)
+            await HubConnection.InvokeAsync("RemoveFromGroup", Wager.GroupName);
     }
 }

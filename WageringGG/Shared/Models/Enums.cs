@@ -6,7 +6,7 @@
         Confirmed = 1,
         Canceled = 2,
         Closed = 3,
-        Completed = 8
+        Completed = 8,
     }
 
     //Used for notifications

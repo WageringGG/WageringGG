@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
-using NSec.Cryptography;
 using stellar_dotnet_sdk.responses;
 using System;
 using System.Collections.Generic;
