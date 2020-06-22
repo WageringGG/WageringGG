@@ -55,7 +55,10 @@
     private async Task ConnectToHub()
     {
         HubConnection = new HubConnectionBuilder()
-            .WithUrl(navManager.ToAbsoluteUri("/group-hub"))
+            .WithUrl(navManager.ToAbsoluteUri("/group-hub"), options =>
+            {
+                options.AccessTokenProvider = async () => await GetToken();
+            })
             .WithAutomaticReconnect()
             .Build();
 
@@ -81,5 +84,21 @@
         });
 
         await HubConnection.StartAsync();
+    }
+
+    /// <summary>
+    /// Gets the user's access token
+    /// </summary>
+    /// <returns>Access Token</returns>
+    private async Task<string> GetToken()
+    {
+        try
+        {
+            var result = await tokenProvider.RequestAccessToken();
+            if (result.TryGetToken(out Microsoft.AspNetCore.Components.WebAssembly.Authentication.AccessToken token))
+                return token.Value;
+        }
+        catch { }
+        return null;
     }
 }

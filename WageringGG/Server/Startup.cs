@@ -80,7 +80,7 @@ namespace WageringGG.Server
                 })
                 .AddIdentityServerJwt();
 
-            /*services.Configure<JwtBearerOptions>(
+            services.Configure<JwtBearerOptions>(
             IdentityServerJwtConstants.IdentityServerJwtBearerScheme,
             options =>
             {
@@ -99,7 +99,7 @@ namespace WageringGG.Server
                         context.Token = accessToken;
                     }
                 };
-            });*/
+            });
 
             services.AddControllersWithViews().AddNewtonsoftJson(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
             services.AddRazorPages();

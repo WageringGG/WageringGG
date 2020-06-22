@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 using WageringGG.Shared.Models;
 
 namespace WageringGG.Server.Hubs
 {
+    [Authorize]
     public class GroupHub : Hub
     {
         public override async Task OnConnectedAsync()
