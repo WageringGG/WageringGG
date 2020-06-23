@@ -3,11 +3,16 @@
 @inject NavigationManager nav
 
 <h1 class="text-center">@Game.Name Wagers</h1>
-<AuthorizeView>
-    <Authorized>
-        <Create Context="context" Game="Game" />
-    </Authorized>
-</AuthorizeView>
+<div class="text-right my-2">
+    <AuthorizeView>
+        <Authorized>
+            <Create Context="context" Game="Game" />
+        </Authorized>
+        <NotAuthorized>
+            <div class="alert alert-warning">Sign in to create a wager.</div>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
 @if (Wagers != null)
 {
     @if (Wagers.TotalPages == 0)
@@ -19,6 +24,20 @@
     }
     else
     {
+        <div class="card my-2">
+            <div class="card-header" id="searchCard">
+                <h2 class="mb-0">
+                    <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#searchCollapse" aria-expanded="false" aria-controls="searchCollapse">
+                        Search Wagers
+                    </button>
+                </h2>
+            </div>
+            <div id="searchCollapse" class="collapse" aria-labelledby="searchCard">
+                <div class="card-body">
+                    Search logic goes here
+                </div>
+            </div>
+        </div>
         <div class="row">
             @foreach (Wager wager in Wagers.List)
             {

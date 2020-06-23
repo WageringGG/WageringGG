@@ -5,13 +5,16 @@
 {
     <h1 class="text-center">@Constants.Games.GetName(Wager.GameId) Wager</h1>
     <div class="row">
-        <AuthorizeView>
-            <Authorized>
-                <div class="col-12 col-lg-8 mx-auto my-1">
+        <div class="col-12 col-lg-8 mx-auto my-1">
+            <AuthorizeView>
+                <Authorized>
                     <Apply Context="context" WagerId="Wager.Id" />
-                </div>
-            </Authorized>
-        </AuthorizeView>
+                </Authorized>
+                <NotAuthorized>
+                    <div class=" alert alert-warning" role="alert">Sign in to apply.</div>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
         <div class="col-12 col-lg-8 mx-auto my-1">
             <h3>Hosts:</h3>
             <WagerBidsDisplay Hosts="Wager.Hosts" />
