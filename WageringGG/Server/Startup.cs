@@ -103,10 +103,7 @@ namespace WageringGG.Server
 
             services.AddControllersWithViews().AddNewtonsoftJson(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
             services.AddRazorPages();
-            services.AddSignalR().AddHubOptions<Hubs.GroupHub>(options =>
-            {
-                options.EnableDetailedErrors = true;
-            }); ;
+            services.AddSignalR().AddAzureSignalR();
             services.AddResponseCompression(opts =>
             {
                 opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
@@ -141,7 +138,7 @@ namespace WageringGG.Server
             app.UseResponseCompression();
             app.UseHttpsRedirection();
             app.UseBlazorFrameworkFiles();
-            app.UseStaticFiles();
+            app.UseFileServer();
 
             app.UseRouting();
 
