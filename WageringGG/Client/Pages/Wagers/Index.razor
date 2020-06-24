@@ -15,7 +15,7 @@
 </div>
 @if (Wagers != null)
 {
-    @if (Wagers.TotalPages == 0)
+    @if (Wagers.TotalPages == 0 && Query.Count == 0)
     {
         <div class="text-center my-auto">
             <h3>There's currently no wagers.</h3>
@@ -34,47 +34,116 @@
             </div>
             <div id="searchCollapse" class="collapse" aria-labelledby="searchCard">
                 <div class="card-body">
-                    Search logic goes here
+                    <div class="form-group">
+                        <label>Player Count</label>
+                        <input type="number" @bind-value="PlayerCount" class="form-control" />
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-success" @onclick="Search">Search</button>
                 </div>
             </div>
         </div>
-        <div class="row">
-            @foreach (Wager wager in Wagers.List)
-            {
-                <div class="col-12 col-md-6 my-2">
-                    <WagerDisplay Wager="wager" Link="@($"/wagers/view/{wager.Id}")"></WagerDisplay>
-                </div>
-            }
-        </div>
+        @if (Wagers.TotalPages == 0)
+        {
+            <div class="text-center my-auto">
+                <h3>There's currently no wagers with the specified parameters.</h3>
+                <p class="lead">Create your own wager, or search for a different wager.</p>
+            </div>
+        }
+        else
+        {
+            <div class="row">
+                @foreach (Wager wager in Wagers.List)
+                {
+                    <div class="col-12 col-md-6 my-2">
+                        <WagerDisplay Wager="wager" Link="@($"/wagers/view/{wager.Id}")"></WagerDisplay>
+                    </div>
+                }
+            </div>
+            <nav aria-label="Pagination">
+                <ul class="pagination">
+                    <li class="page-item @(Wagers.PageIndex <= 1 ? "disabled" : string.Empty)">
+                        <button class="page-link" @onclick="() => SetPage(Wagers.PageIndex - 1)" aria-label="Previous">
+                            <i class="mdi mdi-chevron-left"></i>
+                        </button>
+                    </li>
+                    @for (int i = 1; i <= Wagers.TotalPages; i++)
+                    {
+                        int copy = i;
+                        <li class="page-item @(Page == i ? "active" : string.Empty)"><button class="page-link" @onclick="() => SetPage(copy)">@i</button></li>
+                    }
+                    <li class="page-item @(Wagers.PageIndex >= Wagers.TotalPages ? "disabled" : string.Empty)">
+                        <button class="page-link" @onclick="() => SetPage(Wagers.PageIndex + 1)" aria-label="Next">
+                            <i class="mdi mdi-chevron-right"></i>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        }
     }
 }
 
 @code {
+    @using Microsoft.AspNetCore.WebUtilities
     [Parameter]
     public string Name { get; set; }
-    public Game Game { get; set; }
-    public Dictionary<string, string> Query { get; set; } = new Dictionary<string, string>();
-    public PaginatedList<Wager> Wagers { get; set; }
+    private Game Game { get; set; }
+    private Dictionary<string, string> Query { get; set; }
+    private PaginatedList<Wager> Wagers { get; set; }
+    private int? Page { get; set; } = 1;
+    private string DisplayName { get; set; }
+    private int? PlayerCount { get; set; }
+    private int? MinimumWager { get; set; }
+    private int? MaximumWager { get; set; }
 
     protected override async Task OnParametersSetAsync()
     {
+        Console.WriteLine("HERE");
         Game = Constants.Games.Values.FirstOrDefault(x => x.NormalizedName == Name);
         if (Game != null)
         {
             QueryParser queryParser = new QueryParser(nav);
-            if (queryParser.TryGetQueryString<int>("page", out int page))
-                Query.TryAdd("page", page.ToString());
-            if (queryParser.TryGetQueryString<string>("displayName", out string displayName))
-                Query.TryAdd("displayName", displayName);
-            if (queryParser.TryGetQueryString<int>("playerCount", out int playerCount))
-                Query.TryAdd("playerCount", playerCount.ToString());
-            if (queryParser.TryGetQueryString<int>("minimumWager", out int minimumWager))
-                Query.TryAdd("minimumWager", minimumWager.ToString());
-            if (queryParser.TryGetQueryString<int>("maximumWager", out int maximumWager))
-                Query.TryAdd("maximumWager", maximumWager.ToString());
-            string path = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString($"/api/wager/{Game.Id}", Query);
+            Query = new Dictionary<string, string>();
+            if (queryParser.TryGetQueryString<int>("page", out int Page))
+                Query.Add("page", Page.ToString());
+            if (queryParser.TryGetQueryString<string>("displayName", out string DisplayName))
+                Query.Add("displayName", DisplayName);
+            if (queryParser.TryGetQueryString<int>("playerCount", out int PlayerCount))
+                Query.Add("playerCount", PlayerCount.ToString());
+            if (queryParser.TryGetQueryString<int>("minimumWager", out int MinimumWager))
+                Query.Add("minimumWager", MinimumWager.ToString());
+            if (queryParser.TryGetQueryString<int>("maximumWager", out int MaximumWager))
+                Query.Add("maximumWager", MaximumWager.ToString());
+            string path = QueryHelpers.AddQueryString($"/api/wager/{Game.Id}", Query);
             Wagers = await http.GetFromJsonAsync<PaginatedList<Wager>>(path);
         }
         await base.OnParametersSetAsync();
+    }
+
+    private async Task SetPage(int i)
+    {
+        Console.WriteLine(i);
+        Page = i;
+        await Search();
+    }
+
+    private async Task Search()
+    {
+        Query = new Dictionary<string, string>();
+        if (Page.HasValue)
+            Query.Add("page", Page.ToString());
+        if (!string.IsNullOrEmpty(DisplayName))
+            Query.Add("displayName", DisplayName);
+        if (PlayerCount.HasValue)
+            Query.Add("playerCount", PlayerCount.ToString());
+        if (MinimumWager.HasValue)
+            Query.Add("minimumWager", MinimumWager.ToString());
+        if (MaximumWager.HasValue)
+            Query.Add("maximumWager", MaximumWager.ToString());
+        string path = QueryHelpers.AddQueryString($"/wagers/{Game.NormalizedName}", Query);
+        nav.NavigateTo(path);
+        path = QueryHelpers.AddQueryString($"/api/wager/{Game.Id}", Query);
+        Wagers = await http.GetFromJsonAsync<PaginatedList<Wager>>(path);
     }
 }
