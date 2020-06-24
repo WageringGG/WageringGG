@@ -34,7 +34,7 @@ namespace WageringGG.Server.Handlers
         public async Task<IActionResult> GetWagerChallenge(int id)
         {
             string? userId = User.GetId();
-            WagerChallenge challenge = await _context.WagerChallenges.AsNoTracking().Where(x => x.Id == id).Include(x => x.Challengers).ThenInclude(x => x.Profile).FirstOrDefaultAsync();
+            WagerChallenge challenge = await _context.WagerChallenges.AsNoTracking().Where(x => x.Id == id).Include(x => x.Challengers).ThenInclude(x => x.Profile).Include(x => x.Wager).FirstOrDefaultAsync();
             if (challenge == null)
                 return BadRequest(new string[] { Errors.NotFound });
             if (!challenge.Challengers.Any(x => x.ProfileId == userId))

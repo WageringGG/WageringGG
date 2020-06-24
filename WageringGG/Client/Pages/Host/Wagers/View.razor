@@ -31,10 +31,14 @@
             }
         </div>
         <div class="col-12 col-lg-8 mx-auto my-1">
+            <h3>Wager:</h3>
+            <WagerDisplay Wager="Wager" />
+        </div>
+        <div class="col-12 col-lg-8 mx-auto my-1">
             <h3>Hosts:</h3>
             <AuthorizeView>
                 <Authorized>
-                    <WagerBidsDisplay Hosts="Wager.Hosts">
+                    <WagerBidsDisplay Bids="Wager.Hosts">
                         @{
                             WagerHostBid host = Wager.Hosts.FirstOrDefault(x => x.ProfileId == context.User.GetId());
                         }
@@ -48,10 +52,6 @@
                     </WagerBidsDisplay>
                 </Authorized>
             </AuthorizeView>
-        </div>
-        <div class="col-12 col-lg-8 mx-auto my-1">
-            <h3>Wager:</h3>
-            <WagerDisplay Wager="Wager" />
         </div>
         @if (Wager.Status != (byte)Status.Pending)
         {

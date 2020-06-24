@@ -7,24 +7,24 @@
 @if (Challenge != null)
 {
     <h1 class="text-center">@Enum.GetName(typeof(Status), Challenge.Status) Wager Challenge</h1>
-    <div class="col-12 col-lg-8 mx-auto my-1">
-        <h3>Wager:</h3>
-        <WagerDisplay Wager="Challenge.Wager" />
-    </div>
     <div class="row">
         <div class="col-12 col-lg-8 mx-auto my-1">
-            <h3>Hosts:</h3>
+            <h3>Wager:</h3>
+            <WagerDisplay Wager="Challenge.Wager" />
+        </div>
+        <div class="col-12 col-lg-8 mx-auto my-1">
+            <h3>Challengers:</h3>
             <AuthorizeView>
                 <Authorized>
-                    <WagerBidsDisplay Hosts="Challenge.Challengers">
+                    <WagerBidsDisplay Bids="Challenge.Challengers">
                         @{
                             WagerChallengeBid bid = Challenge.Challengers.FirstOrDefault(x => x.ProfileId == context.User.GetId());
                         }
                         @if (bid != null && !bid.Approved.HasValue)
                         {
                             <div class="text-right">
-                                <button class="btn btn-danger" title="Decline the wager." @onclick="() => DeclineBid(bid.Id)">Decline</button>
-                                <button class="btn btn-success" title="Accept the wager." @onclick="() => AcceptBid(bid.Id)">Accept</button>
+                                <button class="btn btn-danger" title="Decline the wager challenge." @onclick="() => DeclineBid(bid.Id)">Decline</button>
+                                <button class="btn btn-success" title="Accept the wager challenge." @onclick="() => AcceptBid(bid.Id)">Accept</button>
                             </div>
                         }
                     </WagerBidsDisplay>

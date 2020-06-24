@@ -11,7 +11,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (WagerHostBid host in Hosts)
+                    @foreach (WagerBid host in Bids)
                     {
                         <tr>
                             <td>
@@ -47,7 +47,7 @@
 
 @code {
     [Parameter]
-    public IEnumerable<WagerBid> Hosts { get; set; }
+    public IEnumerable<WagerBid> Bids { get; set; }
     [Parameter]
     public RenderFragment ChildContent { get; set; }
 }
