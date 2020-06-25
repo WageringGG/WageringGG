@@ -13,6 +13,8 @@ namespace WageringGG.Shared.Models
 
         public int WagerId { get; set; }
         public Wager Wager { get; set; }
+        public int? AccountId { get; set; }
+        public StellarAccount Account { get; set; }
 
         public List<WagerApproval> Approvals { get; set; } = new List<WagerApproval>();
         public List<WagerChallengeBid> Challengers { get; set; } = new List<WagerChallengeBid>();

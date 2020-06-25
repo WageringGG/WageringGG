@@ -158,7 +158,7 @@
     private async Task Decline(int id)
     {
         //return date response too
-        var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/decline", id);
+        var response = await http.Client.PutAsync($"/api/bid/wager/decline/{id}", null);
         if (response.IsSuccessStatusCode)
         {
             var data = await response.Content.ReadFromJsonAsync<byte>();
@@ -172,7 +172,7 @@
 
     private async Task Accept(int id)
     {
-        var response = await http.Client.PostAsJsonAsync<int>("/api/bid/wager/accept", id);
+        var response = await http.Client.PutAsync($"/api/bid/wager/accept/{id}", null);
         if (response.IsSuccessStatusCode)
         {
             var data = await response.Content.ReadFromJsonAsync<byte>();

@@ -28,8 +28,8 @@ namespace WageringGG.Server.Controllers
             _hubContext = hubContext;
         }
 
-        [HttpPost("wager/accept")]
-        public async Task<IActionResult> AcceptBid([FromBody] int id)
+        [HttpPut("wager/accept/{id}")]
+        public async Task<IActionResult> AcceptWager(int id)
         {
             string? userId = User.GetId();
             string? userName = User.GetName();
@@ -61,7 +61,7 @@ namespace WageringGG.Server.Controllers
             Notification notification = new Notification
             {
                 Date = date,
-                Link = $"/host/wagers/view/{bid.Wager.Id}"
+                Link = $"/host/wagers/view/{bid.WagerId}"
             };
             if (bid.Wager.IsApproved())
             {
@@ -76,8 +76,8 @@ namespace WageringGG.Server.Controllers
             return Ok(bid.Wager.Status);
         }
 
-        [HttpPost("wager/decline")]
-        public async Task<IActionResult> DeclineBid([FromBody] int id)
+        [HttpPut("wager/decline/{id}")]
+        public async Task<IActionResult> DeclineWager(int id)
         {
             string? userId = User.GetId();
             string? userName = User.GetName();
@@ -90,7 +90,7 @@ namespace WageringGG.Server.Controllers
             }
             if (bid.Wager.Status != (byte)Status.Pending)
             {
-                ModelState.AddModelError(string.Empty, "Wager is not in the created state.");
+                ModelState.AddModelError(string.Empty, "Wager is not in the pending state.");
                 return BadRequest(ModelState.GetErrors());
             }
             if (bid.ProfileId != userId)
@@ -110,12 +110,69 @@ namespace WageringGG.Server.Controllers
             {
                 Date = date,
                 Message = $"{userName} has declined the wager.",
-                Link = $"/host/wagers/view/{bid.Wager.Id}"
+                Link = $"/host/wagers/view/{bid.WagerId}"
             };
             IEnumerable<string> otherHosts = bid.Wager.HostIds().Where(x => x != userId);
             await NotificationHandler.AddNotificationToUsers(_context, _hubContext, otherHosts, notification);
             _context.SaveChanges();
             return Ok(bid.Wager.Status);
+        }
+
+        [HttpPut("wager_challenge/accept/{id}")]
+        public async Task<IActionResult> AcceptWagerChallenge(int id, [FromBody] string secretSeed)
+        {
+            string? userId = User.GetId();
+            string? userName = User.GetName();
+            string? userKey = User.GetKey();
+
+            var bid = await _context.WagerChallengeBids.Where(x => x.Id == id).Include(x => x.Challenge).ThenInclude(x => x.Challengers).Include(x => x.Challenge.Account).FirstOrDefaultAsync();
+            if (bid == null)
+            {
+                ModelState.AddModelError(string.Empty, Errors.NotFound);
+                return BadRequest(ModelState.GetErrors());
+            }
+            if (bid.Challenge.Status != (byte)Status.Pending)
+            {
+                ModelState.AddModelError(string.Empty, "Challenge is not in the pending state.");
+                return BadRequest(ModelState.GetErrors());
+            }
+            if (bid.ProfileId != userId)
+            {
+                ModelState.AddModelError(string.Empty, Errors.NotCorresponding);
+                return BadRequest(ModelState.GetErrors());
+            }
+            if (bid.Approved != null)
+            {
+                ModelState.AddModelError(string.Empty, Errors.AlreadySent);
+                return BadRequest(ModelState.GetErrors());
+            }
+            //check funds
+            if (bid.Challenge.AccountId.HasValue)
+            {
+                //send funds to account and update stellaraccount
+            }
+            else
+            {
+                //create account with funds
+            }
+            bid.Approved = true;
+            DateTime date = DateTime.Now;
+            Notification notification = new Notification
+            {
+                Date = date,
+                Link = $"/client/wagers/view/{bid.ChallengeId}"
+            };
+            if (bid.Challenge.IsApproved())
+            {
+                bid.Challenge.Status = (byte)Status.Confirmed;
+                notification.Message = $"{userName} has confirmed the wager challenge.";
+            }
+            else
+                notification.Message = $"{userName} has accepted the wager challenge.";
+            IEnumerable<string> otherHosts = bid.Challenge.ChallengerIds().Where(x => x != userId);
+            await NotificationHandler.AddNotificationToUsers(_context, _hubContext, otherHosts, notification);
+            _context.SaveChanges();
+            return Ok(bid.Challenge.Status);
         }
 
         //bid confirm
