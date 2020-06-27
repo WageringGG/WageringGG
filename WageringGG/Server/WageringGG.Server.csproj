@@ -28,6 +28,8 @@
     <Compile Remove="Migrations\20200611054034_Approvals.Designer.cs" />
     <Compile Remove="Migrations\20200611054740_Approvals.cs" />
     <Compile Remove="Migrations\20200611054740_Approvals.Designer.cs" />
+    <Compile Remove="Migrations\20200627070632_StellarAccount.cs" />
+    <Compile Remove="Migrations\20200627070632_StellarAccount.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>

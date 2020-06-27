@@ -2,6 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using stellar_dotnet_sdk;
+using stellar_dotnet_sdk.responses;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,11 +24,15 @@ namespace WageringGG.Server.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IHubContext<GroupHub> _hubContext;
+        private readonly stellar_dotnet_sdk.Server _server;
+        private readonly IConfiguration _config;
 
-        public BidController(ApplicationDbContext context, IHubContext<GroupHub> hubContext)
+        public BidController(ApplicationDbContext context, IHubContext<GroupHub> hubContext, stellar_dotnet_sdk.Server server, IConfiguration config)
         {
             _context = context;
             _hubContext = hubContext;
+            _server = server;
+            _config = config;
         }
 
         [HttpPut("wager/accept/{id}")]
@@ -125,7 +132,7 @@ namespace WageringGG.Server.Controllers
             string? userName = User.GetName();
             string? userKey = User.GetKey();
 
-            var bid = await _context.WagerChallengeBids.Where(x => x.Id == id).Include(x => x.Challenge).ThenInclude(x => x.Challengers).Include(x => x.Challenge.Account).FirstOrDefaultAsync();
+            var bid = await _context.WagerChallengeBids.Where(x => x.Id == id).Include(x => x.Challenge).ThenInclude(x => x.Challengers).Include(x => x.Challenge.Account).Include(x => x.Challenge.Wager).FirstOrDefaultAsync();
             if (bid == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
@@ -146,15 +153,54 @@ namespace WageringGG.Server.Controllers
                 ModelState.AddModelError(string.Empty, Errors.AlreadySent);
                 return BadRequest(ModelState.GetErrors());
             }
+
             //check funds
+            Asset asset = new AssetTypeNative();
+            KeyPair userKeys = KeyPair.FromSecretSeed(secretSeed);
+            AccountResponse account = await _server.Accounts.Account(userKeys.AccountId);
+            decimal amount = bid.Challenge.Amount / bid.Challenge.Challengers.Count;
+            string amountString = amount.ToString();
+            if (account == null)
+                return BadRequest(new string[] { "Your account could not be loaded." });
+            Balance balance = account.Balances.FirstOrDefault(x => x.Asset == asset);
+            if (!decimal.TryParse(balance?.BalanceString, out decimal balanceAmount))
+                return BadRequest(new string[] { "Your account has insufficient funds." });
+
+            Transaction transaction;
+            KeyPair destination = KeyPair.Random();
             if (bid.Challenge.AccountId.HasValue)
             {
-                //send funds to account and update stellaraccount
+                destination = KeyPair.FromAccountId(bid.Challenge.Account.AccountId);
+                PaymentOperation payment = new PaymentOperation.Builder(destination, asset, amountString).Build();
+                transaction = new TransactionBuilder(account).AddMemo(Memo.Text("Adding funds to a wager challenge."))
+                    .AddOperation(payment).Build();
             }
             else
             {
-                //create account with funds
+                KeyPair source = KeyPair.FromAccountId(_config["Stellar:SecretSeed"]);
+                string startingBalance = ((bid.Challenge.Challengers.Count + bid.Challenge.Wager.PlayerCount + 1) * Stellar.BASE_RESERVE).ToString();
+                CreateAccountOperation createAccount = new CreateAccountOperation.Builder(destination, amountString).SetSourceAccount(source).Build();
+                PaymentOperation payment = new PaymentOperation.Builder(createAccount.Destination, asset, amountString).Build();
+                transaction = new TransactionBuilder(account).AddMemo(Memo.Text("Creating wager challenge account."))
+                    .AddOperation(createAccount).AddOperation(payment).Build();
+                transaction.Sign(source);
             }
+            transaction.Sign(userKeys);
+            SubmitTransactionResponse transactionResponse = await _server.SubmitTransaction(transaction);
+            if (!transactionResponse.Result.IsSuccess)
+                return BadRequest(new string[] { "The transaction was not successful." });
+
+            if (bid.Challenge.AccountId.HasValue)
+                bid.Challenge.Account.Balance += amount;
+            else
+                bid.Challenge.Account = new StellarAccount()
+                {
+                    Balance = amount,
+                    Asset = asset.ToQueryParameterEncodedString(),
+                    AccountId = destination.AccountId,
+                    SecretSeed = destination.SecretSeed
+                };
+
             bid.Approved = true;
             DateTime date = DateTime.Now;
             Notification notification = new Notification
