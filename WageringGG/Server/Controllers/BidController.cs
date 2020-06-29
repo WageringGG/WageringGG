@@ -212,6 +212,16 @@ namespace WageringGG.Server.Controllers
             {
                 bid.Challenge.Status = (byte)Status.Confirmed;
                 notification.Message = $"{userName} has confirmed the wager challenge.";
+
+                Wager wager = await _context.Wagers.Where(x => x.Id == bid.Challenge.WagerId).Include(x => x.Hosts).FirstOrDefaultAsync();
+                wager.ChallengeCount++;
+                Notification hostNotification = new Notification
+                {
+                    Date = date,
+                    Message = "There is a new wager challenge.",
+                    Link = $"/host/wagers/view/{bid.Challenge.WagerId}"
+                };
+                await NotificationHandler.AddNotificationToUsers(_context, _hubContext, wager.HostIds(), hostNotification);
             }
             else
                 notification.Message = $"{userName} has accepted the wager challenge.";
@@ -221,22 +231,6 @@ namespace WageringGG.Server.Controllers
             return Ok(bid.Challenge.Status);
         }
 
-        //bid confirm
-        /*
-            if (challenge.IsApproved())
-            {
-                challenge.Status = (byte)Status.Confirmed;
-                wager.ChallengeCount++;
-                //send notification
-                Notification notification = new Notification
-                {
-                    Date = date,
-                    Message = "There is a new wager challenge.",
-                    Link = $"/host/wagers/view/{wagerId}"
-                };
-                IEnumerable<string> hosts = wager.HostIds();
-                await NotificationHandler.AddNotificationToUsers(_context, _hubContext, hosts, notification);
-            }
-         */
+        //decline refund users their $$$
     }
 }

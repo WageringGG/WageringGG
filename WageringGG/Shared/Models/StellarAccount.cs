@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WageringGG.Shared.Models
 {
@@ -7,8 +8,9 @@ namespace WageringGG.Shared.Models
         public int Id { get; set; }
         public string Asset { get; set; }
         public string AccountId { get; set; }
-        public string SecretSeed { get; set; }
         [Column(TypeName = "decimal(18,7)")]
         public decimal Balance { get; set; }
+        [JsonIgnore]
+        public string SecretSeed { get; set; }
     }
 }
