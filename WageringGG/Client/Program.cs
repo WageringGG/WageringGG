@@ -27,7 +27,6 @@ namespace WageringGG.Client
             builder.Services.AddApiAuthorization();
             builder.Services.AddBlazoredLocalStorage();
             builder.Services.AddBlazoredSessionStorage();
-
             await builder.Build().RunAsync();
         }
     }

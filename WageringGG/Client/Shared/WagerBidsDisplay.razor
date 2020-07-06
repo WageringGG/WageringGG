@@ -11,24 +11,24 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (WagerBid host in Bids)
+                    @foreach (WagerBid bid in Bids)
                     {
                         <tr>
                             <td>
-                                <a class="btn btn-outline-secondary btn-sm" href="@($"/user/{host.Profile.DisplayName}")" title="View profile">@host.Profile.DisplayName</a>
+                                <a class="btn btn-outline-secondary btn-sm" href="@($"/user/{bid.Profile.DisplayName}")" title="View profile">@bid.Profile.DisplayName</a>
                             </td>
-                            <td>@host.PayablePt%</td>
-                            <td>@host.ReceivablePt%</td>
+                            <td>@bid.PayablePt%</td>
+                            <td>@bid.ReceivablePt%</td>
                             <td>
-                                @if (host.Approved.HasValue)
+                                @if (bid.Approved.HasValue)
                                 {
-                                    @if (host.Approved.Value == false)
+                                    @if (bid.Approved.Value == false)
                                     {
-                                        <button class="btn btn-outline-danger btn-sm disabled" title="@($"{host.Profile.DisplayName} declined the wager.")"><i class="mdi mdi-cancel"></i></button>
+                                        <button class="btn btn-outline-danger btn-sm disabled" title="@($"{bid.Profile.DisplayName} declined the wager.")"><i class="mdi mdi-cancel"></i></button>
                                     }
                                     else
                                     {
-                                        <button class="btn btn-outline-success btn-sm disabled" title="@($"{host.Profile.DisplayName} accepted the wager.")"><i class="mdi mdi-check"></i></button>
+                                        <button class="btn btn-outline-success btn-sm disabled" title="@($"{bid.Profile.DisplayName} accepted the wager.")"><i class="mdi mdi-check"></i></button>
                                     }
                                 }
                                 else
