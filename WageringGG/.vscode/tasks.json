@@ -2,17 +2,19 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build Bulma",
+            "label": "Build CSS",
             "type": "shell",
             "command": "node-sass Server/Styles/bulma.sass Server/wwwroot/css/bulma.min.css --output-style compressed",
             "group": "build",
             "problemMatcher": [],
-            "dependsOn":["Bulma"]
+            "dependsOn": [
+                "Bootstrap"
+            ]
         },
         {
-            "label": "Bulma",
+            "label": "Bootstrap",
             "type": "shell",
-            "command": "node-sass Server/Styles/bulma.sass Client/wwwroot/css/bulma.min.css --output-style compressed",
+            "command": "node-sass Server/Styles/bootstrap.scss Client/wwwroot/css/bootstrap.min.css --output-style compressed",
             "group": "build",
         },
         {

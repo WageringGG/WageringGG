@@ -5,32 +5,12 @@
 @inject Microsoft.AspNetCore.Components.WebAssembly.Authentication.IAccessTokenProvider tokenProvider
 
 <NavMenu />
-<main role="main" class="container d-flex flex-column">
+<main role="main" class="container">
     <CascadingValue TValue="HubConnection" Value="HubConnection">
         @Body
     </CascadingValue>
 </main>
-<footer class="mt-auto py-3">
-    <div class="container-fluid">
-        <ul class="nav justify-content-center">
-            <li class="nav-item">
-                <a class="nav-link" href="https://discord.gg/HmmVMs2" target="_blank">
-                    <i class="mdi mdi-discord"> </i>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="https://www.instagram.com/Wagering.GG" target="_blank">
-                    <i class="mdi mdi-instagram"> </i>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="https://twitter.com/WageringGG" target="_blank">
-                    <i class="mdi mdi-twitter"> </i>
-                </a>
-            </li>
-        </ul>
-    </div>
-</footer>
+<BottomNav />
 
 @code{
     [CascadingParameter]

@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html class="h-100">
+<html>
 <head>
     <meta charset="utf-8" />
     <meta content="initial-scale=1, shrink-to-fit=no, width=device-width" name="viewport">
@@ -19,8 +19,12 @@
     <script src="/js/notification.js"></script>
     <script>navigator.serviceWorker.register('service-worker.js');</script>
 </head>
-<body class="d-flex flex-column h-100">
-    <app class="d-flex flex-column h-100">Loading...</app>
+<body style="padding: 4.5rem 0 4.5rem 0;">
+    <app>
+        <div class="text-center">
+            Loading...
+        </div>
+    </app>
     <script src="_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js"></script>
     <script src="_framework/blazor.webassembly.js"></script>
 </body>

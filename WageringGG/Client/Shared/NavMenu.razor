@@ -1,13 +1,6 @@
-﻿<nav class="navbar navbar-dark navbar-expand-lg bg-gradient-primary">
-    <div>
-        <div class="navbar-brand font-weight-bold">
-            Wagering.GG
-        </div>
-        <AuthorizeView>
-            <Authorized>
-                <NotificationDisplay />
-            </Authorized>
-        </AuthorizeView>
+﻿<nav class="navbar fixed-top navbar-dark navbar-expand-lg bg-gradient-primary">
+    <div class="navbar-brand font-weight-bold">
+        Wagering.GG
     </div>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <i class="mdi mdi-menu"></i>
@@ -23,6 +16,20 @@
                 <NavLink class="nav-link" href="about">
                     <i class="mdi mdi-information-outline"></i> About
                 </NavLink>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" id="socialDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="mdi mdi-group"></i> Socials</a>
+                <div class="dropdown-menu text-center">
+                    <a class="dropdown-item" href="https://discord.gg/HmmVMs2" target="_blank">
+                        <i class="mdi mdi-discord"> </i> Discord
+                    </a>
+                    <a class="dropdown-item" href="https://www.instagram.com/Wagering.GG" target="_blank">
+                        <i class="mdi mdi-instagram"> </i> Instagram
+                    </a>
+                    <a class="dropdown-item" href="https://twitter.com/WageringGG" target="_blank">
+                        <i class="mdi mdi-twitter"> </i> Twitter
+                    </a>
+                </div>
             </li>
             <AuthorizeView>
                 <Authorized>
@@ -49,6 +56,5 @@
                 </Authorized>
             </AuthorizeView>
         </ul>
-        <LoginDisplay />
     </div>
 </nav>

@@ -155,7 +155,6 @@ namespace WageringGG.Server.Controllers
             }
 
             //check funds
-            //use custom assets
             Asset asset = new AssetTypeNative();
             KeyPair userKeys = KeyPair.FromSecretSeed(secretSeed);
             AccountResponse account = await _server.Accounts.Account(userKeys.AccountId);
@@ -197,7 +196,6 @@ namespace WageringGG.Server.Controllers
                 bid.Challenge.Account = new StellarAccount()
                 {
                     Balance = amount,
-                    Asset = asset.ToQueryParameterEncodedString(),
                     AccountId = destination.AccountId,
                     SecretSeed = destination.SecretSeed
                 };
