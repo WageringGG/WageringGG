@@ -5,28 +5,31 @@
 @inject SignOutSessionStateManager SignOutManager
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 
-<AuthorizeView>
-    <Authorized>
-        <a class="btn btn-secondary mr-1" href="/profile">
-            <i class="mdi mdi-account"></i>
-            @context.User.GetName()
-        </a>
-        <button class="btn btn-dark" @onclick="BeginSignOut">
-            <i class="mdi mdi-logout"></i>
-            Log out
-        </button>
-    </Authorized>
-    <NotAuthorized>
-        <a class="btn btn-secondary mr-1" href="authentication/register" @onclick="ClearStorage">
-            <i class="mdi mdi-account-plus"></i>
-            Register
-        </a>
-        <a class="btn btn-dark" href="authentication/login" @onclick="ClearStorage">
-            <i class="mdi mdi-login"></i>
-            Log in
-        </a>
-    </NotAuthorized>
-</AuthorizeView>
+<div class="d-inline-block">
+    <AuthorizeView>
+        <Authorized>
+            <a class="btn btn-secondary mr-1" href="/profile">
+                <i class="mdi mdi-account"></i>
+                @context.User.GetName()
+            </a>
+            <button class="btn btn-dark" @onclick="BeginSignOut">
+                <i class="mdi mdi-logout"></i>
+                Log out
+            </button>
+        </Authorized>
+        <NotAuthorized>
+            <a class="btn btn-secondary mr-1" href="authentication/register" @onclick="ClearStorage">
+                <i class="mdi mdi-account-plus"></i>
+                Register
+            </a>
+            <a class="btn btn-dark" href="authentication/login" @onclick="ClearStorage">
+                <i class="mdi mdi-login"></i>
+                Log in
+            </a>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
+
 @code{
     private async Task BeginSignOut(MouseEventArgs args)
     {

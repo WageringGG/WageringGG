@@ -17,20 +17,6 @@
                     <i class="mdi mdi-information-outline"></i> About
                 </NavLink>
             </li>
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" id="socialDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="mdi mdi-group"></i> Socials</a>
-                <div class="dropdown-menu text-center">
-                    <a class="dropdown-item" href="https://discord.gg/HmmVMs2" target="_blank">
-                        <i class="mdi mdi-discord"> </i> Discord
-                    </a>
-                    <a class="dropdown-item" href="https://www.instagram.com/Wagering.GG" target="_blank">
-                        <i class="mdi mdi-instagram"> </i> Instagram
-                    </a>
-                    <a class="dropdown-item" href="https://twitter.com/WageringGG" target="_blank">
-                        <i class="mdi mdi-twitter"> </i> Twitter
-                    </a>
-                </div>
-            </li>
             <AuthorizeView>
                 <Authorized>
                     <li class="nav-item dropdown">
@@ -55,6 +41,7 @@
                     </li>
                 </Authorized>
             </AuthorizeView>
+            <LoginDisplay />
         </ul>
     </div>
 </nav>
