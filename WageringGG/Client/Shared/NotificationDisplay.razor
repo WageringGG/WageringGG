@@ -5,17 +5,20 @@
 @inject IConfiguration config
 @inject IJSRuntime js
 @inject NavigationManager navManager
-@using Humanizer
 
-<button type="button" class="btn btn-outline-warning" title="View your notifications" data-toggle="modal" data-target="#notificationModal">
+<button type="button" class="btn btn-outline-warning" title="View your notifications" data-backdrop="false" data-toggle="modal" data-target="#notificationModal" @onclick="() => ShowBackdrop = !ShowBackdrop">
     <i class="mdi mdi-bell"></i> <span class="badge badge-warning">@Notifications.Count</span>
 </button>
+@if(ShowBackdrop)
+{
+    <div class="modal-backdrop fade show"></div>
+}
 <div class="modal fade" id="notificationModal" tabindex="-1" role="dialog" aria-labelledby="notificationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="notificationModalLabel">Notifications</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="() => ShowBackdrop = false">
                     <i class="mdi mdi-close"></i>
                 </button>
             </div>
@@ -45,7 +48,8 @@
 </div>
 
 @code{
-    List<Notification> Notifications { get; set; } = new List<Notification>();
+    private List<Notification> Notifications { get; set; } = new List<Notification>();
+    private bool ShowBackdrop { get; set; } = false;
 
     /// <summary>
     /// Initializes NotificationDisplay
