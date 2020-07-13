@@ -17,7 +17,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                @if(string.IsNullOrEmpty(EncryptedSecret))
+                @if (string.IsNullOrEmpty(EncryptedSecret))
                 {
                     <h5 class="text-center">You do not have a secret seed encrypted.</h5>
                     <p class="lead text-center">Set your secret seed to access it more quickly.</p>
@@ -27,13 +27,18 @@
                     </div>
                     <div class="form-group">
                         <label>Pin Code:</label>
-                        <input class="form-control" type="password" minlength="4" @bind-value="PinCode"/>
+                        <input class="form-control" type="password" minlength="4" @bind-value="PinCode" />
                     </div>
-                    <button type="button" class="btn btn-success" @onclick="SetSecret">Submit</button>
+                    <button type="button" class="btn btn-success ml-auto" @onclick="SetSecret">Submit</button>
                 }
                 else
                 {
-
+                    <div class="form-group">
+                        <label>Pin Code:</label>
+                        <input class="form-control" type="password" minlength="4" @bind-value="PinCode" />
+                    </div>
+                    <!--Reset code-->
+                    <button type="button" class="btn btn-success ml-auto" @onclick="SetSecret">Submit</button>
                 }
             </div>
         </div>
@@ -54,6 +59,16 @@
 
     private void SetSecret()
     {
+        //use cryptojs for setting
+    }
 
+    private void DecryptSecret()
+    {
+        //js cryptojs call to decrypt
+    }
+
+    private void ResetSecret()
+    {
+        EncryptedSecret = null;
     }
 }

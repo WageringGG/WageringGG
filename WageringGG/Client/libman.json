@@ -37,6 +37,11 @@
     {
       "library": "MaterialDesign-Webfont@5.3.45",
       "destination": "wwwroot"
+    },
+    {
+      "library": "crypto-js@4.0.0",
+      "destination": "wwwroot/lib/dist/js",
+      "files": [ "aes.js", "aes.min.js", "aes.min.js.map", "crypto-js.js", "crypto-js.min.js", "crypto-js.min.js.map" ]
     }
   ]
 }
