@@ -5,7 +5,6 @@
     <Nullable>enable</Nullable>
     <UserSecretsId>WageringGG.Server-465B7CFF-B2BD-486B-B4ED-BC32F4AF5542</UserSecretsId>
     <StartupObject>WageringGG.Server.Program</StartupObject>
-    <ApplicationIcon>wwwroot\favicon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,47 +1,49 @@
 ﻿<nav class="navbar fixed-top navbar-dark navbar-expand-lg bg-gradient-primary">
-    <div class="navbar-brand font-weight-bold">
-        Wagering.GG
-    </div>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <i class="mdi mdi-menu"></i>
-    </button>
-    <div class="navbar-collapse collapse" id="navbarNav">
-        <ul class="navbar-nav text-center ml-auto">
-            <li class="nav-item">
-                <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                    <i class="mdi mdi-home"></i> Home
-                </NavLink>
-            </li>
-            <li class="nav-item">
-                <NavLink class="nav-link" href="about">
-                    <i class="mdi mdi-information-outline"></i> About
-                </NavLink>
-            </li>
-            <AuthorizeView>
-                <Authorized>
-                    <li class="nav-item dropdown">
-                        <NavLink class="nav-link dropdown-toggle" id="hostDropdown" role="button" href="host" Match="NavLinkMatch.Prefix" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="mdi mdi-clipboard"></i> Host
-                        </NavLink>
-                        <div class="dropdown-menu text-center">
-                            <NavLink class="dropdown-item" href="/host/wagers">Wagers</NavLink>
-                            <NavLink class="dropdown-item" href="/host/tournaments">Tournaments</NavLink>
-                            <NavLink class="dropdown-item" href="/host/leagues">Leagues</NavLink>
-                        </div>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <NavLink class="nav-link dropdown-toggle" id="clientDropdown" role="button" href="client" Match="NavLinkMatch.Prefix" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="mdi mdi-clipboard-multiple"></i> Client
-                        </NavLink>
-                        <div class="dropdown-menu text-center">
-                            <NavLink class="dropdown-item" href="/client/wagers">Wagers</NavLink>
-                            <NavLink class="dropdown-item" href="/client/tournaments">Tournaments</NavLink>
-                            <NavLink class="dropdown-item" href="/client/leagues">Leagues</NavLink>
-                        </div>
-                    </li>
-                </Authorized>
-            </AuthorizeView>
-            <LoginDisplay />
-        </ul>
+    <div class="container">
+        <div class="navbar-brand font-weight-bold">
+            Wagering.GG
+        </div>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="mdi mdi-menu"></i>
+        </button>
+        <div class="navbar-collapse collapse" id="navbarNav">
+            <ul class="navbar-nav text-center ml-auto">
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                        <i class="mdi mdi-home"></i> Home
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="about">
+                        <i class="mdi mdi-information-outline"></i> About
+                    </NavLink>
+                </li>
+                <AuthorizeView>
+                    <Authorized>
+                        <li class="nav-item dropdown">
+                            <NavLink class="nav-link dropdown-toggle" id="hostDropdown" role="button" href="host" Match="NavLinkMatch.Prefix" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="mdi mdi-clipboard"></i> Host
+                            </NavLink>
+                            <div class="dropdown-menu text-center">
+                                <NavLink class="dropdown-item" href="/host/wagers">Wagers</NavLink>
+                                <NavLink class="dropdown-item" href="/host/tournaments">Tournaments</NavLink>
+                                <NavLink class="dropdown-item" href="/host/leagues">Leagues</NavLink>
+                            </div>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <NavLink class="nav-link dropdown-toggle" id="clientDropdown" role="button" href="client" Match="NavLinkMatch.Prefix" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="mdi mdi-clipboard-multiple"></i> Client
+                            </NavLink>
+                            <div class="dropdown-menu text-center">
+                                <NavLink class="dropdown-item" href="/client/wagers">Wagers</NavLink>
+                                <NavLink class="dropdown-item" href="/client/tournaments">Tournaments</NavLink>
+                                <NavLink class="dropdown-item" href="/client/leagues">Leagues</NavLink>
+                            </div>
+                        </li>
+                    </Authorized>
+                </AuthorizeView>
+                <LoginDisplay />
+            </ul>
+        </div>
     </div>
 </nav>
