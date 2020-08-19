@@ -3,7 +3,7 @@
 @inject NavigationManager nav
 
 <h1 class="text-center">@Game.Name Wagers</h1>
-<div class="text-right my-2">
+<div class="my-2">
     <AuthorizeView>
         <Authorized>
             <Create Context="context" Game="Game" />
@@ -97,10 +97,9 @@
     private int? MinimumWager { get; set; }
     private int? MaximumWager { get; set; }
 
-    protected override async Task OnParametersSetAsync()
+    protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine("HERE");
-        Game = Constants.Games.Values.FirstOrDefault(x => x.NormalizedName == Name);
+        Game = Constants.Games.Values.FirstOrDefault(x => x.NormalizedName == Name.ToLower());
         if (Game != null)
         {
             QueryParser queryParser = new QueryParser(nav);
@@ -118,12 +117,11 @@
             string path = QueryHelpers.AddQueryString($"/api/wager/{Game.Id}", Query);
             Wagers = await http.GetFromJsonAsync<PaginatedList<Wager>>(path);
         }
-        await base.OnParametersSetAsync();
+        await base.OnInitializedAsync();
     }
 
     private async Task SetPage(int i)
     {
-        Console.WriteLine(i);
         Page = i;
         await Search();
     }
