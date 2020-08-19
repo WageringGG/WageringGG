@@ -16,14 +16,24 @@ window.blazorConfirm = (message) => {
 };
 
 window.encryptSecret = (secret, code) => {
-	var cipher = CryptoJS.AES.encrypt(secret, code).toString();
-	localStorage.setItem("EncryptedSecret", cipher);
+	var encrypted = CryptoJS.AES.encrypt(secret, code).toString();
+	localStorage.setItem("EncryptedSecret", encrypted);
+	return encrypted;
 };
 
 window.decryptSecret = async (code) => {
-	var cipher = localStorage.getItem("EncryptedSecret");
-	var bytes = CryptoJS.AES.decrypt(cipher, code);
-	await copyToClipboard(bytes.toString(CryptoJS.enc.Utf8));
+	var encrypted = localStorage.getItem("EncryptedSecret");
+	if (!encrypted) {
+		alert("Could not retrieve the encrypted secret.");
+		return;
+    }
+	var decrypted = CryptoJS.AES.decrypt(encrypted, code);
+	if (!decrypted) {
+		alert("Could not decrypt the secret.");
+		return;
+    }
+	await copyToClipboard(decrypted.toString(CryptoJS.enc.Utf8));
+	alert("The secret has been copied to your clipboard.");
 };
 
 //STELLAR

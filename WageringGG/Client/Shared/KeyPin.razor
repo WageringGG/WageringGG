@@ -1,4 +1,5 @@
 ﻿@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject IJSRuntime js
 
 <button type="button" class="btn btn-outline-light" title="Access your secret seed." data-backdrop="false" data-toggle="modal" data-target="#keyModal" @onclick="() => ShowBackdrop = !ShowBackdrop">
     <i class="mdi mdi-key"></i> Key
@@ -29,7 +30,7 @@
                         <label>Pin Code:</label>
                         <input class="form-control" type="password" minlength="4" @bind-value="PinCode" />
                     </div>
-                    <button type="button" class="btn btn-success ml-auto" @onclick="SetSecret">Submit</button>
+                    <button type="button" class="btn btn-success" @onclick="SetSecret">Submit</button>
                 }
                 else
                 {
@@ -38,7 +39,8 @@
                         <input class="form-control" type="password" minlength="4" @bind-value="PinCode" />
                     </div>
                     <!--Reset code-->
-                    <button type="button" class="btn btn-success ml-auto" @onclick="SetSecret">Submit</button>
+                    <button type="button" class="btn btn-danger" @onclick="ResetSecret">Reset</button>
+                    <button type="button" class="btn btn-success" @onclick="DecryptSecret">Submit</button>
                 }
             </div>
         </div>
@@ -57,18 +59,19 @@
         await base.OnInitializedAsync();
     }
 
-    private void SetSecret()
+    private async Task SetSecret()
     {
-        //use cryptojs for setting
+        EncryptedSecret = await js.InvokeAsync<string>("encryptSecret", SecretSeed, PinCode);
     }
 
-    private void DecryptSecret()
+    private async Task DecryptSecret()
     {
-        //js cryptojs call to decrypt
+        await js.InvokeVoidAsync("decryptSecret", PinCode);
     }
 
-    private void ResetSecret()
+    private async Task ResetSecret()
     {
         EncryptedSecret = null;
+        await localStorage.RemoveItemAsync("EncryptedSecret");
     }
 }
