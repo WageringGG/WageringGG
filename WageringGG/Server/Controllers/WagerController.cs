@@ -139,7 +139,7 @@ namespace WageringGG.Server.Handlers
                 return BadRequest(new string[] { Errors.NotFound });
             if (!wager.Hosts.Any(x => x.ProfileId == userId))
                 return BadRequest(new string[] { "You are not a wager host." });
-            if(wager.Status == (byte)Status.Canceled)
+            if(wager.Status != (byte)Status.Canceled)
                 return BadRequest(new string[] { "The wager must be in the canceled state to be deleted." });
 
             _context.Wagers.Remove(wager);

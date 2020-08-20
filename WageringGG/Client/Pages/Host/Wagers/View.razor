@@ -150,7 +150,7 @@
     private async Task Delete()
     {
         IsDeleted = true;
-        var response = await http.Client.DeleteAsync($"/api/wager/delete/{Id}");
+        var response = await http.Client.DeleteAsync($"/api/wager/{Id}");
         if (!response.IsSuccessStatusCode)
             IsDeleted = false;
     }
