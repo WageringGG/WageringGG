@@ -205,6 +205,7 @@ namespace WageringGG.Server.Handlers
                 GameId = wagerData.GameId,
                 Date = date,
                 Title = wagerData.Title,
+                Description = wagerData.Description,
                 MinimumWager = wagerData.MinimumWager,
                 MaximumWager = wagerData.MaximumWager,
                 IsPrivate = wagerData.IsPrivate,
@@ -334,7 +335,7 @@ namespace WageringGG.Server.Handlers
             }
             await HubHandler.SendGroupAsync(_hubContext, users, wager.GroupName);
             //after this let users sign transactions
-            return Ok();
+            return Ok(challenge.Id);
         }
     }
 }

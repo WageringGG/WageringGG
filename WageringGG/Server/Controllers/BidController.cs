@@ -125,7 +125,7 @@ namespace WageringGG.Server.Controllers
             return Ok(bid.Wager.Status);
         }
 
-        [HttpPut("wager_challenge/accept/{id}")]
+        [HttpPut("wager/challenge/accept/{id}")]
         public async Task<IActionResult> AcceptWagerChallenge(int id, [FromBody] string secretSeed)
         {
             string? userId = User.GetId();
@@ -162,19 +162,19 @@ namespace WageringGG.Server.Controllers
             string amountString = amount.ToString();
             if (account == null)
                 return BadRequest(new string[] { "Your account could not be loaded." });
-            Balance balance = account.Balances.FirstOrDefault(x => x.Asset == asset);
+            Balance balance = account.Balances.FirstOrDefault(x => asset.Equals(x.Asset));
             if (!decimal.TryParse(balance?.BalanceString, out decimal balanceAmount))
                 return BadRequest(new string[] { "Your account has insufficient funds." });
 
             Transaction transaction;
-            KeyPair destination = KeyPair.FromAccountId(_config["PublicKey"]);
+            KeyPair destination = KeyPair.FromAccountId(_config["Stellar:PublicKey"]);
             PaymentOperation payment = new PaymentOperation.Builder(destination, asset, amountString).Build();
-            transaction = new TransactionBuilder(account).AddMemo(Memo.Text($"Adding funds to a wager challenge (id: {bid.ChallengeId})."))
+            transaction = new TransactionBuilder(account).AddMemo(Memo.Text($"wager challenge {bid.ChallengeId}"))
                 .AddOperation(payment).Build();
             transaction.Sign(userKeys);
             SubmitTransactionResponse transactionResponse = await _server.SubmitTransaction(transaction);
             if (!transactionResponse.Result.IsSuccess)
-                return BadRequest(new string[] { "The transaction was not successful." });
+                return BadRequest(new string[] { "The transaction was not successful." }); //why was transaction not successful
 
             bid.Approved = true;
             DateTime date = DateTime.Now;
