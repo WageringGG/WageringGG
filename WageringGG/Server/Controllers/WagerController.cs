@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
+using stellar_dotnet_sdk;
 using stellar_dotnet_sdk.responses;
 using System;
 using System.Collections.Generic;
@@ -284,8 +285,9 @@ namespace WageringGG.Server.Handlers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
 
+            Asset asset = new AssetTypeNative();
             AccountResponse account = await _server.Accounts.Account(userKey);
-            Balance balance = account.Balances.FirstOrDefault(x => x.AssetType == "native");
+            Balance balance = account.Balances.FirstOrDefault(x => asset.Equals(x.Asset));
             if (balance == null)
                 return BadRequest(new string[] { "You do not have any Stellar Lumens. " });
             if (decimal.TryParse(balance.BalanceString, out decimal balanceAmount))

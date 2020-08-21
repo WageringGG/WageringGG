@@ -156,8 +156,8 @@ namespace WageringGG.Server.Controllers
 
             //check funds
             Asset asset = new AssetTypeNative();
-            KeyPair userKeys = KeyPair.FromSecretSeed(secretSeed);
-            AccountResponse account = await _server.Accounts.Account(userKeys.AccountId);
+            KeyPair source = KeyPair.FromSecretSeed(secretSeed);
+            AccountResponse account = await _server.Accounts.Account(source.AccountId);
             decimal amount = bid.Challenge.Amount / bid.Challenge.Challengers.Count;
             string amountString = amount.ToString();
             if (account == null)
@@ -166,14 +166,13 @@ namespace WageringGG.Server.Controllers
             if (!decimal.TryParse(balance?.BalanceString, out decimal balanceAmount))
                 return BadRequest(new string[] { "Your account has insufficient funds." });
 
-            Transaction transaction;
             KeyPair destination = KeyPair.FromAccountId(_config["Stellar:PublicKey"]);
             PaymentOperation payment = new PaymentOperation.Builder(destination, asset, amountString).Build();
-            transaction = new TransactionBuilder(account).AddMemo(Memo.Text($"wager challenge {bid.ChallengeId}"))
-                .AddOperation(payment).Build();
-            transaction.Sign(userKeys);
+            Transaction transaction = new TransactionBuilder(account)
+                .AddOperation(payment).AddMemo(Memo.Text($"wager challenge {bid.ChallengeId}")).Build();
+            transaction.Sign(source);
             SubmitTransactionResponse transactionResponse = await _server.SubmitTransaction(transaction);
-            if (!transactionResponse.Result.IsSuccess)
+            if (!transactionResponse.IsSuccess())
                 return BadRequest(new string[] { "The transaction was not successful." }); //why was transaction not successful
 
             bid.Approved = true;
@@ -185,12 +184,12 @@ namespace WageringGG.Server.Controllers
             };
             if (bid.Challenge.IsApproved())
             {
-                KeyPair source = KeyPair.FromAccountId(_config["Stellar:SecretSeed"]);
+                KeyPair master = KeyPair.FromAccountId(_config["Stellar:SecretSeed"]);
                 string startingBalance = ((bid.Challenge.Challengers.Count + bid.Challenge.Wager.PlayerCount + 1) * Stellar.BASE_RESERVE).ToString();
-                CreateAccountOperation createAccount = new CreateAccountOperation.Builder(destination, startingBalance).SetSourceAccount(source).Build();
+                CreateAccountOperation createAccount = new CreateAccountOperation.Builder(destination, startingBalance).SetSourceAccount(master).Build();
                 transaction = new TransactionBuilder(account).AddMemo(Memo.Text($"Creating wager challenge account (id: {bid.ChallengeId})."))
                     .AddOperation(createAccount).Build();
-                transaction.Sign(source);
+                transaction.Sign(master);
                 await _server.SubmitTransaction(transaction);
 
                 bid.Challenge.Account = new StellarAccount()

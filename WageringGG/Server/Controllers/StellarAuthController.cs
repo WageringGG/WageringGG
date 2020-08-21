@@ -43,10 +43,10 @@ namespace WageringGG.Server.Handlers
             var keyClaim = claims.KeyClaim();
             if (keyClaim != null && keyClaim.Value == account)
                 return BadRequest(new string[] { $"User's public key is already {account}." });
-            KeyPair serverKeys = KeyPair.FromSecretSeed(_config["Stellar:SecretSeed"]);
+            KeyPair master = KeyPair.FromSecretSeed(_config["Stellar:SecretSeed"]);
             try
             {
-                return Ok(WebAuthentication.BuildChallengeTransaction(serverKeys, account, "Wagering.GG").ToEnvelopeXdrBase64());
+                return Ok(WebAuthentication.BuildChallengeTransaction(master, account, "Wagering.GG").ToEnvelopeXdrBase64());
             }
             catch (Exception e)
             {
