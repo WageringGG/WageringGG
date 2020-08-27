@@ -5,12 +5,12 @@
 @inject SignOutSessionStateManager SignOutManager
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 
-<div class="d-inline-block">
+<div class="d-inline-block ml-2">
     <AuthorizeView>
         <Authorized>
             <a class="btn btn-secondary mr-1" href="/profile">
                 <i class="mdi mdi-account"></i>
-                @context.User.GetName()
+                @context.User.Identity.Name
             </a>
             <button class="btn btn-dark" @onclick="BeginSignOut">
                 <i class="mdi mdi-logout"></i>

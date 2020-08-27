@@ -32,14 +32,13 @@ namespace WageringGG.Server
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            IConfigurationSection connections = _config.GetSection("ConnectionStrings");
             services.AddDbContextPool<ApplicationDbContext>(options =>
             {
-                options.UseSqlServer(connections["Application"]);
+                options.UseSqlServer(_config.GetConnectionString("Application"));
             });
             services.AddDbContext<IdentityDbContext>(options =>
             {
-                options.UseSqlServer(connections["Identity"]);
+                options.UseSqlServer(_config.GetConnectionString("Identity"));
             });
 
             services.AddDefaultIdentity<ApplicationUser>(x =>
@@ -103,7 +102,7 @@ namespace WageringGG.Server
 
             services.AddControllersWithViews().AddNewtonsoftJson(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
             services.AddRazorPages();
-            services.AddSignalR().AddAzureSignalR();
+            services.AddSignalR();
             services.AddResponseCompression(opts =>
             {
                 opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
@@ -138,7 +137,7 @@ namespace WageringGG.Server
             app.UseResponseCompression();
             app.UseHttpsRedirection();
             app.UseBlazorFrameworkFiles();
-            app.UseFileServer();
+            app.UseStaticFiles();
 
             app.UseRouting();
 

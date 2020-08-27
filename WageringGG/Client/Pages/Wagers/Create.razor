@@ -180,7 +180,7 @@
             Wager.Hosts.Add(new WagerHostBid
             {
                 ProfileId = Context.User.GetId(),
-                DisplayName = Context.User.GetName(),
+                DisplayName = Context.User.Identity.Name,
                 ReceivablePt = 100,
                 PayablePt = 100
             });

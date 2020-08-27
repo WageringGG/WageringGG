@@ -14,17 +14,15 @@ namespace WageringGG.Client
     {
         public static async Task Main(string[] args)
         {
-            var builder = WebAssemblyHostBuilder.CreateDefault(args);
-
+            WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
             builder.RootComponents.Add<App>("app");
             builder.Services.AddHttpClient("Auth", client => client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress))
                 .AddHttpMessageHandler<BaseAddressAuthorizationMessageHandler>();
             builder.Services.AddHttpClient("NoAuth", client => client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress));
-
-            // Supply HttpClient instances that include access tokens when making requests to the server project
             builder.Services.AddTransient(sp => new AuthHttp { Client = sp.GetRequiredService<IHttpClientFactory>().CreateClient("Auth") });
             builder.Services.AddTransient(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("NoAuth"));
-            builder.Services.AddApiAuthorization();
+            builder.Services.AddApiAuthorization()
+                .AddAccountClaimsPrincipalFactory<CustomUserFactory>();
             builder.Services.AddBlazoredLocalStorage();
             builder.Services.AddBlazoredSessionStorage();
             await builder.Build().RunAsync();

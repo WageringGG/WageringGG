@@ -1,7 +1,4 @@
-﻿@layout ProfileLayout
-@page "/profile/public-key"
-
-@inject IConfiguration config
+﻿@inject IConfiguration config
 @inject AuthHttp http
 @inject IJSRuntime js
 
@@ -27,7 +24,7 @@
         </div>
     </div>
 }
-@if (Transaction == null)
+else if (Transaction == null)
 {
     <div class="form-group">
         <label>Public Key</label>

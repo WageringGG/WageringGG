@@ -1,3 +1,24 @@
-﻿@layout ProfileLayout
-@page "/profile"
+﻿@page "/profile"
+@attribute [Authorize]
 
+<h1 class="text-center">Manage Profile</h1>
+<div class="d-flex my-2">
+    <div class="btn-group ml-auto">
+        <AuthorizeView>
+            <a class="btn btn-secondary" href="/user/@context.User.Identity.Name"><i class="mdi mdi-account"></i> Profile</a>
+        </AuthorizeView>
+        <a class="btn btn-secondary" href="/authentication/profile"><i class="mdi mdi-cog"></i> Account Settings</a>
+    </div>
+</div>
+<div class="card">
+    <div class="card-body">
+        <h4 class="card-title">Stellar Network</h4>
+        <div class="card-text">
+            <ManageKey />
+        </div>
+    </div>
+</div>
+
+@code{
+
+}
