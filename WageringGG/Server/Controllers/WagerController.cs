@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 using stellar_dotnet_sdk;
@@ -10,8 +9,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WageringGG.Server.Data;
-using WageringGG.Server.Hubs;
 using WageringGG.Server.Models;
+using WageringGG.Server.Services;
 using WageringGG.Shared.Constants;
 using WageringGG.Shared.Models;
 
@@ -23,14 +22,14 @@ namespace WageringGG.Server.Handlers
     {
         private readonly ApplicationDbContext _context;
         private readonly stellar_dotnet_sdk.Server _server;
-        private readonly IHubContext<GroupHub> _hubContext;
+        private readonly HubService _hub;
         private const int ResultSize = 16;
 
-        public WagerController(ApplicationDbContext context, IHubContext<GroupHub> hubContext, stellar_dotnet_sdk.Server server)
+        public WagerController(ApplicationDbContext context, HubService hub, stellar_dotnet_sdk.Server server)
         {
             _context = context;
             _server = server;
-            _hubContext = hubContext;
+            _hub = hub;
         }
 
         //POST: api/wagers/search
@@ -124,7 +123,8 @@ namespace WageringGG.Server.Handlers
                 Message = $"{userName} has canceled the wager.",
                 Link = $"/wagers/view/{id}"
             };
-            await NotificationHandler.AddNotificationToUsers(_context, _hubContext, wager.HostIds(), notification);
+            List<Notification> notifications = await _hub.SendNotificationsAsync(wager.HostIds().ToArray(), notification);
+            _context.Notifications.AddRange(notifications);
             _context.SaveChanges();
             return Ok();
         }
@@ -234,7 +234,7 @@ namespace WageringGG.Server.Handlers
 
             _context.Wagers.Add(wager);
             _context.SaveChanges();
-            IEnumerable<string> users = wager.HostIds();
+            string[] ids = wager.HostIds().ToArray();
             if (wager.Hosts.Count > 1)
             {
                 Notification notification = new Notification
@@ -243,9 +243,10 @@ namespace WageringGG.Server.Handlers
                     Message = $"{userName} created a wager with you.",
                     Link = $"/host/wagers/view/{wager.Id}"
                 };
-                await NotificationHandler.AddNotificationToUsers(_context, _hubContext, users.Where(x => x != userId), notification);
+                List<Notification> notifications = await _hub.SendNotificationsAsync(ids.Where(x => x != userId).ToArray(), notification);
+                _context.Notifications.AddRange(notifications);
             }
-            await HubHandler.SendGroupAsync(_hubContext, users, wager.GroupName);
+            await _hub.SendGroupAsync(ids, wager.GroupName);
             return Ok(wager.Id);
         }
 
@@ -324,7 +325,7 @@ namespace WageringGG.Server.Handlers
             _context.WagerChallenges.Add(challenge);
             _context.SaveChanges();
 
-            IEnumerable<string> users = challenge.ChallengerIds();
+            string[] ids = challenge.ChallengerIds().ToArray();
             if (challenge.Challengers.Count > 1)
             {
                 Notification notification = new Notification
@@ -333,9 +334,10 @@ namespace WageringGG.Server.Handlers
                     Message = $"{userName} created a wager challenge with you.",
                     Link = $"/client/wagers/view/{wagerId}"
                 };
-                await NotificationHandler.AddNotificationToUsers(_context, _hubContext, users.Where(x => x != userId), notification);
+                List<Notification> notifications = await _hub.SendNotificationsAsync(ids.Where(x => x != userId).ToArray(), notification);
+                _context.Notifications.AddRange(notifications);
             }
-            await HubHandler.SendGroupAsync(_hubContext, users, wager.GroupName);
+            await _hub.SendGroupAsync(ids, wager.GroupName);
             //after this let users sign transactions
             return Ok(challenge.Id);
         }

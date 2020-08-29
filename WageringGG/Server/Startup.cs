@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +13,7 @@ using Microsoft.Extensions.Hosting;
 using stellar_dotnet_sdk;
 using System.Linq;
 using WageringGG.Server.Data;
+using WageringGG.Server.Hubs;
 using WageringGG.Server.Models;
 using WageringGG.Server.Services;
 
@@ -79,43 +81,51 @@ namespace WageringGG.Server
                 })
                 .AddIdentityServerJwt();
 
-            services.Configure<JwtBearerOptions>(
-            IdentityServerJwtConstants.IdentityServerJwtBearerScheme,
-            options =>
-            {
-                var received = options.Events.OnMessageReceived;
-                options.Events.OnMessageReceived = async context =>
-                {
-                    await received(context);
-                    var accessToken = context.Request.Query["access_token"];
-
-                    // If the request is for our hub...
-                    var path = context.HttpContext.Request.Path;
-                    if (!string.IsNullOrEmpty(accessToken) &&
-                        path.StartsWithSegments("/group-hub"))
-                    {
-                        // Read the token out of the query string
-                        context.Token = accessToken;
-                    }
-                };
-            });
-
             services.AddControllersWithViews().AddNewtonsoftJson(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
             services.AddRazorPages();
+
+            //SERVICES
+            if (!_env.IsDevelopment())
+                services.AddScoped<IEmailSender, EmailSender>();
+            services.AddSingleton(x =>
+            {
+                return new HubService(x.GetService<IHubContext<GroupHub>>());
+            });
+
+            //STELLAR
+            if (_env.IsDevelopment())
+                Network.UseTestNetwork();
+            else
+                Network.UsePublicNetwork();
+            services.AddSingleton(new stellar_dotnet_sdk.Server(_config["Stellar:URI"]));
+
+            //SIGNALR
+            services.Configure<JwtBearerOptions>(
+                IdentityServerJwtConstants.IdentityServerJwtBearerScheme,
+                options =>
+                {
+                    var received = options.Events.OnMessageReceived;
+                    options.Events.OnMessageReceived = async context =>
+                    {
+                        await received(context);
+                        var accessToken = context.Request.Query["access_token"];
+
+                        // If the request is for our hub...
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) &&
+                            path.StartsWithSegments("/group-hub"))
+                        {
+                            // Read the token out of the query string
+                            context.Token = accessToken;
+                        }
+                    };
+                });
             services.AddSignalR();
             services.AddResponseCompression(opts =>
             {
                 opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
                     new[] { "application/octet-stream" });
             });
-
-            if (_env.IsDevelopment())
-                Network.UseTestNetwork();
-            else
-                Network.UsePublicNetwork();
-            services.AddSingleton(new stellar_dotnet_sdk.Server(_config["Stellar:URI"]));
-            if (!_env.IsDevelopment())
-                services.AddScoped<IEmailSender, EmailSender>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

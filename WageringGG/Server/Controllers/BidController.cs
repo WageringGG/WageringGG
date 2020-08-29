@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using stellar_dotnet_sdk;
@@ -10,8 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WageringGG.Server.Data;
-using WageringGG.Server.Handlers;
-using WageringGG.Server.Hubs;
+using WageringGG.Server.Services;
 using WageringGG.Shared.Constants;
 using WageringGG.Shared.Models;
 
@@ -23,14 +21,14 @@ namespace WageringGG.Server.Controllers
     public class BidController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly IHubContext<GroupHub> _hubContext;
+        private readonly HubService _hub;
         private readonly stellar_dotnet_sdk.Server _server;
         private readonly IConfiguration _config;
 
-        public BidController(ApplicationDbContext context, IHubContext<GroupHub> hubContext, stellar_dotnet_sdk.Server server, IConfiguration config)
+        public BidController(ApplicationDbContext context, HubService hub, stellar_dotnet_sdk.Server server, IConfiguration config)
         {
             _context = context;
-            _hubContext = hubContext;
+            _hub = hub;
             _server = server;
             _config = config;
         }
@@ -77,8 +75,9 @@ namespace WageringGG.Server.Controllers
             }
             else
                 notification.Message = $"{userName} has accepted the wager.";
-            IEnumerable<string> otherHosts = bid.Wager.HostIds().Where(x => x != userId);
-            await NotificationHandler.AddNotificationToUsers(_context, _hubContext, otherHosts, notification);
+            string[] ids = bid.Wager.HostIds().Where(x => x != userId).ToArray();
+            List<Notification> notifications = await _hub.SendNotificationsAsync(ids, notification);
+            _context.Notifications.AddRange(notifications);
             _context.SaveChanges();
             return Ok(bid.Wager.Status);
         }
@@ -119,8 +118,9 @@ namespace WageringGG.Server.Controllers
                 Message = $"{userName} has declined the wager.",
                 Link = $"/host/wagers/view/{bid.WagerId}"
             };
-            IEnumerable<string> otherHosts = bid.Wager.HostIds().Where(x => x != userId);
-            await NotificationHandler.AddNotificationToUsers(_context, _hubContext, otherHosts, notification);
+            string[] ids = bid.Wager.HostIds().Where(x => x != userId).ToArray();
+            List<Notification> notifications = await _hub.SendNotificationsAsync(ids, notification);
+            _context.Notifications.AddRange(notifications);
             _context.SaveChanges();
             return Ok(bid.Wager.Status);
         }
@@ -204,18 +204,22 @@ namespace WageringGG.Server.Controllers
 
                 Wager wager = await _context.Wagers.Where(x => x.Id == bid.Challenge.WagerId).Include(x => x.Hosts).FirstOrDefaultAsync();
                 wager.ChallengeCount++;
+
+                //send hosts a notification
                 Notification hostNotification = new Notification
                 {
                     Date = date,
                     Message = "There is a new wager challenge.",
                     Link = $"/host/wagers/view/{bid.Challenge.WagerId}"
                 };
-                await NotificationHandler.AddNotificationToUsers(_context, _hubContext, wager.HostIds(), hostNotification);
+                List<Notification> hostNotifications = await _hub.SendNotificationsAsync(wager.HostIds().ToArray(), hostNotification);
+                _context.AddRange(hostNotifications);
             }
             else
                 notification.Message = $"{userName} has accepted the wager challenge.";
-            IEnumerable<string> otherHosts = bid.Challenge.ChallengerIds().Where(x => x != userId);
-            await NotificationHandler.AddNotificationToUsers(_context, _hubContext, otherHosts, notification);
+            string[] ids = bid.Challenge.ChallengerIds().Where(x => x != userId).ToArray();
+            List<Notification> notifications = await _hub.SendNotificationsAsync(ids, notification);
+            _context.AddRange(notifications);
             _context.SaveChanges();
             return Ok(bid.Challenge.Status);
         }
