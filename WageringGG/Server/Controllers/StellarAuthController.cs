@@ -65,7 +65,7 @@ namespace WageringGG.Server.Handlers
             try
             {
                 string serverId = _config["Stellar:PublicKey"];
-                ICollection<string> clients = WebAuthentication.VerifyChallengeTransactionThreshold(transaction, serverId, 1, signerSummary);
+                ICollection<string> clients = WebAuthentication.VerifyChallengeTransactionThreshold(transaction, serverId, 1, signerSummary, null);
                 if (clients.Count == 1)
                 {
                     string key = clients.First();
