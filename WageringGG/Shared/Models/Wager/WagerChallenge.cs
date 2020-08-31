@@ -13,11 +13,6 @@ namespace WageringGG.Shared.Models
 
         public int WagerId { get; set; }
         public Wager Wager { get; set; }
-        public int? AccountId { get; set; }
-        public StellarAccount Account { get; set; }
-
-        public List<WagerApproval> Approvals { get; set; } = new List<WagerApproval>();
-        public List<WagerChallengeBid> Challengers { get; set; } = new List<WagerChallengeBid>();
 
         [Required]
         public DateTime Date { get; set; }
@@ -25,31 +20,5 @@ namespace WageringGG.Shared.Models
         [Column(TypeName = "decimal(18,7)")]
         public decimal Amount { get; set; }
         public bool IsAccepted { get; set; }
-
-        public override string GroupName
-        {
-            get
-            {
-                return GetGroupName.WagerChallenge(Id);
-            }
-        }
-
-        public override bool IsApproved()
-        {
-            if (Status == 1)
-                return true;
-
-            foreach (WagerChallengeBid bid in Challengers)
-                if (bid.Approved == null || bid.Approved == false)
-                    return false;
-            if (Challengers.Count == 0)
-                return false;
-            return true;
-        }
-
-        public IEnumerable<string> ChallengerIds()
-        {
-            return Challengers.Select(x => x.ProfileId);
-        }
     }
 }

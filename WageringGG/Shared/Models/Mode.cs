@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 #nullable disable
 
@@ -22,8 +21,8 @@ namespace WageringGG.Shared.Models
         public DateTime Date { get; set; }
         public bool IsPrivate { get; set; }
 
-        public abstract IEnumerable<string> HostIds();
-        public abstract IEnumerable<string> ClientIds();
-        public abstract IEnumerable<string> AllIds();
+        public abstract string[] HostIds();
+        public abstract string[] ClientIds();
+        public abstract string[] AllIds();
     }
 }

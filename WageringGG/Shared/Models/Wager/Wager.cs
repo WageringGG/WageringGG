@@ -6,8 +6,8 @@ namespace WageringGG.Shared.Models
 {
     public class Wager : Mode
     {
-        public List<WagerHostBid> Hosts { get; set; } = new List<WagerHostBid>();
-        public List<WagerChallenge> Challenges { get; set; } = new List<WagerChallenge>();
+        public List<WagerMember> Members { get; set; }
+        public List<WagerChallenge> Challenges { get; set; }
 
         [Column(TypeName = "decimal(18,7)")]
         public decimal? MinimumWager { get; set; }
@@ -16,45 +16,44 @@ namespace WageringGG.Shared.Models
         public int PlayerCount { get; set; }
         public int ChallengeCount { get; set; }
 
-        public override bool IsApproved()
+        private WagerMember[] hosts = null;
+        public WagerMember[] Hosts()
         {
-            if (Status == 1)
-                return true;
-
-            if (Hosts == null || Hosts.Count == 0)
-                return false;
-            foreach (WagerHostBid bid in Hosts)
-                if (bid.Approved == null || bid.Approved == false)
-                    return false;
-            return true;
+            if (hosts != null)
+                return hosts;
+            if (Members == null)
+                return null;
+            return hosts = Members.Where(x => x.IsHost).ToArray();
         }
 
-        public override string GroupName
+        private WagerMember[] clients = null;
+        public WagerMember[] Clients()
         {
-            get
-            {
-                return GetGroupName.Wager(Id);
-            }
+            if (clients != null)
+                return hosts;
+            if (Members == null)
+                return null;
+            return clients = Members.Where(x => !x.IsHost).ToArray();
         }
 
-        public override IEnumerable<string> HostIds()
+        public static string Group(int id)
         {
-            return Hosts.Select(x => x.ProfileId);
+            return $"wager_{id}";
         }
 
-        public override IEnumerable<string> ClientIds()
+        public override string[] HostIds()
         {
-            IEnumerable<string> result = Enumerable.Empty<string>();
-            foreach (WagerChallenge challenge in Challenges)
-            {
-                result = result.Union(challenge.ChallengerIds());
-            }
-            return result.Distinct();
+            return Hosts().Select(x => x.ProfileId).ToArray();
         }
 
-        public override IEnumerable<string> AllIds()
+        public override string[] ClientIds()
         {
-            return HostIds().Union(ClientIds());
+            return Clients().Select(x => x.ProfileId).Distinct().ToArray();
+        }
+
+        public override string[] AllIds()
+        {
+            return Members.Select(x => x.ProfileId).Distinct().ToArray();
         }
     }
 }

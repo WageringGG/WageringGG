@@ -8,29 +8,17 @@ namespace WageringGG.Shared.Models
         [Column(TypeName = "decimal(18,7)")]
         public decimal Entry { get; set; }
 
-        public override bool IsApproved()
+        public override string[] HostIds()
         {
-            throw new System.NotImplementedException();
+            return null;
         }
-
-        public override string GroupName
+        public override string[] ClientIds()
         {
-            get
-            {
-                return GetGroupName.Tournament(Id);
-            }
+            return null;
         }
-        public override IEnumerable<string> HostIds()
+        public override string[] AllIds()
         {
-            return new List<string>();
-        }
-        public override IEnumerable<string> ClientIds()
-        {
-            return new List<string>();
-        }
-        public override IEnumerable<string> AllIds()
-        {
-            return new List<string>();
+            return null;
         }
     }
 }
