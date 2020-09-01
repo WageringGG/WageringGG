@@ -39,7 +39,7 @@ namespace WageringGG.Server.Controllers
             string? userId = User.GetId();
             string? userName = User.GetName();
 
-            var bid = await _context.WagerHostBids.Where(x => x.Id == id).Include(x => x.Wager).ThenInclude(x => x.Hosts).FirstOrDefaultAsync();
+            var bid = await _context.WagerMembers.Where(x => x.Id == id).Include(x => x.Wager).ThenInclude(x => x.Hosts).FirstOrDefaultAsync();
             if (bid == null)
             {
                 ModelState.AddModelError(string.Empty, "not_found");
@@ -132,7 +132,7 @@ namespace WageringGG.Server.Controllers
             string? userName = User.GetName();
             string? userKey = User.GetKey();
 
-            var bid = await _context.WagerChallengeBids.Where(x => x.Id == id).Include(x => x.Challenge).ThenInclude(x => x.Challengers).Include(x => x.Challenge.Account).Include(x => x.Challenge.Wager).FirstOrDefaultAsync();
+            var bid = await _context.WagerMembers.Where(x => x.Id == id).Include(x => x.Challenge).ThenInclude(x => x.Challengers).Include(x => x.Challenge.Account).Include(x => x.Challenge.Wager).FirstOrDefaultAsync();
             if (bid == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);

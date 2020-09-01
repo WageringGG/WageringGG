@@ -26,7 +26,7 @@ namespace WageringGG.Server.Handlers
         public async Task<IActionResult> GetWagerChallenges()
         {
             string? userId = User.GetId();
-            IEnumerable<WagerChallenge> results = await _context.WagerChallengeBids.AsNoTracking().Where(x => x.ProfileId == userId).Include(x => x.Challenge).Select(x => x.Challenge).ToListAsync();
+            IEnumerable<WagerChallenge> results = await _context.WagerMembers.AsNoTracking().Where(x => x.ProfileId == userId).Include(x => x.Challenge).Select(x => x.Challenge).ToListAsync();
             return Ok(results);
         }
 
@@ -34,10 +34,10 @@ namespace WageringGG.Server.Handlers
         public async Task<IActionResult> GetWagerChallenge(int id)
         {
             string? userId = User.GetId();
-            WagerChallenge challenge = await _context.WagerChallenges.AsNoTracking().Where(x => x.Id == id).Include(x => x.Challengers).ThenInclude(x => x.Profile).Include(x => x.Wager).FirstOrDefaultAsync();
+            WagerChallenge challenge = await _context.WagerChallenges.AsNoTracking().Where(x => x.Id == id).Include(x => x.Members).ThenInclude(x => x.Profile).Include(x => x.Wager).FirstOrDefaultAsync();
             if (challenge == null)
                 return BadRequest(new string[] { Errors.NotFound });
-            if (!challenge.Challengers.Any(x => x.ProfileId == userId))
+            if (!challenge.Members.Any(x => x.ProfileId == userId))
                 return BadRequest(new string[] { "You are not an owner of the wager challenge." });
             return Ok(challenge);
         }

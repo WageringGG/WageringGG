@@ -16,22 +16,22 @@
             <h3>Challengers:</h3>
             <AuthorizeView>
                 <Authorized>
-                    <WagerBidsDisplay Bids="Challenge.Challengers">
+                    <WagerMembersDisplay Members="Challenge.Members">
                         @{
-                            WagerChallengeBid bid = Challenge.Challengers.FirstOrDefault(x => x.ProfileId == context.User.GetId());
+                            WagerMember member = Challenge.Members.FirstOrDefault(x => x.ProfileId == context.User.GetId());
                         }
-                        @if (bid != null && !bid.Approved.HasValue)
+                        @if (member != null && !member.IsApproved.HasValue)
                         {
                             <div class="form-group">
                                 <label>Secret Seed:</label>
                                 <input type="text" class="form-control" @bind-value="SecretSeed" />
                             </div>
                             <div class="text-right">
-                                <button class="btn btn-danger" title="Decline the wager challenge." @onclick="() => DeclineBid(bid.Id)">Decline</button>
-                                <button class="btn btn-success" title="Accept the wager challenge." @onclick="() => AcceptBid(bid.Id)">Accept</button>
+                                <button class="btn btn-danger" title="Decline the wager challenge." @onclick="() => DeclineBid(member.Id)">Decline</button>
+                                <button class="btn btn-success" title="Accept the wager challenge." @onclick="() => AcceptBid(member.Id)">Accept</button>
                             </div>
                         }
-                    </WagerBidsDisplay>
+                    </WagerMembersDisplay>
                 </Authorized>
             </AuthorizeView>
         </div>
@@ -69,15 +69,15 @@
                 StateHasChanged();
             }
         }
-        else if (e.Key == "WagerChallengeBid")
+        else if (e.Key == "WagerMember")
         {
-            var data = (WagerChallengeBid)e.NewValue;
+            var data = (WagerMember)e.NewValue;
             if (Challenge.Id == data.ChallengeId)
             {
-                var index = Challenge.Challengers.FindIndex(x => x.Id == data.Id);
+                var index = Challenge.Members.FindIndex(x => x.Id == data.Id);
                 if (index > -1)
                 {
-                    Challenge.Challengers[index] = data;
+                    Challenge.Members[index] = data;
                     StateHasChanged();
                 }
             }
@@ -90,12 +90,11 @@
         var response = await http.Client.PutAsync($"/api/bid/wager/challenge/decline/{id}", null);
         if (response.IsSuccessStatusCode)
         {
-            var data = await response.Content.ReadFromJsonAsync<byte>();
-            var bid = Challenge.Challengers.FirstOrDefault(x => x.Id == id);
+            Challenge.Status = await response.Content.ReadFromJsonAsync<Status>();
+            var bid = Challenge.Members.FirstOrDefault(x => x.Id == id);
             if (bid != null)
-                bid.Approved = false;
-            Challenge.Status = data;
-            await HubConnection.InvokeAsync("SendWagerChallengeBid", Challenge.GroupName, bid, new IdStatus { Status = data, Id = Challenge.Id });
+                bid.IsApproved = false;
+            await HubConnection.InvokeAsync("SendWagerMember", WagerChallenge.Group(Challenge.Id), bid, new IdStatus { Status = Challenge.Status, Id = Challenge.Id });
         }
     }
 
@@ -104,12 +103,11 @@
         var response = await http.Client.PutAsJsonAsync<string>($"/api/bid/wager/challenge/accept/{id}", SecretSeed);
         if (response.IsSuccessStatusCode)
         {
-            var data = await response.Content.ReadFromJsonAsync<byte>();
-            var bid = Challenge.Challengers.FirstOrDefault(x => x.Id == id);
+            Challenge.Status = await response.Content.ReadFromJsonAsync<Status>();
+            var bid = Challenge.Members.FirstOrDefault(x => x.Id == id);
             if (bid != null)
-                bid.Approved = true;
-            Challenge.Status = data;
-            await HubConnection.InvokeAsync("SendWagerChallengeBid", Challenge.GroupName, bid, new IdStatus { Status = data, Id = Challenge.Id });
+                bid.IsApproved = true;
+            await HubConnection.InvokeAsync("SendWagerChallengeBid", WagerChallenge.Group(Challenge.Id), bid, new IdStatus { Status = Challenge.Status, Id = Challenge.Id });
         }
     }
 }

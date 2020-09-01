@@ -25,9 +25,9 @@ namespace WageringGG.Server.Hubs
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
         }
 
-        public async Task SendWagerHostBid(string groupName, WagerHostBid bid, IdStatus status)
+        public async Task SendWagerMember(string groupName, WagerMember member, IdStatus status)
         {
-            await Clients.OthersInGroup(groupName).SendAsync("ReceiveWagerHostBid", bid, status);
+            await Clients.OthersInGroup(groupName).SendAsync("ReceiveWagerMember", member, status);
         }
 
         public async Task SendWagerStatus(string groupName, IdStatus status)

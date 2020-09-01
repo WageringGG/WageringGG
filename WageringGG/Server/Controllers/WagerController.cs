@@ -50,8 +50,7 @@ namespace WageringGG.Server.Handlers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
 
-            byte confirmed = (byte)Status.Confirmed;
-            IQueryable<Wager> wagerQuery = _context.Wagers.AsNoTracking().Where(x => x.GameId == gameId).Where(x => !x.IsPrivate).Where(x => x.Status == confirmed);
+            IQueryable<Wager> wagerQuery = _context.Wagers.AsNoTracking().Where(x => x.GameId == gameId).Where(x => !x.IsPrivate).Where(x => x.Status == Status.Confirmed);
 
             if (playerCount.HasValue)
                 wagerQuery = wagerQuery.Where(x => x.PlayerCount == playerCount);
@@ -62,7 +61,7 @@ namespace WageringGG.Server.Handlers
             if (displayName != null)
             {
                 displayName = displayName.ToUpper();
-                wagerQuery = wagerQuery.Include(x => x.Hosts).ThenInclude(x => x.Profile).Where(x => x.Hosts.Any(x => x.Profile.NormalizedDisplayName.Contains(displayName)));
+                wagerQuery = wagerQuery.Include(x => x.Members).ThenInclude(x => x.Profile).Where(x => x.Members.Any(x => x.Profile.NormalizedDisplayName.Contains(displayName)));
             }
             PaginatedList<Wager> results = await Paginator<Wager>.CreateAsync(wagerQuery.OrderByDescending(x => x.Date), page ?? 1, ResultSize);
             return Ok(results);
@@ -73,7 +72,7 @@ namespace WageringGG.Server.Handlers
         public async Task<IActionResult> SetStatus(int id, [FromBody] byte status)
         {
             string? userId = User.GetId();
-            var wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == id).Include(x => x.Hosts).Where(x => x.Hosts.Any(y => y.ProfileId == userId)).FirstOrDefaultAsync();
+            var wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == id).Include(x => x.Members).Where(x => x.Members.Any(y => y.ProfileId == userId)).FirstOrDefaultAsync();
             if (wager == null)
                 return BadRequest(new string[] { Errors.NotFound });
             //state diagram
@@ -84,7 +83,7 @@ namespace WageringGG.Server.Handlers
         [HttpGet("view/{id}")]
         public async Task<IActionResult> GetWager(int id)
         {
-            var wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == id).Include(x => x.Hosts).ThenInclude(x => x.Profile).Include(x => x.Challenges).FirstOrDefaultAsync();
+            var wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == id).Include(x => x.Members).ThenInclude(x => x.Profile).Include(x => x.Challenges).FirstOrDefaultAsync();
             if (wager == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
@@ -99,7 +98,7 @@ namespace WageringGG.Server.Handlers
         {
             string? userId = User.GetId();
             string? userName = User.GetName();
-            Wager wager = await _context.Wagers.Where(x => x.Id == id).Include(x => x.Hosts).Include(x => x.Challenges).ThenInclude(x => x.Challengers).FirstOrDefaultAsync();
+            Wager wager = await _context.Wagers.Where(x => x.Id == id).Include(x => x.Members).Include(x => x.Challenges).FirstOrDefaultAsync();
 
             if (wager == null)
             {
@@ -111,12 +110,12 @@ namespace WageringGG.Server.Handlers
                 ModelState.AddModelError(string.Empty, "Wager is not in the created.");
                 return BadRequest(ModelState.GetErrors());
             }
-            if (!wager.Hosts.Any(x => x.ProfileId == userId))
+            if (!wager.Members.Any(x => x.ProfileId == userId && x.IsHost == true))
             {
                 ModelState.AddModelError(string.Empty, "You are not a host of this wager.");
                 return BadRequest(ModelState.GetErrors());
             }
-            wager.Status = (byte)Status.Canceled;
+            wager.Status = Status.Canceled;
             Notification notification = new Notification
             {
                 Date = DateTime.Now,
@@ -135,12 +134,12 @@ namespace WageringGG.Server.Handlers
         {
             string? userId = User.GetId();
 
-            Wager wager = await _context.Wagers.Where(x => x.Id == id).Include(x => x.Hosts).FirstOrDefaultAsync();
+            Wager wager = await _context.Wagers.Where(x => x.Id == id).Include(x => x.Members).FirstOrDefaultAsync();
             if (wager == null)
                 return BadRequest(new string[] { Errors.NotFound });
-            if (!wager.Hosts.Any(x => x.ProfileId == userId))
+            if (!wager.Members.Any(x => x.ProfileId == userId && x.IsHost == true))
                 return BadRequest(new string[] { "You are not a wager host." });
-            if (wager.Status != (byte)Status.Canceled)
+            if (wager.Status != Status.Canceled)
                 return BadRequest(new string[] { "The wager must be in the canceled state to be deleted." });
 
             _context.Wagers.Remove(wager);
@@ -164,11 +163,11 @@ namespace WageringGG.Server.Handlers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
 
-            if (wagerData.Hosts.Sum(x => x.ReceivablePt) != 100)
+            if (wagerData.Members.Sum(x => x.ReceivablePercentage) != 100)
                 ModelState.AddModelError(string.Empty, "The receivable percentages do not add up to 100.");
-            if (wagerData.Hosts.Sum(x => x.PayablePt) != 100)
+            if (wagerData.Members.Sum(x => x.PayablePercentage) != 100)
                 ModelState.AddModelError(string.Empty, "The payable percentages do not add up to 100.");
-            if (!wagerData.Hosts.Any(x => x.ProfileId == userId))
+            if (!wagerData.Members.Any(x => x.ProfileId == userId))
                 ModelState.AddModelError(string.Empty, "Caller must be a host.");
             if (!wagerData.HostIds().IsUnique())
                 ModelState.AddModelError(string.Empty, "The id's are not unique.");
@@ -212,31 +211,32 @@ namespace WageringGG.Server.Handlers
                 IsPrivate = wagerData.IsPrivate,
                 Status = (byte)Status.Pending,
                 ChallengeCount = 0,
-                PlayerCount = wagerData.Hosts.Count
+                PlayerCount = wagerData.Members.Count
             };
 
-            foreach (WagerHostBid host in wagerData.Hosts)
+            foreach (WagerMember host in wagerData.Members)
             {
-                WagerHostBid bid = new WagerHostBid
+                WagerMember member = new WagerMember
                 {
-                    Approved = null,
-                    ReceivablePt = host.ReceivablePt,
-                    PayablePt = host.PayablePt,
-                    ProfileId = host.ProfileId
+                    IsApproved = null,
+                    ReceivablePercentage = host.ReceivablePercentage,
+                    PayablePercentage = host.PayablePercentage,
+                    ProfileId = host.ProfileId,
+                    IsHost = true
                 };
-                if (bid.ProfileId == userId)
-                    bid.Approved = true;
-                wager.Hosts.Add(bid);
+                if (member.ProfileId == userId)
+                    member.IsApproved = true;
+                wager.Members.Add(member);
             }
 
-            if (wager.IsApproved())
-                wager.Status = (byte)Status.Confirmed;
+            if (wager.Members.All(x => x.IsApproved == true))
+                wager.Status = Status.Confirmed;
 
             _context.Wagers.Add(wager);
             _context.SaveChanges();
-            string[] ids = wager.HostIds().ToArray();
-            if (wager.Hosts.Count > 1)
+            if (wager.Members.Count > 1)
             {
+                string[] ids = wager.HostIds().ToArray();
                 Notification notification = new Notification
                 {
                     Date = date,
@@ -245,8 +245,8 @@ namespace WageringGG.Server.Handlers
                 };
                 List<Notification> notifications = await _hub.SendNotificationsAsync(ids.Where(x => x != userId).ToArray(), notification);
                 _context.Notifications.AddRange(notifications);
+                await _hub.SendGroupAsync(ids, Wager.Group(wager.Id));
             }
-            await _hub.SendGroupAsync(ids, wager.GroupName);
             return Ok(wager.Id);
         }
 
@@ -262,26 +262,26 @@ namespace WageringGG.Server.Handlers
             //check funds
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
-            if (challengeData.Challengers.Sum(x => x.ReceivablePt) != 100)
+            if (challengeData.Members.Sum(x => x.ReceivablePercentage) != 100)
                 ModelState.AddModelError(string.Empty, "The receivable percentages do not add up to 100.");
-            if (challengeData.Challengers.Sum(x => x.PayablePt) != 100)
+            if (challengeData.Members.Sum(x => x.PayablePercentage) != 100)
                 ModelState.AddModelError(string.Empty, "The payable percentages do not add up to 100.");
-            if (!challengeData.Challengers.Any(x => x.ProfileId == userId))
+            if (!challengeData.Members.Any(x => x.ProfileId == userId))
                 ModelState.AddModelError(string.Empty, "Caller must be a host.");
-            if (!challengeData.ChallengerIds().IsUnique())
+            if (!challengeData.Members.IsUnique())
                 ModelState.AddModelError(string.Empty, "The id's are not unique.");
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
-            Wager wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == wagerId).Include(x => x.Hosts).FirstOrDefaultAsync();
+            Wager wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == wagerId).Include(x => x.Members).FirstOrDefaultAsync();
             if (wager == null)
                 return BadRequest(new string[] { "The wager could not be found." });
-            if (wager.Status != (byte)Status.Confirmed)
+            if (wager.Status != Status.Confirmed)
                 ModelState.AddModelError(string.Empty, "The wager is not currently accepting challenges.");
             if (wager.MaximumWager.HasValue && challengeData.Amount > wager.MaximumWager.Value)
                 ModelState.AddModelError(string.Empty, "The challenge amount is more than the maximum wager amount.");
             if (wager.MinimumWager.HasValue && challengeData.Amount < wager.MinimumWager.Value)
                 ModelState.AddModelError(string.Empty, "The challenge amount is more than the maximum wager amount.");
-            if (wager.HostIds().Intersect(challengeData.ChallengerIds()).Count() > 0)
+            if (wager.HostIds().Intersect(challengeData.Ids()).Count() > 0)
                 ModelState.AddModelError(string.Empty, "A wager host cannot challenge themself.");
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
@@ -293,8 +293,8 @@ namespace WageringGG.Server.Handlers
                 return BadRequest(new string[] { "You do not have any Stellar Lumens. " });
             if (decimal.TryParse(balance.BalanceString, out decimal balanceAmount))
             {
-                WagerChallengeBid bid = challengeData.Challengers.First(x => x.ProfileId == userId);
-                decimal portion = balanceAmount * bid.PayablePt / 100;
+                WagerMember bid = challengeData.Members.First(x => x.ProfileId == userId);
+                decimal portion = balanceAmount * bid.PayablePercentage / 100;
                 if (balanceAmount < portion)
                     return BadRequest(new string[] { $"You have insufficient funds ({balanceAmount} XLM) for the wager amount ({portion} XLM)." });
             }
@@ -310,24 +310,25 @@ namespace WageringGG.Server.Handlers
                 Status = (byte)Status.Pending,
                 WagerId = wagerId
             };
-            foreach (WagerChallengeBid bid in challengeData.Challengers)
+            foreach (WagerMember challenger in challengeData.Members)
             {
-                WagerChallengeBid challengeBid = new WagerChallengeBid
+                WagerMember member = new WagerMember
                 {
-                    Approved = null,
-                    PayablePt = bid.PayablePt,
-                    ReceivablePt = bid.ReceivablePt,
-                    ProfileId = bid.ProfileId
+                    IsApproved = null,
+                    PayablePercentage = challenger.PayablePercentage,
+                    ReceivablePercentage = challenger.ReceivablePercentage,
+                    ProfileId = challenger.ProfileId,
+                    WagerId = wagerId
                 };
-                challenge.Challengers.Add(challengeBid);
+                challenge.Members.Add(member);
             }
 
             _context.WagerChallenges.Add(challenge);
             _context.SaveChanges();
 
-            string[] ids = challenge.ChallengerIds().ToArray();
-            if (challenge.Challengers.Count > 1)
+            if (challenge.Members.Count > 1)
             {
+                string[] ids = challenge.Ids().ToArray();
                 Notification notification = new Notification
                 {
                     Date = date,
@@ -336,8 +337,8 @@ namespace WageringGG.Server.Handlers
                 };
                 List<Notification> notifications = await _hub.SendNotificationsAsync(ids.Where(x => x != userId).ToArray(), notification);
                 _context.Notifications.AddRange(notifications);
+                await _hub.SendGroupAsync(ids, Wager.Group(wager.Id));
             }
-            await _hub.SendGroupAsync(ids, wager.GroupName);
             //after this let users sign transactions
             return Ok(challenge.Id);
         }

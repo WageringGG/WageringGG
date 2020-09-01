@@ -37,37 +37,38 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (WagerChallengeBid bid in Challenge.Challengers)
+                                @for (int i = 0; i < Challenge.Members.Count; i++)
                                 {
+                                    WagerMember member = Challenge.Members[i];
                                     <tr>
-                                        <td>@bid.DisplayName</td>
-                                        @if (bid.IsEditing)
+                                        <td>@member.Profile.DisplayName</td>
+                                        @if (EditIndex == i)
                                         {
                                             <td>
-                                                <input type="number" @bind-value="bid.PayablePt" class="form-control" />
+                                                <input type="number" @bind-value="member.PayablePercentage" class="form-control" />
                                             </td>
                                             <td>
-                                                <input type="number" @bind-value="bid.ReceivablePt" class="form-control" />
+                                                <input type="number" @bind-value="member.ReceivablePercentage" class="form-control" />
                                             </td>
                                         }
                                         else
                                         {
-                                            <td>@bid.PayablePt%</td>
-                                            <td>@bid.ReceivablePt%</td>
+                                            <td>@member.PayablePercentage%</td>
+                                            <td>@member.ReceivablePercentage%</td>
                                         }
                                         <td>
                                             <div class="btn-group">
-                                                @if (bid.IsEditing)
+                                                @if (EditIndex == i)
                                                 {
-                                                    <button type="button" class="btn btn-link"><i class="mdi mdi-content-save" @onclick="e => SaveEdit(bid)"></i></button>
+                                                    <button type="button" class="btn btn-link"><i class="mdi mdi-content-save" @onclick="() => EditIndex = -1"></i></button>
                                                 }
                                                 else
                                                 {
-                                                    <button type="button" class="btn btn-link"><i class="mdi mdi-pencil" @onclick="e => EditUser(bid)"></i></button>
+                                                    <button type="button" class="btn btn-link"><i class="mdi mdi-pencil" @onclick="() => EditIndex = i"></i></button>
                                                 }
-                                                @if (bid.ProfileId != Context.User.GetId())
+                                                @if (member.ProfileId != Context.User.GetId())
                                                 {
-                                                    <button type="button" class="btn btn-link" @onclick="e => RemoveUser(bid.ProfileId)"><i class="mdi mdi-delete"></i></button>
+                                                    <button type="button" class="btn btn-link" @onclick="() => Challenge.Members.RemoveAt(i)"><i class="mdi mdi-delete"></i></button>
                                                 }
                                             </div>
                                         </td>
@@ -75,8 +76,8 @@
                                 }
                                 <tr class="border-top">
                                     <th scope="row">Total:</th>
-                                    <td>@Challenge.Challengers.Sum(x => x.PayablePt)%</td>
-                                    <td>@Challenge.Challengers.Sum(x => x.ReceivablePt)%</td>
+                                    <td>@Challenge.Members.Sum(x => x.PayablePercentage)%</td>
+                                    <td>@Challenge.Members.Sum(x => x.ReceivablePercentage)%</td>
                                     <td><button type="button" class="btn btn-sm btn-outline-secondary" @onclick="Normalize">Normalize</button></td>
                                 </tr>
                             </tbody>
@@ -102,9 +103,10 @@
                                 {
                                     <div class="card overflow-auto" style="max-height: 6rem;">
                                         <div class="btn-group-vertical w-100">
-                                            @foreach (Profile profile in Profiles)
+                                            @for (int i = 0; i < Profiles.Count; i++)
                                             {
-                                                <button type="button" class="btn btn-block btn-sm @(profile.IsSelected ? "btn-outline-success" : "btn-outline-secondary")" @onclick="e => SelectUser(profile)">@profile.DisplayName</button>
+                                                Profile profile = Profiles[i];
+                                                <button type="button" class="btn btn-block btn-sm @(SelectedIndex == i ? "btn-outline-success" : "btn-outline-secondary")" @onclick="() => SelectedIndex = i">@profile.DisplayName</button>
                                             }
                                         </div>
                                     </div>
@@ -113,11 +115,11 @@
                             <div class="col-12 col-sm-6">
                                 <div class="form-group">
                                     <label for="payablePt">Payable %</label>
-                                    <input type="number" @bind-value="Challenger.PayablePt" class="form-control" id="payablePt" />
+                                    <input type="number" @bind-value="Member.PayablePercentage" class="form-control" id="payablePt" />
                                 </div>
                                 <div class="form-group">
                                     <label for="receivablePt">Receivable %</label>
-                                    <input type="number" @bind-value="Challenger.ReceivablePt" class="form-control" id="receivablePt" />
+                                    <input type="number" @bind-value="Member.ReceivablePercentage" class="form-control" id="receivablePt" />
                                 </div>
                             </div>
                         </div>
@@ -139,21 +141,16 @@
     public AuthenticationState Context { get; set; }
     [Parameter]
     public int WagerId { get; set; }
-    private WagerChallenge Challenge { get; set; } = new WagerChallenge();
-    private WagerChallengeBid Challenger { get; set; } = new WagerChallengeBid();
+    private WagerChallenge Challenge { get; set; } = new WagerChallenge { Members = new List<WagerMember>() };
+    private WagerMember Member { get; set; } = new WagerMember();
     private IEnumerable<string> Errors { get; set; }
     private Timer Debounce { get; set; } = new Timer(750) { AutoReset = false };
-    private ICollection<Profile> Profiles { get; set; } = new List<Profile>();
+    private List<Profile> Profiles { get; set; } = new List<Profile>();
     private EditContext EditContext { get; set; }
     private string DisplayName { get; set; }
     private bool HasKey { get; set; } = false;
-    private Profile SelectedProfile
-    {
-        get
-        {
-            return Profiles.FirstOrDefault(x => x.IsSelected);
-        }
-    }
+    private int EditIndex = -1;
+    private int SelectedIndex = -1;
 
     protected override void OnInitialized()
     {
@@ -163,12 +160,12 @@
         {
             if (!string.IsNullOrEmpty(Context.User.GetKey()))
                 HasKey = true;
-            Challenge.Challengers.Add(new WagerChallengeBid
+            Members.Add(new WagerMember
             {
                 ProfileId = Context.User.GetId(),
-                DisplayName = Context.User.Identity.Name,
-                ReceivablePt = 100,
-                PayablePt = 100
+                Profile = new Profile { DisplayName = Context.User.Identity.Name, Id = Context.User.GetId() },
+                ReceivablePercentage = 100,
+                PayablePercentage = 100
             });
         }
         base.OnInitialized();
@@ -176,24 +173,25 @@
 
     private async Task AddUser()
     {
-        Profile profile = SelectedProfile;
-        if (profile == null)
+        if (SelectedIndex == -1 || SelectedIndex >= Profiles.Count)
         {
             await js.InvokeVoidAsync("alert", "No user has been selected.");
             return;
         }
-        if (Challenge.Challengers.Any(x => x.DisplayName == profile.DisplayName))
+
+        Profile profile = Profiles[SelectedIndex];
+        if (Challenge.Members.Any(x => x.ProfileId == profile.Id))
         {
             await js.InvokeVoidAsync("alert", $"{profile.DisplayName} is already a member.");
             return;
         }
 
-        Challenge.Challengers.Add(new WagerChallengeBid
+        Challenge.Members.Add(new WagerMember
         {
             ProfileId = profile.Id,
-            DisplayName = profile.DisplayName,
-            ReceivablePt = Challenger.ReceivablePt,
-            PayablePt = Challenger.PayablePt
+            Profile = profile,
+            ReceivablePercentage = Member.ReceivablePercentage,
+            PayablePercentage = Member.PayablePercentage
         });
         ResetUser();
         await js.InvokeVoidAsync("blazorCollapse", "#addCollapse", "hide");
@@ -206,40 +204,19 @@
 
     private void ResetUser()
     {
-        Challenger = new WagerChallengeBid();
-        Profiles = new List<Profile>();
+        Member = new WagerMember();
+        Profiles.Clear();
+        SelectedIndex = -1;
         DisplayName = null;
-    }
-
-    private void RemoveUser(string profileId)
-    {
-        WagerChallengeBid bid = Challenge.Challengers.FirstOrDefault(x => x.ProfileId == profileId);
-        if (bid == null)
-            return;
-        Challenge.Challengers.Remove(bid);
-    }
-
-    private void EditUser(WagerChallengeBid bid)
-    {
-        if (bid == null)
-            return;
-        bid.IsEditing = true;
-    }
-
-    private void SaveEdit(WagerChallengeBid bid)
-    {
-        if (bid == null)
-            return;
-        bid.IsEditing = false;
     }
 
     private void Normalize()
     {
-        byte avg = (byte)(100 / Challenge.Challengers.Count);
-        Challenge.Challengers.All(x =>
+        byte avg = (byte)(100 / Challenge.Members.Count);
+        Challenge.Members.All(x =>
         {
-            x.PayablePt = avg;
-            x.ReceivablePt = avg;
+            x.PayablePercentage = avg;
+            x.ReceivablePercentage = avg;
             return true;
         });
     }
@@ -248,12 +225,6 @@
     {
         Debounce.Stop();
         Debounce.Start();
-    }
-
-    private void SelectUser(Profile profile)
-    {
-        profile.IsSelected = true;
-        DisplayName = profile.DisplayName;
     }
 
     private async Task GoToProfile()
@@ -265,9 +236,9 @@
     private async void SearchUsers(object source, ElapsedEventArgs e)
     {
         if (string.IsNullOrEmpty(DisplayName))
-            Profiles = new List<Profile>();
+            Profiles.Clear();
         else
-            Profiles = await http.Client.GetFromJsonAsync<ICollection<Profile>>("/api/user/search/" + DisplayName);
+            Profiles = await http.Client.GetFromJsonAsync<List<Profile>>("/api/user/search/" + DisplayName);
         StateHasChanged();
     }
 

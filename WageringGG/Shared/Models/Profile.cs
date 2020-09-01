@@ -21,9 +21,5 @@ namespace WageringGG.Shared.Models
         public string PublicKey { get; set; }
         public ICollection<Rating> Ratings { get; set; } = new List<Rating>();
         public IList<Notification> Notifications { get; set; } = new List<Notification>();
-
-        [NotMapped]
-        [JsonIgnore]
-        public bool IsSelected { get; set; }
     }
 }
