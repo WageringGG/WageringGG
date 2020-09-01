@@ -29,6 +29,8 @@
     <Compile Remove="Migrations\20200611054740_Approvals.Designer.cs" />
     <Compile Remove="Migrations\20200627070632_StellarAccount.cs" />
     <Compile Remove="Migrations\20200627070632_StellarAccount.Designer.cs" />
+    <Compile Remove="Migrations\20200901193102_Members.cs" />
+    <Compile Remove="Migrations\20200901193102_Members.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,8 +43,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="3.1.7" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="3.2.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.7" />
-    <PackageReference Include="Microsoft.Azure.SignalR" Version="1.5.0" />
-    <PackageReference Include="PayPal" Version="1.9.1" />
+    <PackageReference Include="Microsoft.Azure.SignalR" Version="1.5.1" />
     <PackageReference Include="SendGrid" Version="9.21.0" />
     <PackageReference Include="stellar-dotnet-sdk" Version="5.0.9" />
   </ItemGroup>

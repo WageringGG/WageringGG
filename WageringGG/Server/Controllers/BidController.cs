@@ -39,47 +39,47 @@ namespace WageringGG.Server.Controllers
             string? userId = User.GetId();
             string? userName = User.GetName();
 
-            var bid = await _context.WagerMembers.Where(x => x.Id == id).Include(x => x.Wager).ThenInclude(x => x.Hosts).FirstOrDefaultAsync();
-            if (bid == null)
+            var member = await _context.WagerMembers.Where(x => x.Id == id).Include(x => x.Wager).ThenInclude(x => x.Members).FirstOrDefaultAsync();
+            if (member == null)
             {
                 ModelState.AddModelError(string.Empty, "not_found");
                 return BadRequest(ModelState.GetErrors());
             }
-            if (bid.Wager.Status != (byte)Status.Pending)
+            if (member.Wager.Status != Status.Pending)
             {
                 ModelState.AddModelError(string.Empty, "Wager is not in the created state.");
                 return BadRequest(ModelState.GetErrors());
             }
-            if (bid.ProfileId != userId)
+            if (member.ProfileId != userId)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
                 return BadRequest(ModelState.GetErrors());
             }
-            if (bid.Approved != null)
+            if (member.IsApproved != null)
             {
                 ModelState.AddModelError(string.Empty, Errors.AlreadySent);
                 return BadRequest(ModelState.GetErrors());
             }
 
-            bid.Approved = true;
+            member.IsApproved = true;
             DateTime date = DateTime.Now;
             Notification notification = new Notification
             {
                 Date = date,
-                Link = $"/host/wagers/view/{bid.WagerId}"
+                Link = $"/host/wagers/view/{member.WagerId}"
             };
-            if (bid.Wager.IsApproved())
+            if (member.Wager.Members.Where(x => x.IsHost).All(x => x.IsApproved == true))
             {
-                bid.Wager.Status = (byte)Status.Confirmed;
+                member.Wager.Status = Status.Confirmed;
                 notification.Message = $"{userName} has confirmed the wager.";
             }
             else
                 notification.Message = $"{userName} has accepted the wager.";
-            string[] ids = bid.Wager.HostIds().Where(x => x != userId).ToArray();
+            string[] ids = member.Wager.HostIds().Where(x => x != userId).ToArray();
             List<Notification> notifications = await _hub.SendNotificationsAsync(ids, notification);
             _context.Notifications.AddRange(notifications);
             _context.SaveChanges();
-            return Ok(bid.Wager.Status);
+            return Ok(member.Wager.Status);
         }
 
         [HttpPut("wager/decline/{id}")]
@@ -88,41 +88,41 @@ namespace WageringGG.Server.Controllers
             string? userId = User.GetId();
             string? userName = User.GetName();
 
-            var bid = await _context.WagerHostBids.Where(x => x.Id == id).Include(x => x.Wager).ThenInclude(x => x.Hosts).FirstOrDefaultAsync();
-            if (bid == null)
+            var member = await _context.WagerMembers.Where(x => x.Id == id).Include(x => x.Wager).ThenInclude(x => x.Members).FirstOrDefaultAsync();
+            if (member == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
                 return BadRequest(ModelState.GetErrors());
             }
-            if (bid.Wager.Status != (byte)Status.Pending)
+            if (member.Wager.Status != Status.Pending)
             {
                 ModelState.AddModelError(string.Empty, "Wager is not in the pending state.");
                 return BadRequest(ModelState.GetErrors());
             }
-            if (bid.ProfileId != userId)
+            if (member.ProfileId != userId)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotCorresponding);
                 return BadRequest(ModelState.GetErrors());
             }
-            if (bid.Approved != null)
+            if (member.IsApproved != null)
             {
                 ModelState.AddModelError(string.Empty, Errors.AlreadySent);
                 return BadRequest(ModelState.GetErrors());
             }
-            bid.Approved = false;
-            bid.Wager.Status = (byte)Status.Canceled;
+            member.IsApproved = false;
+            member.Wager.Status = Status.Canceled;
             DateTime date = DateTime.Now;
             Notification notification = new Notification
             {
                 Date = date,
                 Message = $"{userName} has declined the wager.",
-                Link = $"/host/wagers/view/{bid.WagerId}"
+                Link = $"/host/wagers/view/{member.WagerId}"
             };
-            string[] ids = bid.Wager.HostIds().Where(x => x != userId).ToArray();
+            string[] ids = member.Wager.HostIds().Where(x => x != userId).ToArray();
             List<Notification> notifications = await _hub.SendNotificationsAsync(ids, notification);
             _context.Notifications.AddRange(notifications);
             _context.SaveChanges();
-            return Ok(bid.Wager.Status);
+            return Ok(member.Wager.Status);
         }
 
         [HttpPut("wager/challenge/accept/{id}")]
@@ -132,23 +132,23 @@ namespace WageringGG.Server.Controllers
             string? userName = User.GetName();
             string? userKey = User.GetKey();
 
-            var bid = await _context.WagerMembers.Where(x => x.Id == id).Include(x => x.Challenge).ThenInclude(x => x.Challengers).Include(x => x.Challenge.Account).Include(x => x.Challenge.Wager).FirstOrDefaultAsync();
-            if (bid == null)
+            var member = await _context.WagerMembers.Where(x => x.Id == id).Include(x => x.Challenge).ThenInclude(x => x.Members).Include(x => x.Challenge.Wager).FirstOrDefaultAsync();
+            if (member == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
                 return BadRequest(ModelState.GetErrors());
             }
-            if (bid.Challenge.Status != (byte)Status.Pending)
+            if (member.Challenge.Status != (byte)Status.Pending)
             {
                 ModelState.AddModelError(string.Empty, "Challenge is not in the pending state.");
                 return BadRequest(ModelState.GetErrors());
             }
-            if (bid.ProfileId != userId)
+            if (member.ProfileId != userId)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotCorresponding);
                 return BadRequest(ModelState.GetErrors());
             }
-            if (bid.Approved != null)
+            if (member.IsApproved != null)
             {
                 ModelState.AddModelError(string.Empty, Errors.AlreadySent);
                 return BadRequest(ModelState.GetErrors());
@@ -158,7 +158,7 @@ namespace WageringGG.Server.Controllers
             Asset asset = new AssetTypeNative();
             KeyPair source = KeyPair.FromSecretSeed(secretSeed);
             AccountResponse account = await _server.Accounts.Account(source.AccountId);
-            decimal amount = bid.Challenge.Amount / bid.Challenge.Challengers.Count;
+            decimal amount = member.Challenge.Amount / member.Challenge.Members.Count;
             string amountString = amount.ToString();
             if (account == null)
                 return BadRequest(new string[] { "Your account could not be loaded." });
@@ -166,43 +166,44 @@ namespace WageringGG.Server.Controllers
             if (!decimal.TryParse(balance?.BalanceString, out decimal balanceAmount))
                 return BadRequest(new string[] { "Your account has insufficient funds." });
 
-            KeyPair destination = KeyPair.FromAccountId(_config["Stellar:PublicKey"]);
+            /*KeyPair destination = KeyPair.FromAccountId(_config["Stellar:PublicKey"]);
             PaymentOperation payment = new PaymentOperation.Builder(destination, asset, amountString).Build();
             Transaction transaction = new TransactionBuilder(account)
-                .AddOperation(payment).AddMemo(Memo.Text($"wager challenge {bid.ChallengeId}")).Build();
+                .AddOperation(payment).AddMemo(Memo.Text($"wager challenge {member.ChallengeId}")).Build();
             transaction.Sign(source);
             SubmitTransactionResponse transactionResponse = await _server.SubmitTransaction(transaction);
             if (!transactionResponse.IsSuccess())
                 return BadRequest(new string[] { "The transaction was not successful." }); //why was transaction not successful
+            */
 
-            bid.Approved = true;
+            member.IsApproved = true;
             DateTime date = DateTime.Now;
             Notification notification = new Notification
             {
                 Date = date,
-                Link = $"/client/wagers/view/{bid.ChallengeId}"
+                Link = $"/client/wagers/view/{member.ChallengeId}"
             };
-            if (bid.Challenge.IsApproved())
+            if (member.Challenge.Members.All(x => x.IsApproved == true))
             {
-                KeyPair master = KeyPair.FromAccountId(_config["Stellar:SecretSeed"]);
-                string startingBalance = ((bid.Challenge.Challengers.Count + bid.Challenge.Wager.PlayerCount + 1) * Stellar.BASE_RESERVE).ToString();
+                /*KeyPair master = KeyPair.FromAccountId(_config["Stellar:SecretSeed"]);
+                string startingBalance = ((member.Challenge.Challengers.Count + member.Challenge.Wager.PlayerCount + 1) * Stellar.BASE_RESERVE).ToString();
                 CreateAccountOperation createAccount = new CreateAccountOperation.Builder(destination, startingBalance).SetSourceAccount(master).Build();
-                transaction = new TransactionBuilder(account).AddMemo(Memo.Text($"Creating wager challenge account (id: {bid.ChallengeId})."))
+                transaction = new TransactionBuilder(account).AddMemo(Memo.Text($"Creating wager challenge account (id: {member.ChallengeId})."))
                     .AddOperation(createAccount).Build();
                 transaction.Sign(master);
                 await _server.SubmitTransaction(transaction);
 
-                bid.Challenge.Account = new StellarAccount()
+                member.Challenge.Account = new StellarAccount()
                 {
                     Balance = amount,
                     AccountId = destination.AccountId,
                     SecretSeed = destination.SecretSeed
                 };
-
-                bid.Challenge.Status = (byte)Status.Confirmed;
+                */
+                member.Challenge.Status = Status.Confirmed;
                 notification.Message = $"{userName} has confirmed the wager challenge.";
 
-                Wager wager = await _context.Wagers.Where(x => x.Id == bid.Challenge.WagerId).Include(x => x.Hosts).FirstOrDefaultAsync();
+                Wager wager = await _context.Wagers.Where(x => x.Id == member.Challenge.WagerId).Include(x => x.Members).FirstOrDefaultAsync();
                 wager.ChallengeCount++;
 
                 //send hosts a notification
@@ -210,18 +211,18 @@ namespace WageringGG.Server.Controllers
                 {
                     Date = date,
                     Message = "There is a new wager challenge.",
-                    Link = $"/host/wagers/view/{bid.Challenge.WagerId}"
+                    Link = $"/host/wagers/view/{member.Challenge.WagerId}"
                 };
                 List<Notification> hostNotifications = await _hub.SendNotificationsAsync(wager.HostIds().ToArray(), hostNotification);
                 _context.AddRange(hostNotifications);
             }
             else
                 notification.Message = $"{userName} has accepted the wager challenge.";
-            string[] ids = bid.Challenge.ChallengerIds().Where(x => x != userId).ToArray();
+            string[] ids = member.Challenge.Ids().Where(x => x != userId).ToArray();
             List<Notification> notifications = await _hub.SendNotificationsAsync(ids, notification);
             _context.AddRange(notifications);
             _context.SaveChanges();
-            return Ok(bid.Challenge.Status);
+            return Ok(member.Challenge.Status);
         }
 
         //decline refund users their $$$

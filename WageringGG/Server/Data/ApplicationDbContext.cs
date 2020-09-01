@@ -27,8 +27,6 @@ namespace WageringGG.Server.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.Entity<Notification>().HasKey(x => new { x.Date, x.ProfileId });
-            builder.Entity<WagerApproval>().HasKey(x => new { x.HostId, x.ChallengeId });
-            builder.Entity<WagerApproval>().HasOne(x => x.Host).WithMany().OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Profile>().HasIndex(x => x.NormalizedDisplayName).IsUnique();
             builder.Entity<Game>().HasIndex(x => x.NormalizedName).IsUnique();
 

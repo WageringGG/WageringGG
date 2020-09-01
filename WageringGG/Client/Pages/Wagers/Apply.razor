@@ -160,7 +160,7 @@
         {
             if (!string.IsNullOrEmpty(Context.User.GetKey()))
                 HasKey = true;
-            Members.Add(new WagerMember
+            Challenge.Members.Add(new WagerMember
             {
                 ProfileId = Context.User.GetId(),
                 Profile = new Profile { DisplayName = Context.User.Identity.Name, Id = Context.User.GetId() },

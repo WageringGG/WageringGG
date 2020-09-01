@@ -26,7 +26,7 @@ namespace WageringGG.Server.Handlers
         public async Task<IActionResult> GetHostWagers()
         {
             string? userId = User.GetId();
-            IEnumerable<Wager> results = await _context.WagerHostBids.AsNoTracking().Where(x => x.ProfileId == userId).Include(x => x.Wager).Select(x => x.Wager).ToListAsync();
+            IEnumerable<Wager> results = await _context.WagerMembers.AsNoTracking().Where(x => x.IsHost).Where(x => x.ProfileId == userId).Include(x => x.Wager).Select(x => x.Wager).ToListAsync();
             return Ok(results);
         }
 
@@ -35,11 +35,11 @@ namespace WageringGG.Server.Handlers
         {
             string? userId = User.GetId();
 
-            Wager wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == id).Include(x => x.Hosts).ThenInclude(x => x.Profile).Include(x => x.Challenges).ThenInclude(x => x.Challengers).ThenInclude(x => x.Profile).FirstOrDefaultAsync();
+            Wager wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == id).Include(x => x.Members).ThenInclude(x => x.Profile).Include(x => x.Challenges).FirstOrDefaultAsync();
 
             if (wager == null)
                 return BadRequest(new string[] { Errors.NotFound });
-            if (!wager.Hosts.Any(x => x.ProfileId == userId))
+            if (!wager.Members.Any(x => x.ProfileId == userId && x.IsHost == true))
                 return BadRequest(new string[] { "You are not a host of this wager." });
             return Ok(wager);
         }
