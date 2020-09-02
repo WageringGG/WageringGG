@@ -69,13 +69,29 @@ namespace WageringGG.Server.Handlers
 
         [HttpPut("status/{id}")]
         [Authorize]
-        public async Task<IActionResult> SetStatus(int id, [FromBody] byte status)
+        public async Task<IActionResult> SetStatus(int id, [FromBody] Status status)
         {
             string? userId = User.GetId();
-            var wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == id).Include(x => x.Members).Where(x => x.Members.Any(y => y.ProfileId == userId)).FirstOrDefaultAsync();
+            var wager = await _context.Wagers.Where(x => x.Id == id).Include(x => x.Members).Where(x => x.Members.Any(y => y.ProfileId == userId && y.IsHost)).FirstOrDefaultAsync();
             if (wager == null)
                 return BadRequest(new string[] { Errors.NotFound });
             //state diagram
+            switch (wager.Status)
+            {
+                case Status.Pending:
+                    break;
+                case Status.Confirmed:
+                    if (status == Status.Closed)
+                        wager.Status = Status.Closed;
+                    break;
+                case Status.Closed:
+                    if (status == Status.Confirmed)
+                        wager.Status = Status.Confirmed;
+                    if (status == Status.Canceled)
+                        wager.Status = Status.Canceled;
+                    break;
+            }
+            _context.SaveChanges();
             return Ok();
         }
 
@@ -209,9 +225,10 @@ namespace WageringGG.Server.Handlers
                 MinimumWager = wagerData.MinimumWager,
                 MaximumWager = wagerData.MaximumWager,
                 IsPrivate = wagerData.IsPrivate,
-                Status = (byte)Status.Pending,
+                Status = Status.Pending,
                 ChallengeCount = 0,
-                PlayerCount = wagerData.Members.Count
+                PlayerCount = wagerData.Members.Count,
+                Members = new List<WagerMember>()
             };
 
             foreach (WagerMember host in wagerData.Members)
@@ -307,8 +324,9 @@ namespace WageringGG.Server.Handlers
                 Amount = challengeData.Amount,
                 Date = date,
                 IsAccepted = false,
-                Status = (byte)Status.Pending,
-                WagerId = wagerId
+                Status = Status.Pending,
+                WagerId = wagerId,
+                Members = new List<WagerMember>()
             };
             foreach (WagerMember challenger in challengeData.Members)
             {
