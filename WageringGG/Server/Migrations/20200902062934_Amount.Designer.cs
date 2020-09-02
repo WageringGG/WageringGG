@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WageringGG.Server.Data;
 
 namespace WageringGG.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20200902062934_Amount")]
+    partial class Amount
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -154,22 +156,6 @@ namespace WageringGG.Server.Migrations
                     b.ToTable("Ratings");
                 });
 
-            modelBuilder.Entity("WageringGG.Shared.Models.StellarAccount", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<decimal>("Balance")
-                        .HasColumnType("decimal(18,7)");
-
-                    b.Property<string>("SecretSeed")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("StellarAccount");
-                });
-
             modelBuilder.Entity("WageringGG.Shared.Models.Tournament", b =>
                 {
                     b.Property<int>("Id")
@@ -216,9 +202,6 @@ namespace WageringGG.Server.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<string>("AccountId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,7)");
 
@@ -251,8 +234,6 @@ namespace WageringGG.Server.Migrations
                         .HasMaxLength(50);
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AccountId");
 
                     b.HasIndex("GameId");
 
@@ -359,10 +340,6 @@ namespace WageringGG.Server.Migrations
 
             modelBuilder.Entity("WageringGG.Shared.Models.Wager", b =>
                 {
-                    b.HasOne("WageringGG.Shared.Models.StellarAccount", "Account")
-                        .WithMany()
-                        .HasForeignKey("AccountId");
-
                     b.HasOne("WageringGG.Shared.Models.Game", "Game")
                         .WithMany()
                         .HasForeignKey("GameId")

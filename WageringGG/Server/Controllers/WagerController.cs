@@ -55,9 +55,9 @@ namespace WageringGG.Server.Handlers
             if (playerCount.HasValue)
                 wagerQuery = wagerQuery.Where(x => x.PlayerCount == playerCount);
             if (minimumWager.HasValue)
-                wagerQuery = wagerQuery.Where(x => x.MinimumWager == null || (x.MinimumWager.HasValue && x.MinimumWager > minimumWager) || (x.MaximumWager.HasValue && x.MaximumWager > minimumWager));
+                wagerQuery = wagerQuery.Where(x => x.Amount > minimumWager);
             if (maximumWager.HasValue)
-                wagerQuery = wagerQuery.Where(x => x.MaximumWager == null || (x.MinimumWager.HasValue && x.MinimumWager < maximumWager) || (x.MaximumWager.HasValue && x.MaximumWager < maximumWager));
+                wagerQuery = wagerQuery.Where(x => x.Amount < maximumWager);
             if (displayName != null)
             {
                 displayName = displayName.ToUpper();
@@ -187,30 +187,8 @@ namespace WageringGG.Server.Handlers
                 ModelState.AddModelError(string.Empty, "Caller must be a host.");
             if (!wagerData.HostIds().IsUnique())
                 ModelState.AddModelError(string.Empty, "The id's are not unique.");
-            if (wagerData.MinimumWager.HasValue && wagerData.MaximumWager.HasValue && wagerData.MinimumWager.Value > wagerData.MaximumWager.Value)
-                ModelState.AddModelError(string.Empty, "The minimum wager cannot be less than the maximum wager.");
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState.GetErrors());
-
-            Balance? balance = null;
-            try
-            {
-                AccountResponse account = await _server.Accounts.Account(userKey);
-                balance = account.Balances.FirstOrDefault(x => x.AssetType == "native");
-            }
-            catch { }
-            if (balance == null)
-                return BadRequest(new string[] { "You do not have any Stellar Lumens. " });
-            if (decimal.TryParse(balance.BalanceString, out decimal balanceAmount))
-            {
-                if (wagerData.MinimumWager.HasValue && balanceAmount < wagerData.MinimumWager.Value)
-                    ModelState.AddModelError(string.Empty, "You have insufficient funds for the minimum wager amount.");
-                if (wagerData.MaximumWager.HasValue && balanceAmount < wagerData.MaximumWager.Value)
-                    ModelState.AddModelError(string.Empty, "You have insufficient funds for the maximum wager amount.");
-            }
-            else
-                ModelState.AddModelError(string.Empty, "Cannot read the Lumens balance.");
+            if (wagerData.Amount <= 0)
+                ModelState.AddModelError(string.Empty, "The wager amount has to be greater than 0.");
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
@@ -222,8 +200,7 @@ namespace WageringGG.Server.Handlers
                 Date = date,
                 Title = wagerData.Title,
                 Description = wagerData.Description,
-                MinimumWager = wagerData.MinimumWager,
-                MaximumWager = wagerData.MaximumWager,
+                Amount = wagerData.Amount,
                 IsPrivate = wagerData.IsPrivate,
                 Status = Status.Pending,
                 ChallengeCount = 0,
@@ -245,10 +222,9 @@ namespace WageringGG.Server.Handlers
                     member.IsApproved = true;
                 wager.Members.Add(member);
             }
-
             if (wager.Members.All(x => x.IsApproved == true))
                 wager.Status = Status.Confirmed;
-
+            //if confirmed start receiving funds
             _context.Wagers.Add(wager);
             _context.SaveChanges();
             if (wager.Members.Count > 1)
@@ -294,10 +270,6 @@ namespace WageringGG.Server.Handlers
                 return BadRequest(new string[] { "The wager could not be found." });
             if (wager.Status != Status.Confirmed)
                 ModelState.AddModelError(string.Empty, "The wager is not currently accepting challenges.");
-            if (wager.MaximumWager.HasValue && challengeData.Amount > wager.MaximumWager.Value)
-                ModelState.AddModelError(string.Empty, "The challenge amount is more than the maximum wager amount.");
-            if (wager.MinimumWager.HasValue && challengeData.Amount < wager.MinimumWager.Value)
-                ModelState.AddModelError(string.Empty, "The challenge amount is more than the maximum wager amount.");
             if (wager.HostIds().Intersect(challengeData.Ids()).Count() > 0)
                 ModelState.AddModelError(string.Empty, "A wager host cannot challenge themself.");
             if (!ModelState.IsValid)
@@ -321,7 +293,6 @@ namespace WageringGG.Server.Handlers
             DateTime date = DateTime.Now;
             WagerChallenge challenge = new WagerChallenge
             {
-                Amount = challengeData.Amount,
                 Date = date,
                 IsAccepted = false,
                 Status = Status.Pending,

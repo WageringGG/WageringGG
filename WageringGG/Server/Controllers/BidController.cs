@@ -155,6 +155,7 @@ namespace WageringGG.Server.Controllers
             }
 
             //check funds
+            /*
             Asset asset = new AssetTypeNative();
             KeyPair source = KeyPair.FromSecretSeed(secretSeed);
             AccountResponse account = await _server.Accounts.Account(source.AccountId);
@@ -166,7 +167,7 @@ namespace WageringGG.Server.Controllers
             if (!decimal.TryParse(balance?.BalanceString, out decimal balanceAmount))
                 return BadRequest(new string[] { "Your account has insufficient funds." });
 
-            /*KeyPair destination = KeyPair.FromAccountId(_config["Stellar:PublicKey"]);
+            KeyPair destination = KeyPair.FromAccountId(_config["Stellar:PublicKey"]);
             PaymentOperation payment = new PaymentOperation.Builder(destination, asset, amountString).Build();
             Transaction transaction = new TransactionBuilder(account)
                 .AddOperation(payment).AddMemo(Memo.Text($"wager challenge {member.ChallengeId}")).Build();

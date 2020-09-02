@@ -24,17 +24,21 @@
                         </div>
                     }
                     <ErrorDisplay @bind-Errors="Errors" />
+                    <div class="form-group">
+                        <label>Title</label>
+                        <InputText class="form-control" @bind-Value="Wager.Title" />
+                    </div>
                     <div class="form-row">
                         <div class="col-9">
                             <div class="form-group">
-                                <label>Title</label>
-                                <InputText class="form-control" @bind-Value="Wager.Title" />
+                                <label>Amount</label>
+                                <InputNumber class="form-control" @bind-Value="Wager.Amount" />
                             </div>
                         </div>
                         <div class="col-3 mt-auto">
                             <div class="form-group form-check">
-                                <InputCheckbox @bind-Value="Wager.IsPrivate" class="form-check-input" />
-                                <label class="form-check-label">Private</label>
+                                <InputCheckbox @bind-Value="Wager.IsPrivate" class="form-check-input" id="isPrivate" />
+                                <label class="form-check-label" for="isPrivate">Private</label>
                             </div>
                         </div>
                     </div>
@@ -113,7 +117,7 @@
                                 {
                                     <div class="card overflow-auto" style="max-height: 6rem;">
                                         <div class="btn-group-vertical w-100">
-                                            @for(int i = 0; i< Profiles.Count; i++)
+                                            @for (int i = 0; i < Profiles.Count; i++)
                                             {
                                                 Profile profile = Profiles[i];
                                                 <button type="button" class="btn btn-block btn-sm @(SelectedIndex == i ? "btn-outline-success" : "btn-outline-secondary")" @onclick="() => SelectedIndex = i">@profile.DisplayName</button>

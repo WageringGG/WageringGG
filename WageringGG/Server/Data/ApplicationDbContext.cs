@@ -29,6 +29,7 @@ namespace WageringGG.Server.Data
             builder.Entity<Notification>().HasKey(x => new { x.Date, x.ProfileId });
             builder.Entity<Profile>().HasIndex(x => x.NormalizedDisplayName).IsUnique();
             builder.Entity<Game>().HasIndex(x => x.NormalizedName).IsUnique();
+            builder.Entity<WagerMember>().HasIndex(x => x.IsHost);
 
             /*const int users = 10;
             Profile[] profiles = new Profile[users];

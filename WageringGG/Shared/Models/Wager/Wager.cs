@@ -6,13 +6,13 @@ namespace WageringGG.Shared.Models
 {
     public class Wager : Mode
     {
+        public string AccountId { get; set; }
+        public StellarAccount Account { get; set; }
         public List<WagerMember> Members { get; set; }
         public List<WagerChallenge> Challenges { get; set; }
 
         [Column(TypeName = "decimal(18,7)")]
-        public decimal? MinimumWager { get; set; }
-        [Column(TypeName = "decimal(18,7)")]
-        public decimal? MaximumWager { get; set; }
+        public decimal Amount { get; set; }
         public int PlayerCount { get; set; }
         public int ChallengeCount { get; set; }
 

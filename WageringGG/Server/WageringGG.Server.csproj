@@ -31,6 +31,8 @@
     <Compile Remove="Migrations\20200627070632_StellarAccount.Designer.cs" />
     <Compile Remove="Migrations\20200901193102_Members.cs" />
     <Compile Remove="Migrations\20200901193102_Members.Designer.cs" />
+    <Compile Remove="Migrations\20200902062843_Amount.cs" />
+    <Compile Remove="Migrations\20200902062843_Amount.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>

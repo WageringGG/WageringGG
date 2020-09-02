@@ -7,14 +7,7 @@
         <div class="my-2">
             <button type="button" class="btn btn-sm">Hosts <span class="badge">@Wager.PlayerCount</span></button>
             <button type="button" class="btn btn-sm">Challenges <span class="badge">@Wager.ChallengeCount</span></button>
-            @if (Wager.MinimumWager.HasValue)
-            {
-                <button type="button" class="btn btn-sm">Minimum <span class="badge">@Wager.MinimumWager</span></button>
-            }
-            @if (Wager.MaximumWager.HasValue)
-            {
-                <button type="button" class="btn btn-sm">Maximum <span class="badge">@Wager.MaximumWager</span></button>
-            }
+            <button type="button" class="btn btn-sm">Amount <span class="badge">@Wager.Amount.ToString("G29") XLM</span></button>
         </div>
         <div class="d-flex">
             @if (Link != null)

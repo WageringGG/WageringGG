@@ -17,9 +17,6 @@ namespace WageringGG.Shared.Models
 
         [Required]
         public DateTime Date { get; set; }
-        [Required]
-        [Column(TypeName = "decimal(18,7)")]
-        public decimal Amount { get; set; }
         public bool IsAccepted { get; set; }
 
         public static string Group(int id)
