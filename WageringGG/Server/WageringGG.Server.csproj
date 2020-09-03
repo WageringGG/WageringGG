@@ -33,6 +33,8 @@
     <Compile Remove="Migrations\20200901193102_Members.Designer.cs" />
     <Compile Remove="Migrations\20200902062843_Amount.cs" />
     <Compile Remove="Migrations\20200902062843_Amount.Designer.cs" />
+    <Compile Remove="Migrations\20200903201650_Paid.cs" />
+    <Compile Remove="Migrations\20200903201650_Paid.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>

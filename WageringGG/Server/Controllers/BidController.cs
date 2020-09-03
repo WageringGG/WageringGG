@@ -2,8 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using stellar_dotnet_sdk;
-using stellar_dotnet_sdk.responses;
 using System;
 using System.Collections.Generic;
 using System.Linq;

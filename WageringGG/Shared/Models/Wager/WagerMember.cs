@@ -16,5 +16,6 @@
 
         public byte ReceivablePercentage { get; set; }
         public byte PayablePercentage { get; set; }
+        public int Entries { get; set; }
     }
 }
