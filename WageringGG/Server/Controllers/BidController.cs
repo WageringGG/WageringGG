@@ -68,7 +68,7 @@ namespace WageringGG.Server.Controllers
             };
             if (member.Wager.Members.Where(x => x.IsHost).All(x => x.IsApproved == true))
             {
-                member.Wager.Status = Status.Confirmed;
+                member.Wager.Status = Status.Open;
                 notification.Message = $"{userName} has confirmed the wager.";
             }
             else
@@ -199,7 +199,7 @@ namespace WageringGG.Server.Controllers
                     SecretSeed = destination.SecretSeed
                 };
                 */
-                member.Challenge.Status = Status.Confirmed;
+                member.Challenge.Status = Status.Open;
                 notification.Message = $"{userName} has confirmed the wager challenge.";
 
                 Wager wager = await _context.Wagers.Where(x => x.Id == member.Challenge.WagerId).Include(x => x.Members).FirstOrDefaultAsync();

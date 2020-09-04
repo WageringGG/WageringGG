@@ -7,6 +7,7 @@
                         <th scope="col">Name</th>
                         <th scope="col">Payable (%)</th>
                         <th scope="col">Receivable (%)</th>
+                        <th scope="col">Entries</th>
                         <th scope="col">Actions</th>
                     </tr>
                 </thead>
@@ -19,6 +20,7 @@
                             </td>
                             <td>@member.PayablePercentage%</td>
                             <td>@member.ReceivablePercentage%</td>
+                            <td>@member.Entries</td>
                             <td>
                                 @if (member.IsApproved.HasValue)
                                 {

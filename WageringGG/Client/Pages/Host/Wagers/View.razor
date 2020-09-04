@@ -10,13 +10,18 @@
     <h1 class="text-center">@Enum.GetName(typeof(Status), Wager.Status) Wager</h1>
     <div class="row">
         <div class="col-12 col-lg-8 mx-auto my-1 text-right">
-            @if (Wager.Status == Status.Confirmed)
+            @if (Wager.Status == Status.Open)
             {
                 <button class="btn btn-outline-danger" @onclick="() => ChangeStatus(Status.Closed)">Close</button>
             }
             else if (Wager.Status == Status.Closed)
             {
-                <button class="btn btn-outline-success ml-auto" @onclick="() => ChangeStatus(Status.Confirmed)">Open</button>
+                <div class="btn-group">
+                    <button class="btn btn-outline-success" @onclick="() => ChangeStatus(Status.Open)">Open</button>
+                    <button class="btn btn-outline-danger" @onclick="() => ChangeStatus(Status.Canceled)">
+                        Cancel
+                    </button>
+                </div>
             }
             else if (Wager.Status == Status.Canceled)
             {
@@ -26,7 +31,7 @@
                 }
                 else
                 {
-                    <button class="btn btn-outline-danger ml-auto" @onclick="Delete">Delete</button>
+                    <button class="btn btn-outline-danger" @onclick="Delete">Delete</button>
                 }
             }
         </div>
@@ -42,14 +47,40 @@
                         @{
                             WagerMember host = Wager.Members.FirstOrDefault(x => x.ProfileId == context.User.GetId());
                         }
-                        @if (host != null && !host.IsApproved.HasValue)
-                        {
-                            <div class="text-right">
+                        <div class="text-right">
+                            <button class="btn btn-secondary" title="Purchase an entry." data-toggle="modal" data-target="#entryModal">Buy Entry</button>
+                            @if (host != null && !host.IsApproved.HasValue)
+                            {
                                 <button class="btn btn-danger" title="Decline the wager." @onclick="() => Decline(host.Id)">Decline</button>
                                 <button class="btn btn-success" title="Accept the wager." @onclick="() => Accept(host.Id)">Accept</button>
-                            </div>
-                        }
+                            }
+                        </div>
                     </WagerMembersDisplay>
+                    <div class="modal fade" id="entryModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Buy Entry</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <i class="mdi mdi-close"></i>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label>Public Key</label>
+                                        <input type="text" class="form-control" disabled value="@context.User.GetKey()" />
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Secret Seed</label>
+                                        <input type="password" class="form-control" @bind-value="SecretSeed" autocomplete="off"/>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-success" @onclick="BuyEntry">Submit</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </Authorized>
             </AuthorizeView>
         </div>
@@ -84,6 +115,7 @@
     public int Id { get; set; }
     [CascadingParameter]
     public HubConnection HubConnection { get; set; }
+    private string SecretSeed { get; set; }
     private Wager Wager { get; set; }
     private bool IsDeleted { get; set; }
     private IEnumerable<string> Errors { get; set; } = new List<string>();
@@ -180,5 +212,11 @@
                 host.IsApproved = true;
             await HubConnection.InvokeAsync("SendWagerMember", Wager.Group(Wager.Id), host, new IdStatus { Status = Wager.Status, Id = host.WagerId });
         }
+    }
+
+    private async Task BuyEntry()
+    {
+        //buy entry
+        SecretSeed = null;
     }
 }

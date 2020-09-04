@@ -3,7 +3,7 @@
     public enum Status
     {
         Pending = 0,
-        Confirmed = 1,
+        Open = 1,
         Canceled = 2,
         Closed = 3,
         Completed = 8,

@@ -50,7 +50,7 @@ namespace WageringGG.Server.Handlers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
 
-            IQueryable<Wager> wagerQuery = _context.Wagers.AsNoTracking().Where(x => x.GameId == gameId).Where(x => !x.IsPrivate).Where(x => x.Status == Status.Confirmed);
+            IQueryable<Wager> wagerQuery = _context.Wagers.AsNoTracking().Where(x => x.GameId == gameId).Where(x => !x.IsPrivate).Where(x => x.Status == Status.Open);
 
             if (playerCount.HasValue)
                 wagerQuery = wagerQuery.Where(x => x.PlayerCount == playerCount);
@@ -80,13 +80,13 @@ namespace WageringGG.Server.Handlers
             {
                 case Status.Pending:
                     break;
-                case Status.Confirmed:
+                case Status.Open:
                     if (status == Status.Closed)
                         wager.Status = Status.Closed;
                     break;
                 case Status.Closed:
-                    if (status == Status.Confirmed)
-                        wager.Status = Status.Confirmed;
+                    if (status == Status.Open)
+                        wager.Status = Status.Open;
                     if (status == Status.Canceled)
                         wager.Status = Status.Canceled;
                     break;
@@ -223,7 +223,7 @@ namespace WageringGG.Server.Handlers
                 wager.Members.Add(member);
             }
             if (wager.Members.All(x => x.IsApproved == true))
-                wager.Status = Status.Confirmed;
+                wager.Status = Status.Open;
             //if confirmed start receiving funds
             _context.Wagers.Add(wager);
             _context.SaveChanges();
@@ -268,7 +268,7 @@ namespace WageringGG.Server.Handlers
             Wager wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == wagerId).Include(x => x.Members).FirstOrDefaultAsync();
             if (wager == null)
                 return BadRequest(new string[] { "The wager could not be found." });
-            if (wager.Status != Status.Confirmed)
+            if (wager.Status != Status.Open)
                 ModelState.AddModelError(string.Empty, "The wager is not currently accepting challenges.");
             if (wager.HostIds().Intersect(challengeData.Ids()).Count() > 0)
                 ModelState.AddModelError(string.Empty, "A wager host cannot challenge themself.");

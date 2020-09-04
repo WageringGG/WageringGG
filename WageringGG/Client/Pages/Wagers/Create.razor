@@ -32,7 +32,12 @@
                         <div class="col-9">
                             <div class="form-group">
                                 <label>Amount</label>
-                                <InputNumber class="form-control" @bind-Value="Wager.Amount" />
+                                <div class="input-group">
+                                    <InputNumber class="form-control" @bind-Value="Wager.Amount" />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">XLM</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="col-3 mt-auto">
