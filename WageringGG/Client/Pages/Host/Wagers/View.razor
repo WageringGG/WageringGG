@@ -5,7 +5,11 @@
 @implements IDisposable
 
 <ErrorDisplay @bind-Errors="Errors" />
-@if (Wager != null)
+@if (Wager == null)
+{
+    <p class="lead">Loading...</p>
+}
+else
 {
     <h1 class="text-center">@Enum.GetName(typeof(Status), Wager.Status) Wager</h1>
     <div class="row">
@@ -72,7 +76,7 @@
                                     </div>
                                     <div class="form-group">
                                         <label>Secret Seed</label>
-                                        <input type="password" class="form-control" @bind-value="SecretSeed" autocomplete="off"/>
+                                        <input type="password" class="form-control" @bind-value="SecretSeed" autocomplete="off" />
                                     </div>
                                 </div>
                                 <div class="modal-footer">
