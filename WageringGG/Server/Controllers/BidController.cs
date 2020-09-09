@@ -31,8 +31,15 @@ namespace WageringGG.Server.Controllers
             _config = config;
         }
 
-        [HttpPut("wager/accept/{id}")]
-        public async Task<IActionResult> AcceptWager(int id)
+        [HttpPost("wager/entry/{id}")]
+        public async Task<IActionResult> BuyEntry([FromRoute] int id, [FromBody] string secretSeed)
+        {
+            //buy
+            return Ok();
+        }
+
+        [HttpPut("wager/{id}")]
+        public async Task<IActionResult> WagerPending([FromRoute] int id, [FromBody] bool value)
         {
             string? userId = User.GetId();
             string? userName = User.GetName();
@@ -40,7 +47,7 @@ namespace WageringGG.Server.Controllers
             var member = await _context.WagerMembers.Where(x => x.Id == id).Include(x => x.Wager).ThenInclude(x => x.Members).FirstOrDefaultAsync();
             if (member == null)
             {
-                ModelState.AddModelError(string.Empty, "not_found");
+                ModelState.AddModelError(string.Empty, Errors.NotFound);
                 return BadRequest(ModelState.GetErrors());
             }
             if (member.Wager.Status != Status.Pending)
@@ -59,63 +66,25 @@ namespace WageringGG.Server.Controllers
                 return BadRequest(ModelState.GetErrors());
             }
 
-            member.IsApproved = true;
+            member.IsApproved = value;
             DateTime date = DateTime.Now;
             Notification notification = new Notification
             {
                 Date = date,
                 Link = $"/host/wagers/view/{member.WagerId}"
             };
-            if (member.Wager.Members.Where(x => x.IsHost).All(x => x.IsApproved == true))
+            if(value == false)
+            {
+                member.Wager.Status = Status.Canceled;
+                notification.Message = $"{userName} has declined the wager.";
+            }
+            else if (member.Wager.Members.Where(x => x.IsHost).All(x => x.IsApproved == true))
             {
                 member.Wager.Status = Status.Open;
                 notification.Message = $"{userName} has confirmed the wager.";
             }
             else
                 notification.Message = $"{userName} has accepted the wager.";
-            string[] ids = member.Wager.HostIds().Where(x => x != userId).ToArray();
-            List<Notification> notifications = await _hub.SendNotificationsAsync(ids, notification);
-            _context.Notifications.AddRange(notifications);
-            _context.SaveChanges();
-            return Ok(member.Wager.Status);
-        }
-
-        [HttpPut("wager/decline/{id}")]
-        public async Task<IActionResult> DeclineWager(int id)
-        {
-            string? userId = User.GetId();
-            string? userName = User.GetName();
-
-            var member = await _context.WagerMembers.Where(x => x.Id == id).Include(x => x.Wager).ThenInclude(x => x.Members).FirstOrDefaultAsync();
-            if (member == null)
-            {
-                ModelState.AddModelError(string.Empty, Errors.NotFound);
-                return BadRequest(ModelState.GetErrors());
-            }
-            if (member.Wager.Status != Status.Pending)
-            {
-                ModelState.AddModelError(string.Empty, "Wager is not in the pending state.");
-                return BadRequest(ModelState.GetErrors());
-            }
-            if (member.ProfileId != userId)
-            {
-                ModelState.AddModelError(string.Empty, Errors.NotCorresponding);
-                return BadRequest(ModelState.GetErrors());
-            }
-            if (member.IsApproved != null)
-            {
-                ModelState.AddModelError(string.Empty, Errors.AlreadySent);
-                return BadRequest(ModelState.GetErrors());
-            }
-            member.IsApproved = false;
-            member.Wager.Status = Status.Canceled;
-            DateTime date = DateTime.Now;
-            Notification notification = new Notification
-            {
-                Date = date,
-                Message = $"{userName} has declined the wager.",
-                Link = $"/host/wagers/view/{member.WagerId}"
-            };
             string[] ids = member.Wager.HostIds().Where(x => x != userId).ToArray();
             List<Notification> notifications = await _hub.SendNotificationsAsync(ids, notification);
             _context.Notifications.AddRange(notifications);

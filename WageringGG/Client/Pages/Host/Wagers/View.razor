@@ -195,33 +195,33 @@ else
     private async Task Decline(int id)
     {
         //return date response too
-        var response = await http.Client.PutAsync($"/api/bid/wager/decline/{id}", null);
+        var response = await http.Client.PutAsJsonAsync<bool>($"/api/bid/wager/{id}", false);
         if (response.IsSuccessStatusCode)
         {
             Wager.Status = await response.Content.ReadFromJsonAsync<Status>();
             var host = Wager.Members.FirstOrDefault(x => x.Id == id);
             if (host != null)
                 host.IsApproved = false;
-            await HubConnection.InvokeAsync("SendWagerMember", Wager.Group(Wager.Id), host, new IdStatus { Status = Wager.Status, Id = host.WagerId });
+            await HubConnection.InvokeAsync("SendWagerStatus", Wager.Group(Wager.Id), host, new IdStatus { Status = Wager.Status, Id = host.WagerId });
         }
     }
 
     private async Task Accept(int id)
     {
-        var response = await http.Client.PutAsync($"/api/bid/wager/accept/{id}", null);
+        var response = await http.Client.PutAsJsonAsync<bool>($"/api/bid/wager/{id}", true);
         if (response.IsSuccessStatusCode)
         {
             Wager.Status = await response.Content.ReadFromJsonAsync<Status>();
             var host = Wager.Members.FirstOrDefault(x => x.Id == id);
             if (host != null)
                 host.IsApproved = true;
-            await HubConnection.InvokeAsync("SendWagerMember", Wager.Group(Wager.Id), host, new IdStatus { Status = Wager.Status, Id = host.WagerId });
+            await HubConnection.InvokeAsync("SendWagerStatus", Wager.Group(Wager.Id), host, new IdStatus { Status = Wager.Status, Id = host.WagerId });
         }
     }
 
     private async Task BuyEntry()
     {
-        //buy entry
+        var response = await http.Client.PostAsJsonAsync()
         SecretSeed = null;
     }
 }
