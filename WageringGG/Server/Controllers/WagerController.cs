@@ -247,11 +247,8 @@ namespace WageringGG.Server.Handlers
         [Authorize]
         public async Task<IActionResult> CreateChallenge([FromRoute] int wagerId, [FromBody] WagerChallenge challengeData)
         {
-            string? userKey = User.GetKey();
             string? userId = User.GetId();
             string? userName = User.GetName();
-            if (userKey == null)
-                ModelState.AddModelError(string.Empty, "You do not have a public key registered.");
             //check funds
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
@@ -274,21 +271,6 @@ namespace WageringGG.Server.Handlers
                 ModelState.AddModelError(string.Empty, "A wager host cannot challenge themself.");
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
-
-            Asset asset = new AssetTypeNative();
-            AccountResponse account = await _server.Accounts.Account(userKey);
-            Balance balance = account.Balances.FirstOrDefault(x => asset.Equals(x.Asset));
-            if (balance == null)
-                return BadRequest(new string[] { "You do not have any Stellar Lumens. " });
-            if (decimal.TryParse(balance.BalanceString, out decimal balanceAmount))
-            {
-                WagerMember bid = challengeData.Members.First(x => x.ProfileId == userId);
-                decimal portion = balanceAmount * bid.PayablePercentage / 100;
-                if (balanceAmount < portion)
-                    return BadRequest(new string[] { $"You have insufficient funds ({balanceAmount} XLM) for the wager amount ({portion} XLM)." });
-            }
-            else
-                return BadRequest(new string[] { "Cannot read the Lumens balance." });
 
             DateTime date = DateTime.Now;
             WagerChallenge challenge = new WagerChallenge
@@ -330,6 +312,36 @@ namespace WageringGG.Server.Handlers
             }
             //after this let users sign transactions
             return Ok(challenge.Id);
+        }
+
+        [HttpPost("entry/{id}")]
+        public async Task<IActionResult> BuyEntry([FromRoute] int id, [FromBody] string secretSeed)
+        {
+            string? userKey = User.GetKey();
+            string? userId = User.GetId();
+            string? userName = User.GetName();
+            if (userKey == null)
+                ModelState.AddModelError(string.Empty, "You do not have a public key registered.");
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState.GetErrors());
+            WagerMember member = await _context.WagerMembers.Where(x => x.WagerId == id).Where(x => x.ProfileId == userId).Include(x => x.Wager).ThenInclude(x => x.Account).FirstOrDefaultAsync();
+            if (member == null)
+                return BadRequest(new string[] { "You are not a member of this wager." });
+
+            Asset asset = new AssetTypeNative();
+            AccountResponse account = await _server.Accounts.Account(userKey);
+            Balance balance = account.Balances.FirstOrDefault(x => asset.Equals(x.Asset));
+            decimal entryAmount = member.EntryAmount(member.Wager.Amount);
+            if (balance == null)
+                return BadRequest(new string[] { "You do not have any Stellar Lumens. " });
+            if (decimal.TryParse(balance.BalanceString, out decimal balanceAmount))
+            {
+                if (balanceAmount < entryAmount)
+                    return BadRequest(new string[] { $"You have insufficient funds ({balanceAmount} XLM) for the wager amount ({entryAmount} XLM)." });
+            }
+            else
+                return BadRequest(new string[] { "Cannot read the Lumens balance." });
+            return Ok();
         }
     }
 }

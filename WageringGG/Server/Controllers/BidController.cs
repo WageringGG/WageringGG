@@ -31,13 +31,6 @@ namespace WageringGG.Server.Controllers
             _config = config;
         }
 
-        [HttpPost("wager/entry/{id}")]
-        public async Task<IActionResult> BuyEntry([FromRoute] int id, [FromBody] string secretSeed)
-        {
-            //buy
-            return Ok();
-        }
-
         [HttpPut("wager/{id}")]
         public async Task<IActionResult> WagerPending([FromRoute] int id, [FromBody] bool value)
         {
