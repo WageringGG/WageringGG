@@ -114,29 +114,6 @@ namespace WageringGG.Server.Controllers
                 return BadRequest(ModelState.GetErrors());
             }
 
-            //check funds
-            /*
-            Asset asset = new AssetTypeNative();
-            KeyPair source = KeyPair.FromSecretSeed(secretSeed);
-            AccountResponse account = await _server.Accounts.Account(source.AccountId);
-            decimal amount = member.Challenge.Amount / member.Challenge.Members.Count;
-            string amountString = amount.ToString();
-            if (account == null)
-                return BadRequest(new string[] { "Your account could not be loaded." });
-            Balance balance = account.Balances.FirstOrDefault(x => asset.Equals(x.Asset));
-            if (!decimal.TryParse(balance?.BalanceString, out decimal balanceAmount))
-                return BadRequest(new string[] { "Your account has insufficient funds." });
-
-            KeyPair destination = KeyPair.FromAccountId(_config["Stellar:PublicKey"]);
-            PaymentOperation payment = new PaymentOperation.Builder(destination, asset, amountString).Build();
-            Transaction transaction = new TransactionBuilder(account)
-                .AddOperation(payment).AddMemo(Memo.Text($"wager challenge {member.ChallengeId}")).Build();
-            transaction.Sign(source);
-            SubmitTransactionResponse transactionResponse = await _server.SubmitTransaction(transaction);
-            if (!transactionResponse.IsSuccess())
-                return BadRequest(new string[] { "The transaction was not successful." }); //why was transaction not successful
-            */
-
             member.IsApproved = true;
             DateTime date = DateTime.Now;
             Notification notification = new Notification

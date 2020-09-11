@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.Extensions.Configuration;
 using stellar_dotnet_sdk;
 using stellar_dotnet_sdk.responses;
 using System;
@@ -23,13 +24,15 @@ namespace WageringGG.Server.Handlers
         private readonly ApplicationDbContext _context;
         private readonly stellar_dotnet_sdk.Server _server;
         private readonly HubService _hub;
+        private readonly IConfiguration _config;
         private const int ResultSize = 16;
 
-        public WagerController(ApplicationDbContext context, HubService hub, stellar_dotnet_sdk.Server server)
+        public WagerController(ApplicationDbContext context, HubService hub, stellar_dotnet_sdk.Server server, IConfiguration config)
         {
             _context = context;
             _server = server;
             _hub = hub;
+            _config = config;
         }
 
         //POST: api/wagers/search
@@ -341,6 +344,20 @@ namespace WageringGG.Server.Handlers
             }
             else
                 return BadRequest(new string[] { "Cannot read the Lumens balance." });
+
+            KeyPair source = KeyPair.FromSecretSeed(secretSeed);
+            if (source.AccountId != userKey)
+                return BadRequest("Your registered stellar key and secret seed do not match.");
+            KeyPair server = KeyPair.FromAccountId(_config["Stellar:PublicKey"]);
+            PaymentOperation payment = new PaymentOperation.Builder(server, asset, entryAmount.ToString()).Build();
+            Transaction transaction = new TransactionBuilder(account)
+                .AddOperation(payment).AddMemo(new MemoText($"wager {member.WagerId}")).Build();
+            transaction.Sign(source);
+            SubmitTransactionResponse transactionResponse = await _server.SubmitTransaction(transaction);
+            if (!transactionResponse.IsSuccess())
+                return BadRequest(new string[] { "The transaction was not successful." }); //why was transaction not successful
+            member.Entries++;
+            _context.SaveChanges();
             return Ok();
         }
     }

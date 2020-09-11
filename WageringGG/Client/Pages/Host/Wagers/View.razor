@@ -80,7 +80,7 @@ else
                                         </div>
                                     </div>
                                     <div class="modal-footer">
-                                        <button type="button" class="btn btn-success" @onclick="BuyEntry">Submit</button>
+                                        <button type="button" class="btn btn-success" @onclick="async () => await BuyEntry(host)">Submit</button>
                                     </div>
                                 </div>
                             </div>
@@ -219,9 +219,13 @@ else
         }
     }
 
-    private async Task BuyEntry()
+    private async Task BuyEntry(WagerMember member)
     {
-        var response = await http.Client.PostAsJsonAsync()
+        var response = await http.Client.PostAsJsonAsync($"/api/wager/entry/{Wager.Id}", SecretSeed);
+        if(response.IsSuccessStatusCode)
+        {
+            member.Entries++;
+        }
         SecretSeed = null;
     }
 }
