@@ -313,12 +313,11 @@ namespace WageringGG.Server.Handlers
                 _context.Notifications.AddRange(notifications);
                 await _hub.SendGroupAsync(ids, Wager.Group(wager.Id));
             }
-            //after this let users sign transactions
             return Ok(challenge.Id);
         }
 
         [HttpPost("entry/{id}")]
-        public async Task<IActionResult> BuyEntry([FromRoute] int id, [FromBody] string secretSeed)
+        public async Task<IActionResult> BuyEntry([FromRoute] int id, [FromBody] string secretSeed, [FromQuery] int amount = 1)
         {
             string? userKey = User.GetKey();
             string? userId = User.GetId();
@@ -327,14 +326,14 @@ namespace WageringGG.Server.Handlers
                 ModelState.AddModelError(string.Empty, "You do not have a public key registered.");
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
-            WagerMember member = await _context.WagerMembers.Where(x => x.WagerId == id).Where(x => x.ProfileId == userId).Include(x => x.Wager).ThenInclude(x => x.Account).FirstOrDefaultAsync();
+            WagerMember member = await _context.WagerMembers.Where(x => x.WagerId == id).Where(x => x.ProfileId == userId).Include(x => x.Wager).FirstOrDefaultAsync();
             if (member == null)
                 return BadRequest(new string[] { "You are not a member of this wager." });
 
             Asset asset = new AssetTypeNative();
             AccountResponse account = await _server.Accounts.Account(userKey);
             Balance balance = account.Balances.FirstOrDefault(x => asset.Equals(x.Asset));
-            decimal entryAmount = member.EntryAmount(member.Wager.Amount);
+            decimal entryAmount = member.EntryAmount(member.Wager.Amount) * amount;
             if (balance == null)
                 return BadRequest(new string[] { "You do not have any Stellar Lumens. " });
             if (decimal.TryParse(balance.BalanceString, out decimal balanceAmount))
@@ -354,10 +353,28 @@ namespace WageringGG.Server.Handlers
                 .AddOperation(payment).AddMemo(new MemoText($"wager {member.WagerId}")).Build();
             transaction.Sign(source);
             SubmitTransactionResponse transactionResponse = await _server.SubmitTransaction(transaction);
+            //keep track of fee charged for refunds
             if (!transactionResponse.IsSuccess())
-                return BadRequest(new string[] { "The transaction was not successful." }); //why was transaction not successful
-            member.Entries++;
+                return BadRequest(new string[] { $"The transaction was not successful: {transactionResponse.Result}" }); //why was transaction not successful
+            member.Entries += amount;
             _context.SaveChanges();
+            return Ok();
+        }
+
+        [HttpPost("refund/{id}")]
+        public async Task<IActionResult> RefundEntry([FromRoute] int id, [FromQuery] int amount = 1)
+        {
+            string? userKey = User.GetKey();
+            string? userId = User.GetId();
+            string? userName = User.GetName();
+            if (userKey == null)
+                ModelState.AddModelError(string.Empty, "You do not have a public key registered.");
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState.GetErrors());
+            WagerMember member = await _context.WagerMembers.Where(x => x.WagerId == id).Where(x => x.ProfileId == userId).Include(x => x.Wager).FirstOrDefaultAsync();
+            if (member == null)
+                return BadRequest(new string[] { "You are not a member of this wager." });
+
             return Ok();
         }
     }
