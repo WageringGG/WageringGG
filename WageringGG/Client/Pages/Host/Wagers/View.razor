@@ -45,50 +45,23 @@ else
         </div>
         <div class="col-12 col-lg-8 mx-auto my-1">
             <h3>Hosts:</h3>
-            <AuthorizeView>
-                <Authorized>
-                    <WagerMembersDisplay Members="Wager.Members">
-                        @{
-                            WagerMember host = Wager.Members.FirstOrDefault(x => x.ProfileId == context.User.GetId());
-                        }
-                        <div class="text-right">
-                            <button class="btn btn-secondary" title="Purchase an entry." data-toggle="modal" data-target="#entryModal">Buy Entry</button>
-                            @if (host != null && !host.IsApproved.HasValue)
-                            {
-                                <button class="btn btn-danger" title="Decline the wager." @onclick="() => Decline(host.Id)">Decline</button>
-                                <button class="btn btn-success" title="Accept the wager." @onclick="() => Accept(host.Id)">Accept</button>
-                            }
-                        </div>
-                        <div class="modal fade" id="entryModal" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">Buy Entry</h5>
-                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                            <i class="mdi mdi-close"></i>
-                                        </button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <h5>Entry Price: @host.EntryAmount(Wager.Amount).ToString("N0") XLM</h5>
-                                        <div class="form-group">
-                                            <label>Public Key</label>
-                                            <input type="text" class="form-control" disabled value="@context.User.GetKey()" />
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Secret Seed</label>
-                                            <input type="password" class="form-control" @bind-value="SecretSeed" autocomplete="off" />
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-success" @onclick="async () => await BuyEntry(host)">Submit</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </WagerMembersDisplay>
-                </Authorized>
-            </AuthorizeView>
+            <WagerMembersDisplay Members="Wager.Members">
+                @if (Host != null && !Host.IsApproved.HasValue)
+                {
+                    <div class="btn-group">
+                        <button class="btn btn-danger" title="Decline the wager." @onclick="Decline">Decline</button>
+                        <button class="btn btn-success" title="Accept the wager." @onclick="Accept">Accept</button>
+                    </div>
+                }
+            </WagerMembersDisplay>
         </div>
+        @if (Host != null)
+        {
+            <div class="col-12 col-lg-8 mx-auto my-1">
+                <h3>Manage Entries:</h3>
+                <ManageEntryDisplay @bind-Host="Host" Amount="Host.EntryAmount(Wager.Amount)" />
+            </div>
+        }
         @if (Wager.Status != (byte)Status.Pending)
         {
             <div class="col-12 col-lg-8 mx-auto my-1">
@@ -119,7 +92,10 @@ else
     [Parameter]
     public int Id { get; set; }
     [CascadingParameter]
-    public HubConnection HubConnection { get; set; }
+    private HubConnection HubConnection { get; set; }
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; }
+    private WagerMember Host { get; set; }
     private string SecretSeed { get; set; }
     private Wager Wager { get; set; }
     private bool IsDeleted { get; set; }
@@ -129,9 +105,11 @@ else
     {
         sessionStorage.Changed += SessionStorageChanged;
         var response = await http.Client.GetAsync($"/api/host/wager/{Id}");
+        AuthenticationState context = await AuthenticationState;
         if (response.IsSuccessStatusCode)
         {
             Wager = await response.Content.ReadFromJsonAsync<Wager>();
+            Host = Wager.Members.FirstOrDefault(x => x.ProfileId == context.User.GetId());
             await HubConnection.InvokeAsync("AddToGroup", Wager.Group(Wager.Id));
         }
         else
@@ -192,40 +170,26 @@ else
             IsDeleted = false;
     }
 
-    private async Task Decline(int id)
+    private async Task Decline()
     {
         //return date response too
-        var response = await http.Client.PutAsJsonAsync<bool>($"/api/bid/wager/{id}", false);
+        var response = await http.Client.PutAsJsonAsync<bool>($"/api/bid/wager/{Host.Id}", false);
         if (response.IsSuccessStatusCode)
         {
             Wager.Status = await response.Content.ReadFromJsonAsync<Status>();
-            var host = Wager.Members.FirstOrDefault(x => x.Id == id);
-            if (host != null)
-                host.IsApproved = false;
-            await HubConnection.InvokeAsync("SendWagerStatus", Wager.Group(Wager.Id), host, new IdStatus { Status = Wager.Status, Id = host.WagerId });
+            Host.IsApproved = false;
+            await HubConnection.InvokeAsync("SendWagerStatus", Wager.Group(Wager.Id), Host, new IdStatus { Status = Wager.Status, Id = Host.WagerId });
         }
     }
 
-    private async Task Accept(int id)
+    private async Task Accept()
     {
-        var response = await http.Client.PutAsJsonAsync<bool>($"/api/bid/wager/{id}", true);
+        var response = await http.Client.PutAsJsonAsync<bool>($"/api/bid/wager/{Host.Id}", true);
         if (response.IsSuccessStatusCode)
         {
             Wager.Status = await response.Content.ReadFromJsonAsync<Status>();
-            var host = Wager.Members.FirstOrDefault(x => x.Id == id);
-            if (host != null)
-                host.IsApproved = true;
-            await HubConnection.InvokeAsync("SendWagerStatus", Wager.Group(Wager.Id), host, new IdStatus { Status = Wager.Status, Id = host.WagerId });
+            Host.IsApproved = true;
+            await HubConnection.InvokeAsync("SendWagerStatus", Wager.Group(Wager.Id), Host, new IdStatus { Status = Wager.Status, Id = Host.WagerId });
         }
-    }
-
-    private async Task BuyEntry(WagerMember member)
-    {
-        var response = await http.Client.PostAsJsonAsync($"/api/wager/entry/{Wager.Id}", SecretSeed);
-        if(response.IsSuccessStatusCode)
-        {
-            member.Entries++;
-        }
-        SecretSeed = null;
     }
 }

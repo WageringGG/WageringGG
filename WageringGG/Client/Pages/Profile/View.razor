@@ -1,14 +1,20 @@
 ﻿@page "/user/{displayName}"
 @inject HttpClient http
 
-<ErrorDisplay @bind-Errors="Errors" />
-<h1 class="text-center">@DisplayName's Profile</h1>
+@if (Profile is null)
+{
+    <p class="lead">Loading...</p>
+}
+else
+{
+    <h1 class="text-center">@Profile.DisplayName's Profile</h1>
+    <RatingsDisplay Ratings="Profile.Ratings" />
+}
 
 @code {
     [Parameter]
     public string DisplayName { get; set; }
-    public Profile Profile { get; set; } = new Profile();
-    public IEnumerable<string> Errors { get; set; } = new List<string>();
+    public Profile Profile { get; set; }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -16,10 +22,7 @@
         if (response.IsSuccessStatusCode)
         {
             Profile = await response.Content.ReadFromJsonAsync<Profile>();
-            DisplayName = Profile.DisplayName;
         }
-        else
-            Errors = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
         await base.OnParametersSetAsync();
     }
 }

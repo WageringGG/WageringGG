@@ -1,0 +1,38 @@
+﻿@inject AuthHttp http 
+
+<div class="card border-primary">
+    <div class="card-body">
+        <h5>Entry Price: @Amount.ToString("N0") XLM</h5>
+        <AuthorizeView>
+            <div class="form-group">
+                <label>Public Key</label>
+                <input type="text" class="form-control" disabled value="@context.User.GetKey()" />
+            </div>
+        </AuthorizeView>
+        <div class="form-group">
+            <label>Secret Seed</label>
+            <input type="password" class="form-control" @bind-value="SecretSeed" autocomplete="off" />
+        </div>
+        <button type="button" class="btn btn-success" @onclick="BuyEntry">Purchase</button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public decimal Amount { get; set; }
+    [Parameter]
+    public WagerMember Host { get; set; }
+    [Parameter]
+    public EventCallback<WagerMember> HostChanged { get; set; }
+    private string SecretSeed { get; set; }
+
+    private async Task BuyEntry()
+    {
+        var response = await http.Client.PostAsJsonAsync($"/api/wager/entry/{Host.WagerId}", SecretSeed);
+        if (response.IsSuccessStatusCode)
+        {
+            Host.Entries++;
+        }
+        SecretSeed = null;
+    }
+}

@@ -1,0 +1,30 @@
+﻿<div class="table-responsive">
+    <table class="table table-sm">
+        @if (Ratings.Count == 0)
+        {
+            <caption>This user has no ratings available.</caption>
+        }
+        <thead>
+            <tr>
+                <th scope="col">Game</th>
+                <th scope="col">Games Played</th>
+                <th scope="col">Rating</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (Rating rating in Ratings)
+            {
+                <tr>
+                    @rating.Game.Name
+                </tr>
+                <tr>@rating.GamesPlayed</tr>
+                <tr>@rating.Value</tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter]
+    public ICollection<Rating> Ratings { get; set; }
+}
