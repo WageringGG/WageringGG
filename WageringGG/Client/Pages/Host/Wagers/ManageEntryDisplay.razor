@@ -13,7 +13,13 @@
             <label>Secret Seed</label>
             <input type="password" class="form-control" @bind-value="SecretSeed" autocomplete="off" />
         </div>
-        <button type="button" class="btn btn-success" @onclick="BuyEntry">Purchase</button>
+        <div class="btn-group">
+            @if(Host.Entries > 0)
+            {
+                <button type="button" class="btn btn-danger" @onclick="RefundEntry">Refund</button>
+            }
+            <button type="button" class="btn btn-success" @onclick="BuyEntry">Purchase</button>
+        </div>
     </div>
 </div>
 
@@ -32,7 +38,13 @@
         if (response.IsSuccessStatusCode)
         {
             Host.Entries++;
+            await HostChanged.InvokeAsync(Host);
         }
         SecretSeed = null;
+    }
+
+    private async Task RefundEntry()
+    {
+
     }
 }
