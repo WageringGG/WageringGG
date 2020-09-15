@@ -21,8 +21,7 @@
                 {
                     <div class="tab-pane" role="tabpanel" id="@status.ToLower()">
                         @{
-                            Status currentStatus = Enum.Parse<Status>(status);
-                            IEnumerable<WagerChallenge> View = Data.Where(x => x.Status == currentStatus);
+                            IEnumerable<WagerChallenge> View = Data.Where(x => x.Status == Enum.Parse<Status>(status));
                         }
                         @if (View != null)
                         {
@@ -37,10 +36,8 @@
                                 <div class="row">
                                     @foreach (WagerChallenge challenge in Data)
                                     {
-                                        <div class="col-12 col-sm-6 col-lg-4 my-2">
-                                            <WagerChallengeDisplay Challenge="challenge">
-                                                <a class="btn btn-outline-secondary" href="/client/wagers/view/@challenge.Id">View</a>
-                                            </WagerChallengeDisplay>
+                                        <div class="col-12 my-2">
+                                            <WagerDisplay Wager="challenge.Wager" Link="@($"/client/wagers/view/{challenge.Id}")" />
                                         </div>
                                     }
                                 </div>
@@ -57,12 +54,9 @@
     protected override async Task OnInitializedAsync()
     {
         sessionStorage.Changed += SessionStorageChanged;
-        var response = await http.Client.GetAsync("/api/client/wagers");
-        if (response.IsSuccessStatusCode)
-        {
-            Data = await response.Content.ReadFromJsonAsync<IEnumerable<WagerChallenge>>();
+        Data = await http.Client.GetFromJsonAsync<IEnumerable<WagerChallenge>>("/api/client/wagers");
+        if (Data != null)
             Data = Data.OrderByDescending(x => x.Date);
-        }
         await base.OnInitializedAsync();
     }
 

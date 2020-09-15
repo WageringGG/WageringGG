@@ -13,7 +13,11 @@
         </NotAuthorized>
     </AuthorizeView>
 </div>
-@if (Wagers != null)
+@if (Wagers == null)
+{
+    <p class="lead">Loading...</p>
+}
+else
 {
     @if (Wagers.TotalPages == 0 && Query.Count == 0)
     {
@@ -34,9 +38,23 @@
             </div>
             <div id="searchCollapse" class="collapse" aria-labelledby="searchCard">
                 <div class="card-body">
-                    <div class="form-group">
-                        <label>Player Count</label>
-                        <input type="number" @bind-value="PlayerCount" class="form-control" />
+                    <div class="form-row">
+                        <div class="form-group col-12 col-sm-6 col-md-3">
+                            <label>Display Name:</label>
+                            <input type="text" @bind-value="DisplayName" class="form-control" />
+                        </div>
+                        <div class="form-group col-12 col-sm-6 col-md-3">
+                            <label>Player Count:</label>
+                            <input type="number" @bind-value="PlayerCount" class="form-control" />
+                        </div>
+                        <div class="form-group col-12 col-sm-6 col-md-3">
+                            <label>Minimum Wager:</label>
+                            <input type="number" @bind-value="MinimumWager" class="form-control" />
+                        </div>
+                        <div class="form-group col-12 col-sm-6 col-md-3">
+                            <label>Maximum Wager:</label>
+                            <input type="number" @bind-value="MaximumWager" class="form-control" />
+                        </div>
                     </div>
                 </div>
                 <div class="card-footer">
