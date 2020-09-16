@@ -1,24 +1,35 @@
-﻿@inject AuthHttp http 
+﻿@inject AuthHttp http
 
-<div class="card border-primary">
-    <div class="card-body">
-        <h5>Entry Price: @Amount.ToString("N0") XLM</h5>
-        <AuthorizeView>
-            <div class="form-group">
-                <label>Public Key</label>
-                <input type="text" class="form-control" disabled value="@context.User.GetKey()" />
+<button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#entryModal">Manage Entries</button>
+<div class="modal fade" tabindex="-1" id="entryModal" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content text-left">
+            <div class="modal-header">
+                <h5 class="modal-title">Manage Entries</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="mdi mdi-close"></i>
+                </button>
             </div>
-        </AuthorizeView>
-        <div class="form-group">
-            <label>Secret Seed</label>
-            <input type="password" class="form-control" @bind-value="SecretSeed" autocomplete="off" />
-        </div>
-        <div class="btn-group">
-            @if(Host.Entries > 0)
-            {
-                <button type="button" class="btn btn-danger" @onclick="RefundEntry">Refund</button>
-            }
-            <button type="button" class="btn btn-success" @onclick="BuyEntry">Purchase</button>
+            <div class="modal-body">
+                <p class="lead">Entry Price <span class="badge badge-pill badge-primary">@Amount.ToString("N0") XLM</span> &ensp; Total Entries <span class="badge badge-pill badge-primary">@Host.Entries</span></p>
+                <AuthorizeView>
+                    <div class="form-group">
+                        <label>Public Key</label>
+                        <input type="text" class="form-control" disabled value="@context.User.GetKey()" />
+                    </div>
+                </AuthorizeView>
+                <div class="form-group">
+                    <label>Secret Seed</label>
+                    <input type="password" class="form-control" @bind-value="SecretSeed" autocomplete="off" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                @if (Host.Entries > 0)
+                {
+                    <button type="button" class="btn btn-danger" @onclick="RefundEntry">Refund</button>
+                }
+                <button type="button" class="btn btn-success" @onclick="BuyEntry">Purchase</button>
+            </div>
         </div>
     </div>
 </div>

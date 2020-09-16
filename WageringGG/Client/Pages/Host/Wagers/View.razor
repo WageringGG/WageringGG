@@ -11,21 +11,25 @@
 }
 else
 {
-    <h1 class="text-center">@Enum.GetName(typeof(Status), Wager.Status) Wager</h1>
     <div class="row">
-        <div class="col-12 col-lg-8 mx-auto my-1 text-right">
+        <div class="col-12 col-md-3 ml-auto">
+            <p class="lead">Status <span class="badge badge-pill badge-secondary">@Enum.GetName(typeof(Status), Wager.Status)</span></p>
+        </div>
+        <div class="col-12 col-md-5 mr-auto my-1 text-right">
+            @if (Wager.Status != Status.Canceled)
+            {
+                <ManageEntryDisplay @bind-Host="Host" Amount="Host.EntryAmount(Wager.Amount)" />
+            }
             @if (Wager.Status == Status.Open)
             {
                 <button class="btn btn-outline-danger" @onclick="() => ChangeStatus(Status.Closed)">Close</button>
             }
             else if (Wager.Status == Status.Closed)
             {
-                <div class="btn-group">
-                    <button class="btn btn-outline-danger" @onclick="() => ChangeStatus(Status.Canceled)">
-                        Cancel
-                    </button>
-                    <button class="btn btn-outline-success" @onclick="() => ChangeStatus(Status.Open)">Open</button>
-                </div>
+                <button class="btn btn-outline-danger" @onclick="() => ChangeStatus(Status.Canceled)">
+                    Cancel
+                </button>
+                <button class="btn btn-outline-success" @onclick="() => ChangeStatus(Status.Open)">Open</button>
             }
             else if (Wager.Status == Status.Canceled)
             {
@@ -48,20 +52,11 @@ else
             <WagerMembersDisplay Members="Wager.Members">
                 @if (Host != null && !Host.IsApproved.HasValue)
                 {
-                    <div class="btn-group">
-                        <button class="btn btn-danger" title="Decline the wager." @onclick="Decline">Decline</button>
-                        <button class="btn btn-success" title="Accept the wager." @onclick="Accept">Accept</button>
-                    </div>
+                    <button class="btn btn-danger" title="Decline the wager." @onclick="Decline">Decline</button>
+                    <button class="btn btn-success" title="Accept the wager." @onclick="Accept">Accept</button>
                 }
             </WagerMembersDisplay>
         </div>
-        @if (Host != null)
-        {
-            <div class="col-12 col-lg-8 mx-auto my-1">
-                <h3>Manage Entries:</h3>
-                <ManageEntryDisplay @bind-Host="Host" Amount="Host.EntryAmount(Wager.Amount)" />
-            </div>
-        }
         @if (Wager.Status != (byte)Status.Pending)
         {
             <div class="col-12 col-lg-8 mx-auto my-1">
