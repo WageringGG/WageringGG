@@ -2,7 +2,7 @@
 
 namespace WageringGG.Shared.Models
 {
-    public class Transaction
+    public class TransactionReceipt
     {
         public int Id { get; set; }
 

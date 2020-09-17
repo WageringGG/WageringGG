@@ -19,7 +19,7 @@ namespace WageringGG.Server.Data
         public DbSet<Game> Games { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Rating> Ratings { get; set; }
-        public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<TransactionReceipt> Transactions { get; set; }
 
         public ApplicationDbContext(DbContextOptions options) : base(options)
         {
