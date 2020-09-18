@@ -22,15 +22,15 @@ namespace WageringGG.Server.Handlers
     public class WagerController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly stellar_dotnet_sdk.Server _server;
+        private readonly TransactionService _transactionService;
         private readonly HubService _hub;
         private readonly IConfiguration _config;
         private const int ResultSize = 16;
 
-        public WagerController(ApplicationDbContext context, HubService hub, stellar_dotnet_sdk.Server server, IConfiguration config)
+        public WagerController(ApplicationDbContext context, HubService hub, TransactionService transactionService, IConfiguration config)
         {
             _context = context;
-            _server = server;
+            _transactionService = transactionService;
             _hub = hub;
             _config = config;
         }
@@ -329,33 +329,18 @@ namespace WageringGG.Server.Handlers
             WagerMember member = await _context.WagerMembers.Where(x => x.WagerId == id).Where(x => x.ProfileId == userId).Include(x => x.Wager).FirstOrDefaultAsync();
             if (member == null)
                 return BadRequest(new string[] { "You are not a member of this wager." });
-
-            Asset asset = new AssetTypeNative();
-            AccountResponse account = await _server.Accounts.Account(userKey);
-            Balance balance = account.Balances.FirstOrDefault(x => asset.Equals(x.Asset));
-            decimal entryAmount = member.EntryAmount(member.Wager.Amount) * amount;
-            if (balance == null)
-                return BadRequest(new string[] { "You do not have any Stellar Lumens. " });
-            if (decimal.TryParse(balance.BalanceString, out decimal balanceAmount))
+            TransactionReceipt receipt = new TransactionReceipt
             {
-                if (balanceAmount < entryAmount)
-                    return BadRequest(new string[] { $"You have insufficient funds ({balanceAmount} XLM) for the wager amount ({entryAmount} XLM)." });
-            }
-            else
-                return BadRequest(new string[] { "Cannot read the Lumens balance." });
-
+                Amount = member.EntryAmount(member.Wager.Amount) * amount,
+                Date = DateTime.Now,
+                Data = $"Funding wager {id}",
+                ProfileId = userId
+            };
             KeyPair source = KeyPair.FromSecretSeed(secretSeed);
             if (source.AccountId != userKey)
                 return BadRequest("Your registered stellar key and secret seed do not match.");
-            KeyPair server = KeyPair.FromAccountId(_config["Stellar:PublicKey"]);
-            PaymentOperation payment = new PaymentOperation.Builder(server, asset, entryAmount.ToString()).Build();
-            Transaction transaction = new TransactionBuilder(account)
-                .AddOperation(payment).AddMemo(new MemoText($"wager {member.WagerId}")).Build();
-            transaction.Sign(source);
-            SubmitTransactionResponse transactionResponse = await _server.SubmitTransaction(transaction);
-            //keep track of fee charged for refunds
-            if (!transactionResponse.IsSuccess())
-                return BadRequest(new string[] { $"The transaction was not successful: {transactionResponse.Result}" }); //why was transaction not successful
+            if (!await _transactionService.ReceiveFunds(_context, source, receipt))
+                return BadRequest();
             member.Entries += amount;
             _context.SaveChanges();
             return Ok();

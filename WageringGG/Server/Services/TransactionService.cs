@@ -1,23 +1,20 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+using stellar_dotnet_sdk;
+using stellar_dotnet_sdk.responses;
 using System.Threading.Tasks;
 using WageringGG.Server.Data;
 using WageringGG.Shared.Models;
-using stellar_dotnet_sdk;
-using stellar_dotnet_sdk.responses;
 
 namespace WageringGG.Server.Services
 {
     public class TransactionService
     {
         private readonly stellar_dotnet_sdk.Server _server;
-        private readonly ILogger<TransactionService> _logger;
         private readonly IConfiguration _config;
-        public TransactionService(stellar_dotnet_sdk.Server server, IConfiguration config, ILogger<TransactionService> logger)
+        public TransactionService(stellar_dotnet_sdk.Server server, IConfiguration config)
         {
             _server = server;
             _config = config;
-            _logger = logger;
         }
 
         /// <summary>
@@ -38,9 +35,10 @@ namespace WageringGG.Server.Services
                 .AddOperation(payment).AddMemo(new MemoText("wagering.gg")).Build();
             transaction.Sign(source);
             SubmitTransactionResponse transactionResponse = await _server.SubmitTransaction(transaction);
-            //log result
             if (transactionResponse.IsSuccess())
             {
+                receipt.ToAddress = server.AccountId;
+                receipt.FromAddress = source.AccountId;
                 context.Transactions.Add(receipt);
                 return true;
             }
@@ -65,9 +63,10 @@ namespace WageringGG.Server.Services
                 .AddOperation(payment).AddMemo(new MemoText("wagering.gg")).Build();
             transaction.Sign(server);
             SubmitTransactionResponse transactionResponse = await _server.SubmitTransaction(transaction);
-            //log result
             if (transactionResponse.IsSuccess())
             {
+                receipt.ToAddress = destination.AccountId;
+                receipt.FromAddress = server.AccountId;
                 context.Transactions.Add(receipt);
                 return true;
             }

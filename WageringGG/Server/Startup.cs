@@ -97,6 +97,7 @@ namespace WageringGG.Server
                 Network.UseTestNetwork();
             else
                 Network.UsePublicNetwork();
+            services.AddSingleton(new TransactionService(new stellar_dotnet_sdk.Server(_config["Stellar:URI"]), _config));
             services.AddSingleton(new stellar_dotnet_sdk.Server(_config["Stellar:URI"]));
 
             //SIGNALR
