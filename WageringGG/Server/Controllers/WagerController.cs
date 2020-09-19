@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Configuration;
 using stellar_dotnet_sdk;
-using stellar_dotnet_sdk.responses;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -359,7 +358,20 @@ namespace WageringGG.Server.Handlers
             WagerMember member = await _context.WagerMembers.Where(x => x.WagerId == id).Where(x => x.ProfileId == userId).Include(x => x.Wager).FirstOrDefaultAsync();
             if (member == null)
                 return BadRequest(new string[] { "You are not a member of this wager." });
-
+            if (member.Entries < amount)
+                return BadRequest(new string[] { "Member does not have sufficient entries to refund." });
+            TransactionReceipt receipt = new TransactionReceipt
+            {
+                Amount = member.EntryAmount(member.Wager.Amount) * amount,
+                Date = DateTime.Now,
+                Data = $"Funding wager {id}",
+                ProfileId = userId
+            };
+            KeyPair destination = KeyPair.FromAccountId(userKey);
+            if (!await _transactionService.RefundFunds(_context, destination, receipt))
+                return BadRequest();
+            member.Entries -= amount;
+            _context.SaveChanges();
             return Ok();
         }
     }

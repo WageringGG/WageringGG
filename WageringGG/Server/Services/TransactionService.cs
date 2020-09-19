@@ -51,7 +51,7 @@ namespace WageringGG.Server.Services
         /// <param name="context">Database context</param>
         /// <param name="destination">Keys to the user receiving funds.</param>
         /// <param name="receipt">The transaction being processed.</param>
-        /// <returns>True if the trnasaction is successful.</returns>
+        /// <returns>True if the transaction is successful.</returns>
         public async Task<bool> RefundFunds(ApplicationDbContext context, KeyPair destination, TransactionReceipt receipt)
         {
             KeyPair server = KeyPair.FromAccountId(_config["Stellar:SecretSeed"]);
