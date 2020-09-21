@@ -6,7 +6,18 @@
 <ErrorDisplay @bind-Errors="Errors" />
 @if (Challenge != null)
 {
-    <h1 class="text-center">@Enum.GetName(typeof(Status), Challenge.Status) Wager Challenge</h1>
+    <div class="row">
+        <div class="col-12 col-md-3 ml-auto">
+            <p class="lead">Challenge Status <span class="badge badge-pill badge-secondary">@Enum.GetName(typeof(Status), Challenge.Status)</span></p>
+        </div>
+        <div class="col-12 col-md-5 mr-auto my-1 text-right">
+            @if (Challenge.Wager.Status != Status.Canceled)
+            {
+                <ManageEntryDisplay @bind-Member="Member" Amount="Member.EntryAmount(Challenge.Wager.Amount)" />
+            }
+        </div>
+    </div>
+    <p class="lead">Wager Status <span class="badge badge-pill badge-secondary">@Enum.GetName(typeof(Status), Challenge.Wager.Status)</span></p>
     <div class="row">
         <div class="col-12 col-lg-8 mx-auto my-1">
             <h3>Wager:</h3>
@@ -17,19 +28,10 @@
             <AuthorizeView>
                 <Authorized>
                     <WagerMembersDisplay Members="Challenge.Members">
-                        @{
-                            WagerMember member = Challenge.Members.FirstOrDefault(x => x.ProfileId == context.User.GetId());
-                        }
-                        @if (member != null && !member.IsApproved.HasValue)
+                        @if (Member != null && !Member.IsApproved.HasValue)
                         {
-                            <div class="form-group">
-                                <label>Secret Seed:</label>
-                                <input type="text" class="form-control" @bind-value="SecretSeed" />
-                            </div>
-                            <div class="text-right">
-                                <button class="btn btn-danger" title="Decline the wager challenge." @onclick="() => DeclineBid(member.Id)">Decline</button>
-                                <button class="btn btn-success" title="Accept the wager challenge." @onclick="() => AcceptBid(member.Id)">Accept</button>
-                            </div>
+                            <button class="btn btn-danger" title="Decline the wager challenge." @onclick="() => SetAnswer(false)">Decline</button>
+                            <button class="btn btn-success" title="Accept the wager challenge." @onclick="() => SetAnswer(true)">Accept</button>
                         }
                     </WagerMembersDisplay>
                 </Authorized>
@@ -43,16 +45,22 @@
     public int Id { get; set; }
     [CascadingParameter]
     public HubConnection HubConnection { get; set; }
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; }
+    private WagerMember Member { get; set; }
     private WagerChallenge Challenge { get; set; }
-    private string SecretSeed { get; set; }
     public IEnumerable<string> Errors { get; set; } = new List<string>();
 
     protected override async Task OnParametersSetAsync()
     {
         sessionStorage.Changed += SessionStorageChanged;
         var response = await http.Client.GetAsync($"/api/client/wager/{Id}");
+        AuthenticationState context = await AuthenticationState;
         if (response.IsSuccessStatusCode)
+        {
             Challenge = await response.Content.ReadFromJsonAsync<WagerChallenge>();
+            Member = Challenge.Members.FirstOrDefault(x => x.ProfileId == context.User.GetId());
+        }
         else
             Errors = await response.Content.ReadFromJsonAsync<IEnumerable<string>>();
         await base.OnParametersSetAsync();
@@ -84,30 +92,15 @@
         }
     }
 
-    private async Task DeclineBid(int id)
+    private async Task SetAnswer(bool answer)
     {
         //return date response too
-        var response = await http.Client.PutAsync($"/api/bid/wager/challenge/decline/{id}", null);
+        var response = await http.Client.PutAsJsonAsync<bool>($"/api/bid/wager_challenge/{Member.Id}", answer);
         if (response.IsSuccessStatusCode)
         {
             Challenge.Status = await response.Content.ReadFromJsonAsync<Status>();
-            var bid = Challenge.Members.FirstOrDefault(x => x.Id == id);
-            if (bid != null)
-                bid.IsApproved = false;
-            await HubConnection.InvokeAsync("SendWagerMember", WagerChallenge.Group(Challenge.Id), bid, new IdStatus { Status = Challenge.Status, Id = Challenge.Id });
-        }
-    }
-
-    private async Task AcceptBid(int id)
-    {
-        var response = await http.Client.PutAsJsonAsync<string>($"/api/bid/wager/challenge/accept/{id}", SecretSeed);
-        if (response.IsSuccessStatusCode)
-        {
-            Challenge.Status = await response.Content.ReadFromJsonAsync<Status>();
-            var bid = Challenge.Members.FirstOrDefault(x => x.Id == id);
-            if (bid != null)
-                bid.IsApproved = true;
-            await HubConnection.InvokeAsync("SendWagerChallengeBid", WagerChallenge.Group(Challenge.Id), bid, new IdStatus { Status = Challenge.Status, Id = Challenge.Id });
+            Member.IsApproved = answer;
+            await HubConnection.InvokeAsync("SendWagerChallengeStatus", WagerChallenge.Group(Challenge.Id), Member, new IdStatus { Status = Challenge.Status, Id = Challenge.WagerId });
         }
     }
 }

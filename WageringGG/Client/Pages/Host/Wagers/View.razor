@@ -18,7 +18,7 @@ else
         <div class="col-12 col-md-5 mr-auto my-1 text-right">
             @if (Wager.Status != Status.Canceled)
             {
-                <ManageEntryDisplay @bind-Host="Host" Amount="Host.EntryAmount(Wager.Amount)" />
+                <ManageEntryDisplay @bind-Member="Host" Amount="Host.EntryAmount(Wager.Amount)" />
             }
             @if (Wager.Status == Status.Open)
             {
@@ -52,8 +52,8 @@ else
             <WagerMembersDisplay Members="Wager.Members">
                 @if (Host != null && !Host.IsApproved.HasValue)
                 {
-                    <button class="btn btn-danger" title="Decline the wager." @onclick="Decline">Decline</button>
-                    <button class="btn btn-success" title="Accept the wager." @onclick="Accept">Accept</button>
+                    <button class="btn btn-danger" title="Decline the wager." @onclick="() => SetAnswer(false)">Decline</button>
+                    <button class="btn btn-success" title="Accept the wager." @onclick="() => SetAnswer(true)">Accept</button>
                 }
             </WagerMembersDisplay>
         </div>
@@ -91,7 +91,6 @@ else
     [CascadingParameter]
     private Task<AuthenticationState> AuthenticationState { get; set; }
     private WagerMember Host { get; set; }
-    private string SecretSeed { get; set; }
     private Wager Wager { get; set; }
     private bool IsDeleted { get; set; }
     private IEnumerable<string> Errors { get; set; } = new List<string>();
@@ -165,25 +164,14 @@ else
             IsDeleted = false;
     }
 
-    private async Task Decline()
+    private async Task SetAnswer(bool answer)
     {
         //return date response too
-        var response = await http.Client.PutAsJsonAsync<bool>($"/api/bid/wager/{Host.Id}", false);
+        var response = await http.Client.PutAsJsonAsync<bool>($"/api/bid/wager/{Host.Id}", answer);
         if (response.IsSuccessStatusCode)
         {
             Wager.Status = await response.Content.ReadFromJsonAsync<Status>();
-            Host.IsApproved = false;
-            await HubConnection.InvokeAsync("SendWagerStatus", Wager.Group(Wager.Id), Host, new IdStatus { Status = Wager.Status, Id = Host.WagerId });
-        }
-    }
-
-    private async Task Accept()
-    {
-        var response = await http.Client.PutAsJsonAsync<bool>($"/api/bid/wager/{Host.Id}", true);
-        if (response.IsSuccessStatusCode)
-        {
-            Wager.Status = await response.Content.ReadFromJsonAsync<Status>();
-            Host.IsApproved = true;
+            Host.IsApproved = answer;
             await HubConnection.InvokeAsync("SendWagerStatus", Wager.Group(Wager.Id), Host, new IdStatus { Status = Wager.Status, Id = Host.WagerId });
         }
     }

@@ -11,7 +11,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p class="lead">Entry Price <span class="badge badge-pill badge-primary">@Amount.ToString("N0") XLM</span> &ensp; Total Entries <span class="badge badge-pill badge-primary">@Host.Entries</span></p>
+                <p class="lead">Entry Price <span class="badge badge-pill badge-primary">@Amount.ToString("N0") XLM</span> &ensp; Total Entries <span class="badge badge-pill badge-primary">@Member.Entries</span></p>
                 <AuthorizeView>
                     <div class="form-group">
                         <label>Public Key</label>
@@ -24,7 +24,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                @if (Host.Entries > 0)
+                @if (Member.Entries > 0)
                 {
                     <button type="button" class="btn btn-danger" @onclick="RefundEntry">Refund</button>
                 }
@@ -38,18 +38,18 @@
     [Parameter]
     public decimal Amount { get; set; }
     [Parameter]
-    public WagerMember Host { get; set; }
+    public WagerMember Member { get; set; }
     [Parameter]
-    public EventCallback<WagerMember> HostChanged { get; set; }
+    public EventCallback<WagerMember> MemberChanged { get; set; }
     private string SecretSeed { get; set; }
 
     private async Task BuyEntry()
     {
-        var response = await http.Client.PostAsJsonAsync($"/api/wager/entry/{Host.WagerId}", SecretSeed);
+        var response = await http.Client.PostAsJsonAsync($"/api/wager/entry/{Member.WagerId}", SecretSeed);
         if (response.IsSuccessStatusCode)
         {
-            Host.Entries++;
-            await HostChanged.InvokeAsync(Host);
+            Member.Entries++;
+            await MemberChanged.InvokeAsync(Member);
         }
         SecretSeed = null;
     }
