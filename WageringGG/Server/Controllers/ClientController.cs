@@ -26,7 +26,7 @@ namespace WageringGG.Server.Handlers
         public async Task<IActionResult> GetWagerChallenges()
         {
             string? userId = User.GetId();
-            IEnumerable<WagerChallenge> results = await _context.WagerMembers.AsNoTracking().Where(x => x.ProfileId == userId).Include(x => x.Challenge).Select(x => x.Challenge).ToListAsync();
+            IEnumerable<WagerChallenge> results = await _context.WagerMembers.AsNoTracking().Where(x => x.ProfileId == userId).Where(x => x.ChallengeId.HasValue).Include(x => x.Challenge).ThenInclude(x => x.Wager).Select(x => x.Challenge).ToListAsync();
             return Ok(results);
         }
 

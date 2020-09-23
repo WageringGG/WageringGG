@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,19 +19,15 @@ namespace WageringGG.Server.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly HubService _hub;
-        private readonly stellar_dotnet_sdk.Server _server;
-        private readonly IConfiguration _config;
 
-        public BidController(ApplicationDbContext context, HubService hub, stellar_dotnet_sdk.Server server, IConfiguration config)
+        public BidController(ApplicationDbContext context, HubService hub)
         {
             _context = context;
             _hub = hub;
-            _server = server;
-            _config = config;
         }
 
         [HttpPut("wager/{id}")]
-        public async Task<IActionResult> WagerPending([FromRoute] int id, [FromBody] bool value)
+        public async Task<IActionResult> SetWagerStatus([FromRoute] int id, [FromBody] bool value)
         {
             string? userId = User.GetId();
             string? userName = User.GetName();
@@ -66,7 +61,7 @@ namespace WageringGG.Server.Controllers
                 Date = date,
                 Link = $"/host/wagers/view/{member.WagerId}"
             };
-            if(value == false)
+            if (value == false)
             {
                 member.Wager.Status = Status.Canceled;
                 notification.Message = $"{userName} has declined the wager.";
