@@ -52,8 +52,8 @@ else
             <WagerMembersDisplay Members="Wager.Members">
                 @if (Host != null && !Host.IsApproved.HasValue)
                 {
-                    <button class="btn btn-danger" title="Decline the wager." @onclick="() => SetAnswer(false)">Decline</button>
-                    <button class="btn btn-success" title="Accept the wager." @onclick="() => SetAnswer(true)">Accept</button>
+                    <button class="btn btn-danger" title="Decline the wager." @onclick="() => HandleWager(false)">Decline</button>
+                    <button class="btn btn-success" title="Accept the wager." @onclick="() => HandleWager(true)">Accept</button>
                 }
             </WagerMembersDisplay>
         </div>
@@ -74,7 +74,8 @@ else
                                 <WagerChallengeDisplay Challenge="challenge">
                                     @if(challenge.IsAccepted == null)
                                     {
-
+                                        <button class="btn btn-danger" title="Decline the challenge." @onclick="() => HandleChallenge(false)">Decline</button>
+                                        <button class="btn btn-success" title="Accept the challenge." @onclick="() => HandleChallenge(true)">Accept</button>
                                     }
                                 </WagerChallengeDisplay>
                             </div>
@@ -167,7 +168,7 @@ else
             IsDeleted = false;
     }
 
-    private async Task SetAnswer(bool answer)
+    private async Task HandleWager(bool answer)
     {
         //return date response too
         var response = await http.Client.PutAsJsonAsync<bool>($"/api/bid/wager/{Host.Id}", answer);
@@ -176,6 +177,14 @@ else
             Wager.Status = await response.Content.ReadFromJsonAsync<Status>();
             Host.IsApproved = answer;
             await HubConnection.InvokeAsync("SendWagerStatus", Wager.Group(Wager.Id), Host, new IdStatus { Status = Wager.Status, Id = Host.WagerId });
+        }
+    }
+
+    private async Task HandleChallenge(bool answer)
+    {
+        var response = await http.Client.PutAsJsonAsync<bool>($"/api/bid/wager_challenge/{Host.Id}", answer);
+        if (response.IsSuccessStatusCode)
+        {
         }
     }
 }

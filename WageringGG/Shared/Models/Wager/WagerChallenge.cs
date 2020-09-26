@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
-#nullable disable
 namespace WageringGG.Shared.Models
 {
     public class WagerChallenge : Approvable
@@ -16,7 +15,7 @@ namespace WageringGG.Shared.Models
 
         [Required]
         public DateTime Date { get; set; }
-        public bool IsAccepted { get; set; }
+        public bool? IsAccepted { get; set; }
 
         public static string Group(int id)
         {

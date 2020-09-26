@@ -36,7 +36,7 @@
                                 <div class="row">
                                     @foreach (WagerChallenge challenge in Data)
                                     {
-                                        <div class="col-12 my-2">
+                                        <div class="col-12 col-lg-6 my-2">
                                             <WagerDisplay Wager="challenge.Wager" Link="@($"/client/wagers/view/{challenge.Id}")" />
                                         </div>
                                     }

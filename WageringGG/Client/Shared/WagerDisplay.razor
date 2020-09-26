@@ -1,21 +1,23 @@
 ﻿<div class="card border-primary">
+    <h4 class="card-header">
+        @Wager.Title
+    </h4>
     <div class="card-body">
-        <h4 class="card-title">@Wager.Title</h4>
         <div class="card-text">
             @Wager.Description
         </div>
-        <div class="my-2">
-            <button type="button" class="btn btn-sm">Amount <span class="badge">@Wager.Amount.ToString("G29") XLM</span></button>
-            <button type="button" class="btn btn-sm">Hosts <span class="badge">@Wager.PlayerCount</span></button>
-            <button type="button" class="btn btn-sm">Challenges <span class="badge">@Wager.ChallengeCount</span></button>
-        </div>
-        <div class="d-flex">
-            @if (Link != null)
-            {
-                <a class="btn btn-outline-secondary" href="@Link">View</a>
-            }
-            <TimeAgo Date="Wager.Date" Class="mt-auto ml-auto text-muted" />
-        </div>
+    </div>
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between align-items-center">Amount <span class="badge badge-secondary">@Wager.Amount.ToString("G29") XLM</span></li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">Hosts <span class="badge badge-secondary">@Wager.PlayerCount</span></li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">Challenges <span class="badge badge-secondary">@Wager.ChallengeCount</span></li>
+    </ul>
+    <div class="d-flex card-footer bg-transparent">
+        @if (Link != null)
+        {
+            <a class="btn btn-secondary" href="@Link">View</a>
+        }
+        <TimeAgo Date="Wager.Date" Class="text-muted ml-auto mt-auto" />
     </div>
 </div>
 

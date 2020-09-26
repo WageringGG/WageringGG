@@ -34,7 +34,7 @@
                             <div class="row">
                                 @foreach (Wager wager in View)
                                 {
-                                    <div class="col-12 my-2">
+                                    <div class="col-12 col-lg-6 my-2">
                                         <WagerDisplay Wager="wager" Link="@($"/host/wagers/view/{wager.Id}")" />
                                     </div>
                                 }
