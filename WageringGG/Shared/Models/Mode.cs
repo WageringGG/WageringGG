@@ -20,9 +20,5 @@ namespace WageringGG.Shared.Models
         [Required]
         public DateTime Date { get; set; }
         public bool IsPrivate { get; set; }
-
-        public abstract string[] HostIds();
-        public abstract string[] ClientIds();
-        public abstract string[] AllIds();
     }
 }

@@ -11,7 +11,10 @@ namespace WageringGG.Shared.Models
 
         public int WagerId { get; set; }
         public Wager Wager { get; set; }
-        public List<WagerMember> Members { get; set; }
+        public string AccountId { get; set; }
+        public StellarAccount Account { get; set; }
+        public List<WagerChallenger> Challengers { get; set; }
+        public List<ChallengeEntry> Entries { get; set; }
 
         [Required]
         public DateTime Date { get; set; }
@@ -22,9 +25,12 @@ namespace WageringGG.Shared.Models
             return $"wager_challenge_{id}";
         }
 
-        public string[] Ids()
+        private string[] challengerIds;
+        public string[] ChallengerIds()
         {
-            return Members.Select(x => x.ProfileId).ToArray();
+            if (challengerIds == null)
+                challengerIds = Challengers.Select(x => x.ProfileId).ToArray();
+            return challengerIds;
         }
     }
 }

@@ -21,22 +21,20 @@ namespace WageringGG.Server.Handlers
     public class WagerController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly TransactionService _transactionService;
         private readonly HubService _hub;
         private readonly IConfiguration _config;
         private const int ResultSize = 16;
 
-        public WagerController(ApplicationDbContext context, HubService hub, TransactionService transactionService, IConfiguration config)
+        public WagerController(ApplicationDbContext context, HubService hub, IConfiguration config)
         {
             _context = context;
-            _transactionService = transactionService;
             _hub = hub;
             _config = config;
         }
 
         //POST: api/wagers/search
         [HttpGet("{gameId}")]
-        public async Task<IActionResult> GetWagers(int gameId, int? page, string? displayName, int? minimumWager, int? maximumWager, int? playerCount)
+        public async Task<IActionResult> GetWagers(int gameId, int? page, int? minimumWager, int? maximumWager, int? playerCount)
         {
             if (page < 1)
                 ModelState.AddModelError("Page", $"{page} is not a valid page.");
@@ -60,11 +58,6 @@ namespace WageringGG.Server.Handlers
                 wagerQuery = wagerQuery.Where(x => x.Amount > minimumWager);
             if (maximumWager.HasValue)
                 wagerQuery = wagerQuery.Where(x => x.Amount < maximumWager);
-            if (displayName != null)
-            {
-                displayName = displayName.ToUpper();
-                wagerQuery = wagerQuery.Include(x => x.Members).ThenInclude(x => x.Profile).Where(x => x.Members.Any(x => x.Profile.NormalizedDisplayName.Contains(displayName)));
-            }
             PaginatedList<Wager> results = await Paginator<Wager>.CreateAsync(wagerQuery.OrderByDescending(x => x.Date), page ?? 1, ResultSize);
             return Ok(results);
         }
@@ -74,9 +67,11 @@ namespace WageringGG.Server.Handlers
         public async Task<IActionResult> SetStatus(int id, [FromBody] Status status)
         {
             string? userId = User.GetId();
-            var wager = await _context.Wagers.Where(x => x.Id == id).Include(x => x.Members).Where(x => x.Members.Any(y => y.ProfileId == userId && y.IsHost)).FirstOrDefaultAsync();
+            var wager = await _context.Wagers.Where(x => x.Id == id).Include(x => x.Hosts).FirstOrDefaultAsync();
             if (wager == null)
                 return BadRequest(new string[] { Errors.NotFound });
+            if (!wager.Hosts.Any(x => x.ProfileId == userId))
+                return BadRequest();
             //state diagram
             switch (wager.Status)
             {
@@ -101,7 +96,7 @@ namespace WageringGG.Server.Handlers
         [HttpGet("view/{id}")]
         public async Task<IActionResult> GetWager(int id)
         {
-            var wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == id).Include(x => x.Members).ThenInclude(x => x.Profile).Include(x => x.Challenges).FirstOrDefaultAsync();
+            var wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == id).Include(x => x.Hosts).ThenInclude(x => x.Profile).Include(x => x.Challenges).FirstOrDefaultAsync();
             if (wager == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
@@ -116,7 +111,7 @@ namespace WageringGG.Server.Handlers
         {
             string? userId = User.GetId();
             string? userName = User.GetName();
-            Wager wager = await _context.Wagers.Where(x => x.Id == id).Include(x => x.Members).Include(x => x.Challenges).FirstOrDefaultAsync();
+            Wager wager = await _context.Wagers.Where(x => x.Id == id).Include(x => x.Hosts).Include(x => x.Challenges).FirstOrDefaultAsync();
 
             if (wager == null)
             {
@@ -128,7 +123,7 @@ namespace WageringGG.Server.Handlers
                 ModelState.AddModelError(string.Empty, "Wager is not in the created.");
                 return BadRequest(ModelState.GetErrors());
             }
-            if (!wager.Members.Any(x => x.ProfileId == userId && x.IsHost == true))
+            if (!wager.Hosts.Any(x => x.ProfileId == userId))
             {
                 ModelState.AddModelError(string.Empty, "You are not a host of this wager.");
                 return BadRequest(ModelState.GetErrors());
@@ -152,10 +147,10 @@ namespace WageringGG.Server.Handlers
         {
             string? userId = User.GetId();
 
-            Wager wager = await _context.Wagers.Where(x => x.Id == id).Include(x => x.Members).FirstOrDefaultAsync();
+            Wager wager = await _context.Wagers.Where(x => x.Id == id).Include(x => x.Hosts).FirstOrDefaultAsync();
             if (wager == null)
                 return BadRequest(new string[] { Errors.NotFound });
-            if (!wager.Members.Any(x => x.ProfileId == userId && x.IsHost == true))
+            if (!wager.Hosts.Any(x => x.ProfileId == userId))
                 return BadRequest(new string[] { "You are not a wager host." });
             if (wager.Status != Status.Canceled)
                 return BadRequest(new string[] { "The wager must be in the canceled state to be deleted." });
@@ -170,7 +165,7 @@ namespace WageringGG.Server.Handlers
         // more details see https://aka.ms/RazorPagesCRUD.
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> CreateWager(Wager wagerData)
+        public async Task<IActionResult> CreateWager(Wager wager)
         {
             string? userId = User.GetId();
             string? userName = User.GetName();
@@ -181,55 +176,39 @@ namespace WageringGG.Server.Handlers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
 
-            if (wagerData.Members.Sum(x => x.ReceivablePercentage) != 100)
-                ModelState.AddModelError(string.Empty, "The receivable percentages do not add up to 100.");
-            if (wagerData.Members.Sum(x => x.PayablePercentage) != 100)
-                ModelState.AddModelError(string.Empty, "The payable percentages do not add up to 100.");
-            if (!wagerData.Members.Any(x => x.ProfileId == userId))
+            if (wager.Hosts.Sum(x => x.Receivable) != wager.Amount * 2)
+                ModelState.AddModelError(string.Empty, "Receivable");
+            if (wager.Hosts.Sum(x => x.Payable) != wager.Amount)
+                ModelState.AddModelError(string.Empty, "Payable");
+            if (!wager.Hosts.Any(x => x.ProfileId == userId))
                 ModelState.AddModelError(string.Empty, "Caller must be a host.");
-            if (!wagerData.HostIds().IsUnique())
+            if (!wager.HostIds().IsUnique())
                 ModelState.AddModelError(string.Empty, "The id's are not unique.");
-            if (wagerData.Amount <= 0)
+            if (wager.Amount <= 0)
                 ModelState.AddModelError(string.Empty, "The wager amount has to be greater than 0.");
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
 
             DateTime date = DateTime.Now;
-            Wager wager = new Wager //prevents overposting
-            {
-                GameId = wagerData.GameId,
-                Date = date,
-                Title = wagerData.Title,
-                Description = wagerData.Description,
-                Amount = wagerData.Amount,
-                IsPrivate = wagerData.IsPrivate,
-                Status = Status.Pending,
-                ChallengeCount = 0,
-                PlayerCount = wagerData.Members.Count,
-                Members = new List<WagerMember>()
-            };
+            wager.Date = date;
+            wager.Status = Status.Pending;
+            wager.ChallengeCount = 0;
+            wager.PlayerCount = wager.Hosts.Count;
 
-            foreach (WagerMember host in wagerData.Members)
+            foreach (WagerHost host in wager.Hosts)
             {
-                WagerMember member = new WagerMember
-                {
-                    IsApproved = null,
-                    ReceivablePercentage = host.ReceivablePercentage,
-                    PayablePercentage = host.PayablePercentage,
-                    ProfileId = host.ProfileId,
-                    IsHost = true
-                };
-                if (member.ProfileId == userId)
-                    member.IsApproved = true;
-                wager.Members.Add(member);
+                host.IsApproved = null;
+                if (host.ProfileId == userId)
+                    host.IsApproved = true;
             }
-            if (wager.Members.All(x => x.IsApproved == true))
+
+            if (wager.Hosts.Count == 1)
                 wager.Status = Status.Open;
-            //if confirmed start receiving funds
+
             _context.Wagers.Add(wager);
             _context.SaveChanges();
-            if (wager.Members.Count > 1)
+            if (wager.Hosts.Count > 1)
             {
                 string[] ids = wager.HostIds().ToArray();
                 Notification notification = new Notification
@@ -247,132 +226,44 @@ namespace WageringGG.Server.Handlers
 
         [HttpPost("challenge/{wagerId}")]
         [Authorize]
-        public async Task<IActionResult> CreateChallenge([FromRoute] int wagerId, [FromBody] WagerChallenge challengeData)
+        public async Task<IActionResult> CreateChallenge([FromRoute] int wagerId, [FromBody] WagerChallenge challenge)
         {
             string? userId = User.GetId();
             string? userName = User.GetName();
             //check funds
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
-            if (challengeData.Members.Sum(x => x.ReceivablePercentage) != 100)
-                ModelState.AddModelError(string.Empty, "The receivable percentages do not add up to 100.");
-            if (challengeData.Members.Sum(x => x.PayablePercentage) != 100)
-                ModelState.AddModelError(string.Empty, "The payable percentages do not add up to 100.");
-            if (!challengeData.Members.Any(x => x.ProfileId == userId))
+            if (!challenge.Challengers.Any(x => x.ProfileId == userId))
                 ModelState.AddModelError(string.Empty, "Caller must be a host.");
-            if (!challengeData.Members.IsUnique())
+            if (!challenge.Challengers.IsUnique())
                 ModelState.AddModelError(string.Empty, "The id's are not unique.");
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
-            Wager wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == wagerId).Include(x => x.Members).FirstOrDefaultAsync();
+            Wager wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == wagerId).Include(x => x.Hosts).FirstOrDefaultAsync();
             if (wager == null)
                 return BadRequest(new string[] { "The wager could not be found." });
             if (wager.Status != Status.Open)
                 ModelState.AddModelError(string.Empty, "The wager is not currently accepting challenges.");
-            if (wager.HostIds().Intersect(challengeData.Ids()).Count() > 0)
+            if (wager.HostIds().Intersect(challenge.ChallengerIds()).Count() > 0)
                 ModelState.AddModelError(string.Empty, "A wager host cannot challenge themself.");
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
 
+            //set data
             DateTime date = DateTime.Now;
-            WagerChallenge challenge = new WagerChallenge
+            challenge.IsAccepted = null;
+            challenge.Status = Status.Pending;
+            challenge.WagerId = wagerId;
+            challenge.Date = date;
+            foreach (WagerChallenger challenger in challenge.Challengers)
             {
-                Date = date,
-                IsAccepted = false,
-                Status = Status.Pending,
-                WagerId = wagerId,
-                Members = new List<WagerMember>()
-            };
-            foreach (WagerMember challenger in challengeData.Members)
-            {
-                WagerMember member = new WagerMember
-                {
-                    IsApproved = null,
-                    PayablePercentage = challenger.PayablePercentage,
-                    ReceivablePercentage = challenger.ReceivablePercentage,
-                    ProfileId = challenger.ProfileId,
-                    WagerId = wagerId
-                };
-                challenge.Members.Add(member);
+                challenger.IsApproved = null;
+                challenger.Entries = 0;
             }
 
             _context.WagerChallenges.Add(challenge);
             _context.SaveChanges();
-
-            if (challenge.Members.Count > 1)
-            {
-                string[] ids = challenge.Ids().ToArray();
-                Notification notification = new Notification
-                {
-                    Date = date,
-                    Message = $"{userName} created a wager challenge with you.",
-                    Link = $"/client/wagers/view/{wagerId}"
-                };
-                List<Notification> notifications = await _hub.SendNotificationsAsync(ids.Where(x => x != userId).ToArray(), notification);
-                _context.Notifications.AddRange(notifications);
-                await _hub.SendGroupAsync(ids, Wager.Group(wager.Id));
-            }
             return Ok(challenge.Id);
-        }
-
-        [HttpPost("entry/{id}")]
-        public async Task<IActionResult> BuyEntry([FromRoute] int id, [FromBody] string secretSeed, [FromQuery] int amount = 1)
-        {
-            string? userKey = User.GetKey();
-            string? userId = User.GetId();
-            string? userName = User.GetName();
-            if (userKey == null)
-                ModelState.AddModelError(string.Empty, "You do not have a public key registered.");
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState.GetErrors());
-            WagerMember member = await _context.WagerMembers.Where(x => x.WagerId == id).Where(x => x.ProfileId == userId).Include(x => x.Wager).FirstOrDefaultAsync();
-            if (member == null)
-                return BadRequest(new string[] { "You are not a member of this wager." });
-            TransactionReceipt receipt = new TransactionReceipt
-            {
-                Amount = member.EntryAmount(member.Wager.Amount) * amount,
-                Date = DateTime.Now,
-                Data = $"Funding wager {id}",
-                ProfileId = userId
-            };
-            KeyPair source = KeyPair.FromSecretSeed(secretSeed);
-            if (source.AccountId != userKey)
-                return BadRequest("Your registered stellar key and secret seed do not match.");
-            if (!await _transactionService.ReceiveFunds(_context, source, receipt))
-                return BadRequest();
-            member.Entries += amount;
-            _context.SaveChanges();
-            return Ok();
-        }
-
-        [HttpPost("refund/{id}")]
-        public async Task<IActionResult> RefundEntry([FromRoute] int id, [FromQuery] int amount = 1)
-        {
-            string? userKey = User.GetKey();
-            string? userId = User.GetId();
-            string? userName = User.GetName();
-            if (userKey == null)
-                ModelState.AddModelError(string.Empty, "You do not have a public key registered.");
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState.GetErrors());
-            WagerMember member = await _context.WagerMembers.Where(x => x.WagerId == id).Where(x => x.ProfileId == userId).Include(x => x.Wager).FirstOrDefaultAsync();
-            if (member == null)
-                return BadRequest(new string[] { "You are not a member of this wager." });
-            if (member.Entries < amount)
-                return BadRequest(new string[] { "Member does not have sufficient entries to refund." });
-            TransactionReceipt receipt = new TransactionReceipt
-            {
-                Amount = member.EntryAmount(member.Wager.Amount) * amount,
-                Date = DateTime.Now,
-                Data = $"Funding wager {id}",
-                ProfileId = userId
-            };
-            KeyPair destination = KeyPair.FromAccountId(userKey);
-            if (!await _transactionService.RefundFunds(_context, destination, receipt))
-                return BadRequest();
-            member.Entries -= amount;
-            _context.SaveChanges();
-            return Ok();
         }
     }
 }

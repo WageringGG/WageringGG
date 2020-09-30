@@ -22,14 +22,6 @@ namespace WageringGG.Server.Handlers
             _context = context;
         }
 
-        [HttpGet("wagers")]
-        public async Task<IActionResult> GetWagerChallenges()
-        {
-            string? userId = User.GetId();
-            IEnumerable<WagerChallenge> results = await _context.WagerMembers.AsNoTracking().Where(x => x.ProfileId == userId).Where(x => x.ChallengeId.HasValue).Include(x => x.Challenge).ThenInclude(x => x.Wager).Select(x => x.Challenge).ToListAsync();
-            return Ok(results);
-        }
-
         [HttpGet("wager/{id}")]
         public async Task<IActionResult> GetWagerChallenge(int id)
         {

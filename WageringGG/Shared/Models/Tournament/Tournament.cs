@@ -6,18 +6,5 @@ namespace WageringGG.Shared.Models
     {
         [Column(TypeName = "decimal(18,7)")]
         public decimal Entry { get; set; }
-
-        public override string[] HostIds()
-        {
-            return null;
-        }
-        public override string[] ClientIds()
-        {
-            return null;
-        }
-        public override string[] AllIds()
-        {
-            return null;
-        }
     }
 }

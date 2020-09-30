@@ -15,15 +15,77 @@ namespace WageringGG.Server.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class BidController : ControllerBase
+    public class EntryController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly TransactionService _transactionService;
         private readonly HubService _hub;
 
-        public BidController(ApplicationDbContext context, HubService hub)
+        public EntryController(ApplicationDbContext context, HubService hub, TransactionService transactionService)
         {
             _context = context;
             _hub = hub;
+            _transactionService = transactionService;
+        }
+
+        [HttpPost("buy/wager/{id}")]
+        public async Task<IActionResult> BuyWagerEntry([FromRoute] int id, [FromBody] string secretSeed, [FromQuery] int amount = 1)
+        {
+            string? userKey = User.GetKey();
+            string? userId = User.GetId();
+            string? userName = User.GetName();
+            if (userKey == null)
+                ModelState.AddModelError(string.Empty, "You do not have a public key registered.");
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState.GetErrors());
+            WagerMember member = await _context.WagerMembers.Where(x => x.WagerId == id).Where(x => x.ProfileId == userId).Include(x => x.Wager).FirstOrDefaultAsync();
+            if (member == null)
+                return BadRequest(new string[] { "You are not a member of this wager." });
+            TransactionReceipt receipt = new TransactionReceipt
+            {
+                Amount = member.EntryAmount(member.Wager.Amount) * amount,
+                Date = DateTime.Now,
+                Data = $"Funding wager {id}",
+                ProfileId = userId
+            };
+            KeyPair source = KeyPair.FromSecretSeed(secretSeed);
+            if (source.AccountId != userKey)
+                return BadRequest("Your registered stellar key and secret seed do not match.");
+            if (!await _transactionService.ReceiveFunds(_context, source, receipt))
+                return BadRequest();
+            member.Entries += amount;
+            _context.SaveChanges();
+            return Ok();
+        }
+
+        [HttpPost("refund/wager/{id}")]
+        public async Task<IActionResult> RefundWagerEntry([FromRoute] int id, [FromQuery] int amount = 1)
+        {
+            string? userKey = User.GetKey();
+            string? userId = User.GetId();
+            string? userName = User.GetName();
+            if (userKey == null)
+                ModelState.AddModelError(string.Empty, "You do not have a public key registered.");
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState.GetErrors());
+            WagerMember member = await _context.WagerMembers.Where(x => x.WagerId == id).Where(x => x.ProfileId == userId).Include(x => x.Wager).FirstOrDefaultAsync();
+            if (member == null)
+                return BadRequest(new string[] { "You are not a member of this wager." });
+            if (member.Entries < amount)
+                return BadRequest(new string[] { "Member does not have sufficient entries to refund." });
+            TransactionReceipt receipt = new TransactionReceipt
+            {
+                Amount = member.EntryAmount(member.Wager.Amount) * amount,
+                Date = DateTime.Now,
+                Data = $"Funding wager {id}",
+                ProfileId = userId
+            };
+            KeyPair destination = KeyPair.FromAccountId(userKey);
+            if (!await _transactionService.RefundFunds(_context, destination, receipt))
+                return BadRequest();
+            member.Entries -= amount;
+            _context.SaveChanges();
+            return Ok();
         }
 
         [HttpPut("wager/{id}")]
@@ -32,7 +94,7 @@ namespace WageringGG.Server.Controllers
             string? userId = User.GetId();
             string? userName = User.GetName();
 
-            var member = await _context.WagerMembers.Where(x => x.Id == id).Include(x => x.Wager).ThenInclude(x => x.Members).FirstOrDefaultAsync();
+            var member = await _context.WagerHosts.Where(x => x.Id == id).Include(x => x.Wager).ThenInclude(x => x.Hosts).FirstOrDefaultAsync();
             if (member == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
@@ -66,7 +128,7 @@ namespace WageringGG.Server.Controllers
                 member.Wager.Status = Status.Canceled;
                 notification.Message = $"{userName} has declined the wager.";
             }
-            else if (member.Wager.Members.Where(x => x.IsHost).All(x => x.IsApproved == true))
+            else if (member.Wager.Hosts.All(x => x.IsApproved == true))
             {
                 member.Wager.Status = Status.Open;
                 notification.Message = $"{userName} has confirmed the wager.";
@@ -87,7 +149,7 @@ namespace WageringGG.Server.Controllers
             string? userName = User.GetName();
             string? userKey = User.GetKey();
 
-            var member = await _context.WagerMembers.Where(x => x.Id == id).Include(x => x.Challenge).ThenInclude(x => x.Members).Include(x => x.Challenge.Wager).FirstOrDefaultAsync();
+            var member = await _context.WagerChallengers.Where(x => x.Id == id).Include(x => x.Challenge).ThenInclude(x => x.Challengers).FirstOrDefaultAsync();
             if (member == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
@@ -116,42 +178,17 @@ namespace WageringGG.Server.Controllers
                 Date = date,
                 Link = $"/client/wagers/view/{member.ChallengeId}"
             };
-            if (member.Challenge.Members.All(x => x.IsApproved == true))
+            if (member.Challenge.Challengers.All(x => x.IsApproved == true))
             {
-                /*KeyPair master = KeyPair.FromAccountId(_config["Stellar:SecretSeed"]);
-                string startingBalance = ((member.Challenge.Challengers.Count + member.Challenge.Wager.PlayerCount + 1) * Stellar.BASE_RESERVE).ToString();
-                CreateAccountOperation createAccount = new CreateAccountOperation.Builder(destination, startingBalance).SetSourceAccount(master).Build();
-                transaction = new TransactionBuilder(account).AddMemo(Memo.Text($"Creating wager challenge account (id: {member.ChallengeId})."))
-                    .AddOperation(createAccount).Build();
-                transaction.Sign(master);
-                await _server.SubmitTransaction(transaction);
-
-                member.Challenge.Account = new StellarAccount()
-                {
-                    Balance = amount,
-                    AccountId = destination.AccountId,
-                    SecretSeed = destination.SecretSeed
-                };
-                */
                 member.Challenge.Status = Status.Open;
                 notification.Message = $"{userName} has confirmed the wager challenge.";
 
-                Wager wager = await _context.Wagers.Where(x => x.Id == member.Challenge.WagerId).Include(x => x.Members).FirstOrDefaultAsync();
-                wager.ChallengeCount++;
-
-                //send hosts a notification
-                Notification hostNotification = new Notification
-                {
-                    Date = date,
-                    Message = "There is a new wager challenge.",
-                    Link = $"/host/wagers/view/{member.Challenge.WagerId}"
-                };
-                List<Notification> hostNotifications = await _hub.SendNotificationsAsync(wager.HostIds().ToArray(), hostNotification);
-                _context.AddRange(hostNotifications);
+                //send challengers a notification
+                //send hosts a notifications
             }
             else
                 notification.Message = $"{userName} has accepted the wager challenge.";
-            string[] ids = member.Challenge.Ids().Where(x => x != userId).ToArray();
+            string[] ids = member.Challenge.ChallengerIds().Where(x => x != userId).ToArray();
             List<Notification> notifications = await _hub.SendNotificationsAsync(ids, notification);
             _context.AddRange(notifications);
             _context.SaveChanges();

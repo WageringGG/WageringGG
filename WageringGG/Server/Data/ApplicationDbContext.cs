@@ -11,7 +11,8 @@ namespace WageringGG.Server.Data
         #region Wagers
         public DbSet<Wager> Wagers { get; set; }
         public DbSet<WagerChallenge> WagerChallenges { get; set; }
-        public DbSet<WagerMember> WagerMembers { get; set; }
+        public DbSet<WagerHost> WagerHosts { get; set; }
+        public DbSet<WagerChallenger> WagerChallengers { get; set; }
         #endregion
         #region Tournaments
         public DbSet<Tournament> Tournaments { get; set; }
@@ -30,24 +31,17 @@ namespace WageringGG.Server.Data
             builder.Entity<Notification>().HasKey(x => new { x.Date, x.ProfileId });
             builder.Entity<Profile>().HasIndex(x => x.NormalizedDisplayName).IsUnique();
             builder.Entity<Game>().HasIndex(x => x.NormalizedName).IsUnique();
-            builder.Entity<WagerMember>().HasIndex(x => x.IsHost);
-
-            /*const int users = 10;
-            Profile[] profiles = new Profile[users];
-            List<Wager> wagers = new List<Wager>();
-            for (int i = 0; i < users; i++)
-            {
-                profiles[i] = new Profile
-                {
-                    DisplayName = $"user_{i}",
-                    NormalizedDisplayName = $"USER_{i}",
-                    Id = $"FAKEID{i}",
-                };
-            }
-
-            builder.Entity<Profile>().HasData(profiles);*/
+            builder.Entity<ChallengeEntry>().HasKey(x => new { x.HostId, x.ChallengeId });
             builder.Entity<Game>().HasData(Constants.Games.Values);
+
+            //AddTestData(builder);
+
             base.OnModelCreating(builder);
+        }
+
+        private void AddTestData(ModelBuilder builder)
+        {
+
         }
     }
 }
