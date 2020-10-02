@@ -13,6 +13,7 @@ namespace WageringGG.Server.Data
         public DbSet<WagerChallenge> WagerChallenges { get; set; }
         public DbSet<WagerHost> WagerHosts { get; set; }
         public DbSet<WagerChallenger> WagerChallengers { get; set; }
+        public DbSet<ChallengeEntry> WagerChallengeEntries { get; set; }
         #endregion
         #region Tournaments
         public DbSet<Tournament> Tournaments { get; set; }

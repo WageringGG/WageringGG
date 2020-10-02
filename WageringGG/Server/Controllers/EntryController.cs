@@ -28,8 +28,8 @@ namespace WageringGG.Server.Controllers
             _transactionService = transactionService;
         }
 
-        [HttpPost("buy/wager/{id}")]
-        public async Task<IActionResult> BuyWagerEntry([FromRoute] int id, [FromBody] string secretSeed, [FromQuery] int amount = 1)
+        [HttpPost("buy/wager/{id}/{challengeId}")]
+        public async Task<IActionResult> BuyWagerEntry([FromRoute] int id, [FromRoute] int challengeId, [FromBody] string secretSeed, [FromQuery] bool isHost = false, [FromQuery] int amount = 1)
         {
             string? userKey = User.GetKey();
             string? userId = User.GetId();
@@ -38,14 +38,25 @@ namespace WageringGG.Server.Controllers
                 ModelState.AddModelError(string.Empty, "You do not have a public key registered.");
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
-            WagerMember member = await _context.WagerMembers.Where(x => x.WagerId == id).Where(x => x.ProfileId == userId).Include(x => x.Wager).FirstOrDefaultAsync();
-            if (member == null)
-                return BadRequest(new string[] { "You are not a member of this wager." });
+
+            if (isHost)
+            {
+                WagerHost host = await _context.WagerHosts.Where(x => x.WagerId == id).Where(x => x.ProfileId == userId).Include(x => x.Entries).FirstOrDefaultAsync();
+                if (host == null)
+                    return BadRequest(new string[] { "You are not a host of this wager." });
+
+
+            }
+            else
+            {
+                WagerChallenger challenger = await _context.WagerChallengers.Where(x => x.ChallengeId == challengeId).Where(x => x.ProfileId == userId).FirstOrDefaultAsync();
+            }
+
             TransactionReceipt receipt = new TransactionReceipt
             {
                 Amount = member.EntryAmount(member.Wager.Amount) * amount,
                 Date = DateTime.Now,
-                Data = $"Funding wager {id}",
+                Data = $"Funding wager {challengeId}",
                 ProfileId = userId
             };
             KeyPair source = KeyPair.FromSecretSeed(secretSeed);
