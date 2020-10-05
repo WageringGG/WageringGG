@@ -58,24 +58,24 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @for (int i = 0; i < Wager.Members.Count; i++)
+                                @for (int i = 0; i < Wager.Hosts.Count; i++)
                                 {
-                                    WagerMember member = Wager.Members[i];
+                                    WagerHost member = Wager.Hosts[i];
                                     <tr>
                                         <td>@member.Profile.DisplayName</td>
                                         @if (EditIndex == i)
                                         {
                                             <td>
-                                                <input type="number" @bind-value="member.PayablePercentage" class="form-control" />
+                                                <input type="number" @bind-value="member.Payable" class="form-control" />
                                             </td>
                                             <td>
-                                                <input type="number" @bind-value="member.ReceivablePercentage" class="form-control" />
+                                                <input type="number" @bind-value="member.Receivable" class="form-control" />
                                             </td>
                                         }
                                         else
                                         {
-                                            <td>@member.PayablePercentage%</td>
-                                            <td>@member.ReceivablePercentage%</td>
+                                            <td>@member.Payable</td>
+                                            <td>@member.Receivable</td>
                                         }
                                         <td>
                                             <div class="btn-group">
@@ -89,7 +89,7 @@
                                                 }
                                                 @if (member.ProfileId != Context.User.GetId())
                                                 {
-                                                    <button type="button" class="btn btn-link" @onclick="() => Wager.Members.RemoveAt(i)"><i class="mdi mdi-delete"></i></button>
+                                                    <button type="button" class="btn btn-link" @onclick="() => Wager.Hosts.RemoveAt(i)"><i class="mdi mdi-delete"></i></button>
                                                 }
                                             </div>
                                         </td>
@@ -97,8 +97,8 @@
                                 }
                                 <tr class="border-top">
                                     <th scope="row">Total:</th>
-                                    <td>@Wager.Members.Sum(x => x.PayablePercentage)%</td>
-                                    <td>@Wager.Members.Sum(x => x.ReceivablePercentage)%</td>
+                                    <td>@Wager.Hosts.Sum(x => x.Payable)</td>
+                                    <td>@Wager.Hosts.Sum(x => x.Receivable)</td>
                                     <td><button type="button" class="btn btn-sm btn-outline-secondary" @onclick="Normalize">Normalize</button></td>
                                 </tr>
                             </tbody>
@@ -133,12 +133,12 @@
                             </div>
                             <div class="col-12 col-sm-6">
                                 <div class="form-group">
-                                    <label for="payablePercentage">Payable %</label>
-                                    <input type="number" @bind-value="Host.PayablePercentage" class="form-control" id="payablePercentage" />
+                                    <label for="payablePercentage">Payable</label>
+                                    <input type="number" @bind-value="Host.Payable" class="form-control" id="payablePercentage" />
                                 </div>
                                 <div class="form-group">
-                                    <label for="receivablePercentage">Receivable %</label>
-                                    <input type="number" @bind-value="Host.ReceivablePercentage" class="form-control" id="receivablePercentage" />
+                                    <label for="receivablePercentage">Receivable</label>
+                                    <input type="number" @bind-value="Host.Receivable" class="form-control" id="receivablePercentage" />
                                 </div>
                             </div>
                         </div>
@@ -162,8 +162,8 @@
     private HubConnection HubConnection { get; set; }
     [Parameter]
     public AuthenticationState Context { get; set; }
-    private Wager Wager { get; set; } = new Wager { Members = new List<WagerMember>() };
-    private WagerMember Host { get; set; } = new WagerMember();
+    private Wager Wager { get; set; } = new Wager { Hosts = new List<WagerHost>() };
+    private WagerHost Host { get; set; } = new WagerHost();
     private string DisplayName { get; set; }
     private List<Profile> Profiles { get; set; } = new List<Profile>();
     private Timer Debounce { get; set; } = new Timer(750) { AutoReset = false };
@@ -183,12 +183,12 @@
         {
             if (!string.IsNullOrEmpty(Context.User.GetKey()))
                 HasKey = true;
-            Wager.Members.Add(new WagerMember
+            Wager.Hosts.Add(new WagerHost
             {
                 ProfileId = Context.User.GetId(),
                 Profile = new Profile { DisplayName = Context.User.Identity.Name, Id = Context.User.GetId() },
-                ReceivablePercentage = 100,
-                PayablePercentage = 100
+                Receivable = Wager.Amount,
+                Payable = Wager.Amount
             });
         }
         base.OnInitialized();
@@ -207,11 +207,11 @@
 
     private void Normalize()
     {
-        byte avg = (byte)(100 / Wager.Members.Count);
-        Wager.Members.All(x =>
+        byte avg = (byte)(Wager.Amount / Wager.Hosts.Count);
+        Wager.Hosts.All(x =>
         {
-            x.PayablePercentage = avg;
-            x.ReceivablePercentage = avg;
+            x.Payable = avg;
+            x.Receivable = avg;
             return true;
         });
     }
@@ -231,18 +231,18 @@
         }
 
         Profile profile = Profiles[SelectedIndex];
-        if (Wager.Members.Any(x => x.ProfileId == profile.Id))
+        if (Wager.Hosts.Any(x => x.ProfileId == profile.Id))
         {
             await js.InvokeVoidAsync("alert", $"{profile.DisplayName} is already a member.");
             return;
         }
 
-        Wager.Members.Add(new WagerMember
+        Wager.Hosts.Add(new WagerHost
         {
             ProfileId = profile.Id,
             Profile = profile,
-            ReceivablePercentage = Host.ReceivablePercentage,
-            PayablePercentage = Host.PayablePercentage
+            Receivable = Host.Receivable,
+            Payable = Host.Payable
         });
         ResetUser();
         await js.InvokeVoidAsync("blazorCollapse", "#addCollapse", "hide");
@@ -250,7 +250,7 @@
 
     private void ResetUser()
     {
-        Host = new WagerMember();
+        Host = new WagerHost();
         SelectedIndex = -1;
         Profiles.Clear();
         DisplayName = null;

@@ -9,6 +9,8 @@ using WageringGG.Server.Data;
 using WageringGG.Server.Services;
 using WageringGG.Shared.Constants;
 using WageringGG.Shared.Models;
+using stellar_dotnet_sdk;
+using stellar_dotnet_sdk.responses;
 
 namespace WageringGG.Server.Controllers
 {
@@ -28,8 +30,8 @@ namespace WageringGG.Server.Controllers
             _transactionService = transactionService;
         }
 
-        [HttpPost("buy/wager/{id}/{challengeId}")]
-        public async Task<IActionResult> BuyWagerEntry([FromRoute] int id, [FromRoute] int challengeId, [FromBody] string secretSeed, [FromQuery] bool isHost = false, [FromQuery] int amount = 1)
+        [HttpPost("buy/wager/{id}")]
+        public async Task<IActionResult> BuyWagerEntry([FromRoute] int id, [FromBody] string secretSeed, [FromQuery] int amount = 1)
         {
             string? userKey = User.GetKey();
             string? userId = User.GetId();
@@ -39,31 +41,23 @@ namespace WageringGG.Server.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
 
-            if (isHost)
-            {
-                WagerHost host = await _context.WagerHosts.Where(x => x.WagerId == id).Where(x => x.ProfileId == userId).Include(x => x.Entries).FirstOrDefaultAsync();
-                if (host == null)
-                    return BadRequest(new string[] { "You are not a host of this wager." });
-
-
-            }
-            else
-            {
-                WagerChallenger challenger = await _context.WagerChallengers.Where(x => x.ChallengeId == challengeId).Where(x => x.ProfileId == userId).FirstOrDefaultAsync();
-            }
+            WagerMember member = await _context.WagerMembers.Where(x => x.Id == id).Where(x => x.ProfileId == userId).FirstOrDefaultAsync();
+            if (member == null)
+                return BadRequest();
 
             TransactionReceipt receipt = new TransactionReceipt
             {
-                Amount = member.EntryAmount(member.Wager.Amount) * amount,
+                Amount = member.Payable * amount,
                 Date = DateTime.Now,
-                Data = $"Funding wager {challengeId}",
+                Data = $"Funding challenge {member.ChallengeId}",
                 ProfileId = userId
             };
             KeyPair source = KeyPair.FromSecretSeed(secretSeed);
             if (source.AccountId != userKey)
                 return BadRequest("Your registered stellar key and secret seed do not match.");
-            if (!await _transactionService.ReceiveFunds(_context, source, receipt))
-                return BadRequest();
+            SubmitTransactionResponse response = await _transactionService.ReceiveFunds(_context, source, receipt);
+            if(!response.IsSuccess())
+                return BadRequest(response.Result);
             member.Entries += amount;
             _context.SaveChanges();
             return Ok();
@@ -79,21 +73,22 @@ namespace WageringGG.Server.Controllers
                 ModelState.AddModelError(string.Empty, "You do not have a public key registered.");
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
-            WagerMember member = await _context.WagerMembers.Where(x => x.WagerId == id).Where(x => x.ProfileId == userId).Include(x => x.Wager).FirstOrDefaultAsync();
+            WagerMember member = await _context.WagerMembers.Where(x => x.Id == id).Where(x => x.ProfileId == userId).FirstOrDefaultAsync();
             if (member == null)
                 return BadRequest(new string[] { "You are not a member of this wager." });
             if (member.Entries < amount)
                 return BadRequest(new string[] { "Member does not have sufficient entries to refund." });
             TransactionReceipt receipt = new TransactionReceipt
             {
-                Amount = member.EntryAmount(member.Wager.Amount) * amount,
+                Amount = member.Payable * amount,
                 Date = DateTime.Now,
-                Data = $"Funding wager {id}",
+                Data = $"Refunding challenge {id}",
                 ProfileId = userId
             };
             KeyPair destination = KeyPair.FromAccountId(userKey);
-            if (!await _transactionService.RefundFunds(_context, destination, receipt))
-                return BadRequest();
+            SubmitTransactionResponse response = await _transactionService.RefundFunds(_context, destination, receipt);
+            if(!response.IsSuccess())
+                return BadRequest(response.Result);
             member.Entries -= amount;
             _context.SaveChanges();
             return Ok();
@@ -105,7 +100,7 @@ namespace WageringGG.Server.Controllers
             string? userId = User.GetId();
             string? userName = User.GetName();
 
-            var member = await _context.WagerHosts.Where(x => x.Id == id).Include(x => x.Wager).ThenInclude(x => x.Hosts).FirstOrDefaultAsync();
+            var member = await _context.WagerMembers.Where(x => x.Id == id).Include(x => x.Wager).FirstOrDefaultAsync();
             if (member == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
@@ -160,7 +155,7 @@ namespace WageringGG.Server.Controllers
             string? userName = User.GetName();
             string? userKey = User.GetKey();
 
-            var member = await _context.WagerChallengers.Where(x => x.Id == id).Include(x => x.Challenge).ThenInclude(x => x.Challengers).FirstOrDefaultAsync();
+            var member = await _context.WagerMembers.Where(x => x.Id == id).Include(x => x.Challenge).ThenInclude(x => x.Members).FirstOrDefaultAsync();
             if (member == null)
             {
                 ModelState.AddModelError(string.Empty, Errors.NotFound);
@@ -189,7 +184,7 @@ namespace WageringGG.Server.Controllers
                 Date = date,
                 Link = $"/client/wagers/view/{member.ChallengeId}"
             };
-            if (member.Challenge.Challengers.All(x => x.IsApproved == true))
+            if (member.Challenge.Members.All(x => x.IsApproved == true))
             {
                 member.Challenge.Status = Status.Open;
                 notification.Message = $"{userName} has confirmed the wager challenge.";
@@ -205,7 +200,5 @@ namespace WageringGG.Server.Controllers
             _context.SaveChanges();
             return Ok(member.Challenge.Status);
         }
-
-        //decline refund users their $$$
     }
 }

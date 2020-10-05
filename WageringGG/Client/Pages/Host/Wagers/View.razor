@@ -16,10 +16,6 @@ else
             <p class="lead">Status <span class="badge badge-pill badge-secondary">@Enum.GetName(typeof(Status), Wager.Status)</span></p>
         </div>
         <div class="col-12 col-md-5 mr-auto my-1 text-right">
-            @if (Wager.Status != Status.Canceled)
-            {
-                <ManageEntryDisplay @bind-Member="Host" Amount="Host.EntryAmount(Wager.Amount)" />
-            }
             @if (Wager.Status == Status.Open)
             {
                 <button class="btn btn-outline-danger" @onclick="() => ChangeStatus(Status.Closed)">Close</button>
@@ -94,7 +90,7 @@ else
     private HubConnection HubConnection { get; set; }
     [CascadingParameter]
     private Task<AuthenticationState> AuthenticationState { get; set; }
-    private WagerMember Host { get; set; }
+    private WagerHost Host { get; set; }
     private Wager Wager { get; set; }
     private bool IsDeleted { get; set; }
     private IEnumerable<string> Errors { get; set; } = new List<string>();
@@ -107,7 +103,7 @@ else
         if (response.IsSuccessStatusCode)
         {
             Wager = await response.Content.ReadFromJsonAsync<Wager>();
-            Host = Wager.Members.FirstOrDefault(x => x.ProfileId == context.User.GetId());
+            Host = Wager.Hosts.FirstOrDefault(x => x.ProfileId == context.User.GetId());
             await HubConnection.InvokeAsync("AddToGroup", Wager.Group(Wager.Id));
         }
         else

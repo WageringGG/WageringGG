@@ -23,8 +23,8 @@ namespace WageringGG.Server.Services
         /// <param name="context">Database context</param>
         /// <param name="source">Keys to the user sending funds.</param>
         /// <param name="receipt">The transaction being processed.</param>
-        /// <returns>True if the transaction is successful.</returns>
-        public async Task<bool> ReceiveFunds(ApplicationDbContext context, KeyPair source, TransactionReceipt receipt)
+        /// <returns>Transaction Response</returns>
+        public async Task<SubmitTransactionResponse> ReceiveFunds(ApplicationDbContext context, KeyPair source, TransactionReceipt receipt)
         {
             KeyPair server = KeyPair.FromAccountId(_config["Stellar:PublicKey"]);
             AccountResponse account = await _server.Accounts.Account(source.AccountId);
@@ -40,9 +40,8 @@ namespace WageringGG.Server.Services
                 receipt.ToAddress = server.AccountId;
                 receipt.FromAddress = source.AccountId;
                 context.Transactions.Add(receipt);
-                return true;
             }
-            return false;
+            return transactionResponse;
         }
 
         /// <summary>
@@ -51,8 +50,8 @@ namespace WageringGG.Server.Services
         /// <param name="context">Database context</param>
         /// <param name="destination">Keys to the user receiving funds.</param>
         /// <param name="receipt">The transaction being processed.</param>
-        /// <returns>True if the transaction is successful.</returns>
-        public async Task<bool> RefundFunds(ApplicationDbContext context, KeyPair destination, TransactionReceipt receipt)
+        /// <returns>Transaction Response</returns>
+        public async Task<SubmitTransactionResponse> RefundFunds(ApplicationDbContext context, KeyPair destination, TransactionReceipt receipt)
         {
             KeyPair server = KeyPair.FromAccountId(_config["Stellar:SecretSeed"]);
             AccountResponse account = await _server.Accounts.Account(server.AccountId);
@@ -68,9 +67,8 @@ namespace WageringGG.Server.Services
                 receipt.ToAddress = destination.AccountId;
                 receipt.FromAddress = server.AccountId;
                 context.Transactions.Add(receipt);
-                return true;
             }
-            return false;
+            return transactionResponse;
         }
     }
 }

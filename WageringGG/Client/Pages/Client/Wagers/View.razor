@@ -13,7 +13,7 @@
         <div class="col-12 col-md-5 mr-auto my-1 text-right">
             @if (Challenge.Wager.Status != Status.Canceled)
             {
-                <ManageEntryDisplay @bind-Member="Member" Amount="Member.EntryAmount(Challenge.Wager.Amount)" />
+                <ManageEntryDisplay @bind-Member="Member" Amount="Member.Payable" />
             }
         </div>
     </div>
@@ -27,7 +27,7 @@
             <h3>Challengers:</h3>
             <AuthorizeView>
                 <Authorized>
-                    <WagerMembersDisplay Members="Challenge.Challengers">
+                    <WagerMembersDisplay Members="Challenge.Members.Where(x => !x.IsHost).ToList()">
                         @if (Member != null && !Member.IsApproved.HasValue)
                         {
                             <button class="btn btn-danger" title="Decline the wager challenge." @onclick="() => SetAnswer(false)">Decline</button>
@@ -47,7 +47,7 @@
     public HubConnection HubConnection { get; set; }
     [CascadingParameter]
     private Task<AuthenticationState> AuthenticationState { get; set; }
-    private WagerChallenger Member { get; set; }
+    private WagerMember Member { get; set; }
     private WagerChallenge Challenge { get; set; }
     public IEnumerable<string> Errors { get; set; } = new List<string>();
 

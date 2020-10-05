@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WageringGG.Server.Data;
+using WageringGG.Server.Migrations;
 using WageringGG.Server.Models;
 using WageringGG.Server.Services;
 using WageringGG.Shared.Constants;
@@ -233,9 +234,9 @@ namespace WageringGG.Server.Handlers
             //check funds
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
-            if (!challenge.Challengers.Any(x => x.ProfileId == userId))
+            if (!challenge.Members.Any(x => x.ProfileId == userId))
                 ModelState.AddModelError(string.Empty, "Caller must be a host.");
-            if (!challenge.Challengers.IsUnique())
+            if (!challenge.Members.IsUnique())
                 ModelState.AddModelError(string.Empty, "The id's are not unique.");
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.GetErrors());
@@ -255,9 +256,10 @@ namespace WageringGG.Server.Handlers
             challenge.Status = Status.Pending;
             challenge.WagerId = wagerId;
             challenge.Date = date;
-            foreach (WagerChallenger challenger in challenge.Challengers)
+            foreach (WagerMember challenger in challenge.Members)
             {
                 challenger.IsApproved = null;
+                challenger.IsHost = false;
                 challenger.Entries = 0;
             }
 

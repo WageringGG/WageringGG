@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using NSec.Cryptography;
 using WageringGG.Shared.Models;
 using Constants = WageringGG.Shared.Constants;
 #nullable disable
@@ -11,9 +12,8 @@ namespace WageringGG.Server.Data
         #region Wagers
         public DbSet<Wager> Wagers { get; set; }
         public DbSet<WagerChallenge> WagerChallenges { get; set; }
+        public DbSet<WagerMember> WagerMembers { get; set; }
         public DbSet<WagerHost> WagerHosts { get; set; }
-        public DbSet<WagerChallenger> WagerChallengers { get; set; }
-        public DbSet<ChallengeEntry> WagerChallengeEntries { get; set; }
         #endregion
         #region Tournaments
         public DbSet<Tournament> Tournaments { get; set; }
@@ -32,7 +32,7 @@ namespace WageringGG.Server.Data
             builder.Entity<Notification>().HasKey(x => new { x.Date, x.ProfileId });
             builder.Entity<Profile>().HasIndex(x => x.NormalizedDisplayName).IsUnique();
             builder.Entity<Game>().HasIndex(x => x.NormalizedName).IsUnique();
-            builder.Entity<ChallengeEntry>().HasKey(x => new { x.HostId, x.ChallengeId });
+            builder.Entity<WagerMember>().HasIndex(x => x.IsHost);
             builder.Entity<Game>().HasData(Constants.Games.Values);
 
             //AddTestData(builder);

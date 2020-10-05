@@ -35,11 +35,11 @@ namespace WageringGG.Server.Handlers
         {
             string? userId = User.GetId();
 
-            Wager wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == id).Include(x => x.Members).ThenInclude(x => x.Profile).Include(x => x.Challenges).FirstOrDefaultAsync();
+            Wager wager = await _context.Wagers.AsNoTracking().Where(x => x.Id == id).Include(x => x.Hosts).ThenInclude(x => x.Profile).Include(x => x.Challenges).FirstOrDefaultAsync();
 
             if (wager == null)
                 return BadRequest(new string[] { Errors.NotFound });
-            if (!wager.Members.Any(x => x.ProfileId == userId && x.IsHost == true))
+            if (!wager.Hosts.Any(x => x.ProfileId == userId))
                 return BadRequest(new string[] { "You are not a host of this wager." });
             return Ok(wager);
         }
