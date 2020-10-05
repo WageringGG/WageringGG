@@ -45,13 +45,13 @@ else
         </div>
         <div class="col-12 col-lg-8 mx-auto my-1">
             <h3>Hosts:</h3>
-            <WagerMembersDisplay Members="Wager.Members">
+            <WagerHostsDisplay Members="Wager.Members">
                 @if (Host != null && !Host.IsApproved.HasValue)
                 {
                     <button class="btn btn-danger" title="Decline the wager." @onclick="() => HandleWager(false)">Decline</button>
                     <button class="btn btn-success" title="Accept the wager." @onclick="() => HandleWager(true)">Accept</button>
                 }
-            </WagerMembersDisplay>
+            </WagerHostsDisplay>
         </div>
         @if (Wager.Status != (byte)Status.Pending)
         {
@@ -139,19 +139,6 @@ else
             {
                 Wager.Status = data.Status;
                 StateHasChanged();
-            }
-        }
-        else if (e.Key == "WagerMember")
-        {
-            var data = (WagerMember)e.NewValue;
-            if (Wager.Id == data.WagerId)
-            {
-                var index = Wager.Members.FindIndex(x => x.Id == data.Id);
-                if (index > -1)
-                {
-                    Wager.Members[index] = data;
-                    StateHasChanged();
-                }
             }
         }
     }

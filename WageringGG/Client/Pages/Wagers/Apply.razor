@@ -45,16 +45,16 @@
                                         @if (EditIndex == i)
                                         {
                                             <td>
-                                                <input type="number" @bind-value="member.PayablePercentage" class="form-control" />
+                                                <input type="number" @bind-value="member.Payable" class="form-control" />
                                             </td>
                                             <td>
-                                                <input type="number" @bind-value="member.ReceivablePercentage" class="form-control" />
+                                                <input type="number" @bind-value="member.Receivable" class="form-control" />
                                             </td>
                                         }
                                         else
                                         {
-                                            <td>@member.PayablePercentage%</td>
-                                            <td>@member.ReceivablePercentage%</td>
+                                            <td>@member.Payable</td>
+                                            <td>@member.Receivable</td>
                                         }
                                         <td>
                                             <div class="btn-group">
@@ -76,8 +76,8 @@
                                 }
                                 <tr class="border-top">
                                     <th scope="row">Total:</th>
-                                    <td>@Challenge.Members.Sum(x => x.PayablePercentage)%</td>
-                                    <td>@Challenge.Members.Sum(x => x.ReceivablePercentage)%</td>
+                                    <td>@Challenge.Members.Sum(x => x.Payable)</td>
+                                    <td>@Challenge.Members.Sum(x => x.Receivable)</td>
                                     <td><button type="button" class="btn btn-sm btn-outline-secondary" @onclick="Normalize">Normalize</button></td>
                                 </tr>
                             </tbody>
@@ -108,12 +108,12 @@
                             </div>
                             <div class="col-12 col-sm-6">
                                 <div class="form-group">
-                                    <label for="payablePt">Payable %</label>
-                                    <input type="number" @bind-value="Member.PayablePercentage" class="form-control" id="payablePt" />
+                                    <label for="payablePt">Payable</label>
+                                    <input type="number" @bind-value="Member.Payable" class="form-control" id="payablePt" />
                                 </div>
                                 <div class="form-group">
-                                    <label for="receivablePt">Receivable %</label>
-                                    <input type="number" @bind-value="Member.ReceivablePercentage" class="form-control" id="receivablePt" />
+                                    <label for="receivablePt">Receivable</label>
+                                    <input type="number" @bind-value="Member.Receivable" class="form-control" id="receivablePt" />
                                 </div>
                             </div>
                         </div>
@@ -134,7 +134,7 @@
     [Parameter]
     public AuthenticationState Context { get; set; }
     [Parameter]
-    public int WagerId { get; set; }
+    public Wager Wager { get; set; }
     private WagerChallenge Challenge { get; set; } = new WagerChallenge { Members = new List<WagerMember>() };
     private WagerMember Member { get; set; } = new WagerMember();
     private IEnumerable<string> Errors { get; set; }
@@ -158,8 +158,8 @@
             {
                 ProfileId = Context.User.GetId(),
                 Profile = new Profile { DisplayName = Context.User.Identity.Name, Id = Context.User.GetId() },
-                ReceivablePercentage = 100,
-                PayablePercentage = 100
+                Receivable = Wager.Amount,
+                Payable = Wager.Amount
             });
         }
         base.OnInitialized();
@@ -184,8 +184,8 @@
         {
             ProfileId = profile.Id,
             Profile = profile,
-            ReceivablePercentage = Member.ReceivablePercentage,
-            PayablePercentage = Member.PayablePercentage
+            Receivable = Member.Receivable,
+            Payable = Member.Payable
         });
         ResetUser();
         await js.InvokeVoidAsync("blazorCollapse", "#addCollapse", "hide");
@@ -206,11 +206,11 @@
 
     private void Normalize()
     {
-        byte avg = (byte)(100 / Challenge.Members.Count);
+        byte avg = (byte)(Wager.Amount / Challenge.Members.Count);
         Challenge.Members.All(x =>
         {
-            x.PayablePercentage = avg;
-            x.ReceivablePercentage = avg;
+            x.Payable = avg;
+            x.Receivable = avg;
             return true;
         });
     }
@@ -240,7 +240,7 @@
     {
         if (!HasKey)
             return;
-        HttpResponseMessage response = await http.Client.PostAsJsonAsync($"/api/wager/challenge/{WagerId}", Challenge);
+        HttpResponseMessage response = await http.Client.PostAsJsonAsync($"/api/wager/challenge/{Wager.Id}", Challenge);
         if (response.IsSuccessStatusCode)
         {
             string link = $"/client/wagers/view/{await response.Content.ReadAsStringAsync()}";

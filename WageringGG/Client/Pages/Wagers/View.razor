@@ -12,7 +12,7 @@ else
         <div class="col-12 col-lg-8 mx-auto my-1">
             <AuthorizeView>
                 <Authorized>
-                    @if (!Wager.Hosts().Any(x => x.ProfileId == context.User.GetId()))
+                    @if (!Wager.Hosts.Any(x => x.ProfileId == context.User.GetId()))
                     {
                         <Apply Context="context" WagerId="Wager.Id" />
                     }
@@ -24,7 +24,7 @@ else
         </div>
         <div class="col-12 col-lg-8 mx-auto my-1">
             <h3>Hosts:</h3>
-            <WagerMembersDisplay Members="Wager.Members" />
+            <WagerHostsDisplay Hosts="Wager.Hosts" />
         </div>
         <div class="col-12 col-lg-8 mx-auto my-1">
             <h3>Wager:</h3>

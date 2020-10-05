@@ -7,30 +7,28 @@
                         <th scope="col">Name</th>
                         <th scope="col">Payable (%)</th>
                         <th scope="col">Receivable (%)</th>
-                        <th scope="col">Entries</th>
                         <th scope="col">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (WagerMember member in Members)
+                    @foreach (WagerHost host in Hosts)
                     {
                         <tr>
                             <td>
-                                <a class="btn btn-outline-secondary btn-sm" href="@($"/user/{member.Profile.DisplayName}")" title="View profile">@member.Profile.DisplayName</a>
+                                <a class="btn btn-outline-secondary btn-sm" href="@($"/user/{host.Profile.DisplayName}")" title="View profile">@host.Profile.DisplayName</a>
                             </td>
-                            <td>@member.PayablePercentage%</td>
-                            <td>@member.ReceivablePercentage%</td>
-                            <td>@member.Entries</td>
+                            <td>@host.Payable</td>
+                            <td>@host.Receivable</td>
                             <td>
-                                @if (member.IsApproved.HasValue)
+                                @if (host.IsApproved.HasValue)
                                 {
-                                    @if (member.IsApproved.Value == false)
+                                    @if (host.IsApproved.Value == false)
                                     {
-                                        <button class="btn btn-outline-danger btn-sm disabled" title="@($"{member.Profile.DisplayName} declined the wager.")"><i class="mdi mdi-cancel"></i></button>
+                                        <button class="btn btn-outline-danger btn-sm disabled" title="@($"{host.Profile.DisplayName} declined the wager.")"><i class="mdi mdi-cancel"></i></button>
                                     }
                                     else
                                     {
-                                        <button class="btn btn-outline-success btn-sm disabled" title="@($"{member.Profile.DisplayName} accepted the wager.")"><i class="mdi mdi-check"></i></button>
+                                        <button class="btn btn-outline-success btn-sm disabled" title="@($"{host.Profile.DisplayName} accepted the wager.")"><i class="mdi mdi-check"></i></button>
                                     }
                                 }
                                 else
@@ -49,7 +47,7 @@
 
 @code {
     [Parameter]
-    public List<WagerMember> Members { get; set; }
+    public List<WagerHost> Hosts { get; set; }
     [Parameter]
     public RenderFragment ChildContent { get; set; }
 }

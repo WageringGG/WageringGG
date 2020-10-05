@@ -24,16 +24,11 @@
             <WagerDisplay Wager="Challenge.Wager" />
         </div>
         <div class="col-12 col-lg-8 mx-auto my-1">
-            <h3>Challengers:</h3>
+            <h3>Hosts:</h3>
             <AuthorizeView>
                 <Authorized>
-                    <WagerMembersDisplay Members="Challenge.Members.Where(x => !x.IsHost).ToList()">
-                        @if (Member != null && !Member.IsApproved.HasValue)
-                        {
-                            <button class="btn btn-danger" title="Decline the wager challenge." @onclick="() => SetAnswer(false)">Decline</button>
-                            <button class="btn btn-success" title="Accept the wager challenge." @onclick="() => SetAnswer(true)">Accept</button>
-                        }
-                    </WagerMembersDisplay>
+                    <WagerHostsDisplay Hosts="Challenge.Wager.Hosts">
+                    </WagerHostsDisplay>
                 </Authorized>
             </AuthorizeView>
         </div>

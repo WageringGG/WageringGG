@@ -35,6 +35,10 @@
     <Compile Remove="Migrations\20200902062843_Amount.Designer.cs" />
     <Compile Remove="Migrations\20200903201650_Paid.cs" />
     <Compile Remove="Migrations\20200903201650_Paid.Designer.cs" />
+    <Compile Remove="Migrations\20201005205456_WagerHostMember.cs" />
+    <Compile Remove="Migrations\20201005205456_WagerHostMember.Designer.cs" />
+    <Compile Remove="Migrations\20201005210537_WagerHostMember.cs" />
+    <Compile Remove="Migrations\20201005210537_WagerHostMember.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>
