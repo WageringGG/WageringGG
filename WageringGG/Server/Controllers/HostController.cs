@@ -8,7 +8,7 @@ using WageringGG.Server.Data;
 using WageringGG.Shared.Constants;
 using WageringGG.Shared.Models;
 
-namespace WageringGG.Server.Handlers
+namespace WageringGG.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

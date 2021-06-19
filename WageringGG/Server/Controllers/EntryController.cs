@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using stellar_dotnet_sdk;
+using stellar_dotnet_sdk.responses;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,8 +11,6 @@ using WageringGG.Server.Data;
 using WageringGG.Server.Services;
 using WageringGG.Shared.Constants;
 using WageringGG.Shared.Models;
-using stellar_dotnet_sdk;
-using stellar_dotnet_sdk.responses;
 
 namespace WageringGG.Server.Controllers
 {
@@ -56,7 +56,7 @@ namespace WageringGG.Server.Controllers
             if (source.AccountId != userKey)
                 return BadRequest("Your registered stellar key and secret seed do not match.");
             SubmitTransactionResponse response = await _transactionService.ReceiveFunds(_context, source, receipt);
-            if(!response.IsSuccess())
+            if (!response.IsSuccess())
                 return BadRequest(response.Result);
             member.Entries += amount;
             _context.SaveChanges();
@@ -87,7 +87,7 @@ namespace WageringGG.Server.Controllers
             };
             KeyPair destination = KeyPair.FromAccountId(userKey);
             SubmitTransactionResponse response = await _transactionService.RefundFunds(_context, destination, receipt);
-            if(!response.IsSuccess())
+            if (!response.IsSuccess())
                 return BadRequest(response.Result);
             member.Entries -= amount;
             _context.SaveChanges();
